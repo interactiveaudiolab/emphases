@@ -34,9 +34,9 @@ The `alignment` is a `pypar.Alignment` object. You can also use
 `emphases.from_text_and_audio` to compute emphases from a string and,
 numpy array, `emphases.from_file_to_file` to automatically save
 results to disk, or `emphases.from_files_to_files` to compute the
-emphases of many files. Emphases are saved as a list of words with
-start times (`word['start']`), end times (`word['end']`), and a boolean
-emphasis flag (`word['emphasized']`).
+emphases of many files. Emphases are saved as a list of four-tuples
+containing the word, start time, end time, and boolean that is true if
+the word is emphasized.
 
 
 ### Command-line interface

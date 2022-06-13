@@ -24,8 +24,18 @@ def from_file_to_file(text_file, audio_file, output_file=None):
     """Determine locations of emphases for a speech audio file"""
     if output_file is None:
         output_file = text_file.with_suffix('.json')
+
+    # Detect emphases
+    alignment, results = from_file(text_file, audio_file)
+
+    # Format results
+    results_list = [
+        (str(word), word.start(), word.end(), result)
+        for word, result in zip(alignment.words(), results)]
+
+    # Save results
     with open(output_file, 'w') as file:
-        json.dump(from_file(text_file, audio_file), file, indent=4)
+        json.dump(results_list, file, indent=4)
 
 
 def from_files_to_files(text_files, audio_files, output_files=None):
@@ -67,4 +77,4 @@ def from_text_and_audio(text, audio, sample_rate):
         #        large enough to mark the word as emphasized.
         pass
 
-    return results
+    return alignment, results
