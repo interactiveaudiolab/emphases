@@ -24,7 +24,7 @@ def parse_args():
         nargs='+',
         help='The corresponding speech audio files')
     parser.add_argument(
-        'output_file',
+        '--output_file',
         type=Path,
         nargs='+',
         required=False,

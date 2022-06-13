@@ -2,11 +2,12 @@ import json
 
 import pyfoal
 import soundfile
+import tqdm
 
 import emphases
 
 
-def from_file_to_file(text_file, audio_file, output_file=None):
+def from_file(text_file, audio_file):
     """Determine locations of emphases for a speech audio file"""
     # Load text
     with open(text_file, encoding='utf-8') as file:
@@ -16,13 +17,15 @@ def from_file_to_file(text_file, audio_file, output_file=None):
     audio, sample_rate = soundfile.read(audio_file)
 
     # Detect emphases
-    results = from_text_and_audio(text, audio, sample_rate)
+    return from_text_and_audio(text, audio, sample_rate)
 
-    # Save to disk
+
+def from_file_to_file(text_file, audio_file, output_file=None):
+    """Determine locations of emphases for a speech audio file"""
     if output_file is None:
         output_file = text_file.with_suffix('.json')
     with open(output_file, 'w') as file:
-        json.dump(results, indent=4)
+        json.dump(from_file(text_file, audio_file), file, indent=4)
 
 
 def from_files_to_files(text_files, audio_files, output_files=None):
@@ -32,7 +35,7 @@ def from_files_to_files(text_files, audio_files, output_files=None):
         output_files = [file.with_suffix('.json') for file in text_files]
 
     # Detect emphases
-    for files in zip(text_files, audio_files, output_files):
+    for files in tqdm.tqdm(zip(text_files, audio_files, output_files)):
         from_file_to_file(*files)
 
 

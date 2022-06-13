@@ -12,7 +12,7 @@ setup(
     author='Interactive Audio Lab',
     author_email='interactiveaudiolab@gmail.com',
     url='https://github.com/interactiveaudiolab/emphases',
-    install_requires=['pyfoal', 'soundfile'],
+    install_requires=['pyfoal', 'soundfile', 'tqdm'],
     packages=['emphases'],
     long_description=long_description,
     long_description_content_type='text/markdown',
