@@ -62,3 +62,4 @@ def from_text_and_audio(text, audio, sample_rate):
 
         # TODO - Determine if the prominence between start and end is
         #        large enough to mark the word as emphasized.
+        pass
