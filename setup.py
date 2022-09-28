@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import find_packages, setup
 
 
 with open('README.md', encoding='utf8') as file:
@@ -12,8 +12,18 @@ setup(
     author='Interactive Audio Lab',
     author_email='interactiveaudiolab@gmail.com',
     url='https://github.com/interactiveaudiolab/emphases',
-    install_requires=['pyfoal', 'soundfile', 'tqdm'],
-    packages=['emphases'],
+    install_requires=[
+        'matplotlib',
+        'pycwt',
+        'pyfoal',
+        'pyyaml',
+        'scipy',
+        'soundfile',
+        'torch',
+        'tqdm',
+        'yapecs'],
+    packages=find_packages(),
+    package_data={'emphases': ['assets/*', 'assets/*/*']},
     long_description=long_description,
     long_description_content_type='text/markdown',
     keywords=['audio', 'loudness', 'pitch', 'prosody', 'speech'],

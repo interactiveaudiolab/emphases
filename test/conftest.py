@@ -4,6 +4,8 @@ import pytest
 import soundfile
 
 
+TEST_ASSETS_DIR = Path(__file__).parent / 'assets'
+
 
 ###############################################################################
 # Testing fixtures
@@ -15,6 +17,15 @@ def audio_and_sample_rate():
     """Retrieve the test audio"""
     return soundfile.read(path('test.wav'))
 
+@pytest.fixture(scope='session')
+def dataset():
+    """Preload the dataset"""
+    return emphases.data.Dataset('DATASET', 'valid')
+
+@pytest.fixture(scope='session')
+def model():
+    """Preload the model"""
+    return emphases.model.Model()
 
 @pytest.fixture(scope='session')
 def text():

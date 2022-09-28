@@ -1,2 +1,15 @@
+data/cache/*
+!data/cache/.gitkeep
+data/datasets/*
+!data/datasets/.gitkeep
+eval/*
+!eval/.gitkeep
+runs/*
+!runs/.gitkeep
+
 __pycache__/
+.DS_Store
+._.DS_Store
+.ipynb_checkpoints/
+.vscode/
 *.egg-info/
