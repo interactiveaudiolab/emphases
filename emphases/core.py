@@ -51,17 +51,8 @@ def from_files_to_files(text_files, audio_files, output_files=None):
 
 def from_text_and_audio(text, audio, sample_rate):
     """Determine locations of emphases"""
-    # Compute combined features
-    combined = emphases.features.combined(audio, sample_rate)
-
-    # Continuous wavelet transform
-    cwt = emphases.transform.wavelet(combined)
-
-    # Line of maximum amplitude
-    loma = emphases.transform.loma(cwt)
-
-    # Get prominence
-    prominence = emphases.features.prominence(loma)
+    # TODO - get prominence
+    prominence = None
 
     # Get alignment
     alignment = pyfoal.align(text, audio, sample_rate)

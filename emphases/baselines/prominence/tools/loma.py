@@ -16,7 +16,7 @@ LICENSE
 import numpy as np
 from operator import itemgetter
 
-from emphases.prosody_tools import misc
+from emphases.baselines.prominence.tools import misc
 
 # Logging
 import logging

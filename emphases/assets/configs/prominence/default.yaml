@@ -12,7 +12,7 @@ energy:
   band_max: 5000
   calculation_method: "rms"                # 'rms', 'hilbert' or 'true_envelope'  (root mean square, hilbert envelope, or true envelope -inspired method)
   smooth_energy: True                      # smoothing reduces the effect of voicing related variation in energy contour
-  
+
 
 duration:
   acoustic_estimation: False               # estimate speech rate from signal using wavelet transform of energy
