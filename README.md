@@ -63,10 +63,10 @@ optional arguments:
 
 ## Training
 
-### Download data
+### Download data - Done
 
 Complete all TODOs in `data/download/`, then run `python -m emphases.download DATASET`.
-
+`python -m emphases.data.download --datasets Buckeye`
 
 ### Partition data
 
@@ -74,11 +74,11 @@ Complete all TODOs in `partition/`, then run `python -m emphases.partition
 DATASET`.
 
 
-### Preprocess data
+### Preprocess data - Done
 
 Complete all TODOs in `preprocess/`, then run `python -m emphases.preprocess
-DATASET`. All preprocessed data is saved in `data/cache/DATASET`.
-
+DATASET`. All preprocessed data is saved in `data/cache/DATASET`. Temporarily its in DATA_DIR
+`python -m emphases.preprocess Buckeye`
 
 ### Train
 

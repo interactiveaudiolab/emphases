@@ -1,6 +1,7 @@
 conda install -c anaconda ipykernel
 python -m ipykernel install --user --name=prominence-est-conda-py37
 pip install pyreaper
+pip install yapecs
 
 python3 emphases/prosody_labeller.py -v -o test_libri -c emphases/configs/libritts.yaml samples/libritts
 
