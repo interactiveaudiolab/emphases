@@ -360,7 +360,8 @@ def main():
 
     # Load configuration
     configuration = defaultdict()
-    with open(os.path.dirname(os.path.realpath(__file__)) + "/configs/default.yaml", 'r') as f:
+    config_base_path = "/home/pranav/prominence-estimation-exp/emphases/emphases/assets/configs/prominence"
+    with open(config_base_path + "/default.yaml", 'r') as f:
         configuration = apply_configuration(configuration, defaultdict(lambda: False, yaml.load(f, Loader=yaml.FullLoader)))
 
     if args.config:
@@ -394,9 +395,12 @@ def main():
         if args.plot:
             plot_flag = 1
         for f in input_files:
-            analysis(f, configuration, logger, args.annotation_directory, args.output_directory, plot_flag)
-
-
+            try:
+                analysis(f, configuration, logger, args.annotation_directory, args.output_directory, plot_flag)
+            except:
+                print(f'analysis failed for file {f}')                
+                continue
+                
 ###############################################################################
 #  Envelopping
 ###############################################################################

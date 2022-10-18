@@ -19,34 +19,39 @@ def build_textgrid(word_file, phones_file, data_dir):
     raw_data_phones = [x.strip().split(';')[0].split() for x in data_phones.split('\n')[9:-1]]
     
     grid_word_tuples = []
-    if raw_data[0][-1]=='{B_TRANS}' and raw_data[-1][-1]=='{E_TRANS}':
-        start = 0.0
-        for row in raw_data[1:-1]:
+    # if raw_data[0][-1]=='{B_TRANS}' and raw_data[-1][-1]=='{E_TRANS}':
+    start = 0.0
+    for row in raw_data[1:-1]:
+        # getting rid of the redundant tokens (<IVER>, <VOCNOISE>, etc.)
+        if not row[-1].startswith('<') and not row[-1].startswith('{'):
             end = row[0]
             if start==end:
                 # TODO: find a fix for this
-                print(f'{basename} {start} {end} timestamps same')
+                print(f'>>>>> {basename} {start} {end} timestamps same')
                 continue
             tup = (float(start), float(end), row[-1])
             grid_word_tuples.append(tup)
             start = row[0]
-    else:
-        print(f">>>>> INVALID {basename}.words file, aborting formation, grid will be empty")
+    # else:
+    #     print(f">>>>> INVALID {basename}.words file, aborting formation, grid will be empty")
 
     grid_phones_tuples = []
-    if raw_data_phones[0][-1]=='{B_TRANS}' and raw_data_phones[-1][-1]=='{E_TRANS}':
-        start = 0.0
-        for row in raw_data_phones[1:-1]:
+    # if raw_data_phones[0][-1]=='{B_TRANS}' and raw_data_phones[-1][-1]=='{E_TRANS}':
+    start = 0.0
+    for row in raw_data_phones[1:-1]:
+        # assuming all phoneme values are always lowercased, 
+        # getting rid of the redundant tokens (IVER, VOCNOISE, etc.)
+        if not row[-1].isupper():
             end = row[0]
             if start==end:
                 # TODO: find a fix for this
-                print(f'{basename} {start} {end} timestamps same')
+                print(f'>>>>> {basename} {start} {end} timestamps same')
                 continue
             tup = (float(start), float(end), row[-1])
             grid_phones_tuples.append(tup)
             start = row[0]
-    else:
-        print(f">>>>> INVALID {basename}.phones file, aborting formation, grid will be empty")
+    # else:
+    #     print(f">>>>> INVALID {basename}.phones file, aborting formation, grid will be empty")
     
     # Build the grids
     tg = textgrid.Textgrid()

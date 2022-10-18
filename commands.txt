@@ -7,4 +7,26 @@ python3 emphases/prosody_labeller.py -v -o test_libri -c emphases/configs/librit
 
 python3 emphases/prosody_labeller.py -v -o test_libri -c emphases/configs/libritts.yaml utils
 
+pip install -e .
+python -m emphases.data.download --datasets Buckeye
+python -m emphases.preprocess Buckeye
+
+python3 prosody_labeller.py -v -o test_libri -c /home/pranav/prominence-estimation-exp/emphases/emphases/assets/configs/prominence/libritts.yaml /home/pranav/prominence-estimation-exp/emphases/utils
+
+#############################################
+python3 core.py -v -o test_outputs_buckeye -j 1 \
+        -a /home/pranav/prominence-estimation-exp/emphases/data/cache/Buckeye/annotation/ \
+        /home/pranav/prominence-estimation-exp/emphases/data/cache/Buckeye/wavs/s1401a.wav
+
+python3 core.py -v -o test_outputs_buckeye -j 1 \
+        -a /home/pranav/prominence-estimation-exp/emphases/data/cache/Buckeye/annotation/ \
+        /home/pranav/prominence-estimation-exp/emphases/data/cache/Buckeye/wavs
+#############################################
+
+python3 core.py -v -o /home/pranav/prominence-estimation-exp/emphases/eval/Buckeye_v1 -j 1 \
+        -a /home/pranav/prominence-estimation-exp/emphases/data/cache/Buckeye_v1/annotation/ \
+        /home/pranav/prominence-estimation-exp/emphases/data/cache/Buckeye_v1/wavs
+
+python -m emphases.evaluate --dataset Buckeye_v1
+
 headers for the .prom file ("Basename", "start", "end", "label", "prominence", "boundary")

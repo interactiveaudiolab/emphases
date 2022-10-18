@@ -14,3 +14,5 @@ __pycache__/
 .vscode/
 *.egg-info/
 */.ipynb_checkpoints/*
+
+*.prom

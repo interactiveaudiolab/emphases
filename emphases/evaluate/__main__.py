@@ -17,6 +17,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--datasets',
+        nargs='+',
         help='The datasets to evaluate')
     parser.add_argument(
         '--checkpoint',
