@@ -22,24 +22,26 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
         print(dataset, 'perform eval \n')
         if dataset.startswith('Buckeye'):
             ground_truth_file = "utils/BuckEye-annotations.csv"
-            annotations = pd.read_csv(ground_truth_file)
             for prom_file in os.listdir(eval_dir):
                 filename = prom_file.split('/')[-1].replace('.prom', '')
-                print(f">>> Processing {filename}")
-                predictions = pd.read_table(os.path.join(eval_dir, prom_file), header=None)
-                avail_window = annotations[annotations['filename']==filename].reset_index(drop=True)
-                target_window = predictions[1:-1].reset_index(drop=True)
-                prominence_cosine_similarity = eval_similarity(avail_window, target_window)
+                prom_file = os.path.join(eval_dir, prom_file)
+                prominence_cosine_similarity = eval_similarity(prom_file, ground_truth_file)
                 print(f"cosine similarity for {filename}: {prominence_cosine_similarity} \n")
 
-def eval_similarity(avail_window, target_window):
+def eval_similarity(prom_file, ground_truth_file):
+    annotations = pd.read_csv(ground_truth_file)
+    filename = prom_file.split('/')[-1].replace('.prom', '')
+    print(f">>> Processing {filename}")
+    predictions = pd.read_table(prom_file, header=None)
+    avail_window = annotations[annotations['filename']==filename].reset_index(drop=True)
+    target_window = predictions.reset_index(drop=True)
 
     l, r = 0, 0
     pairs = []
 
     while l<len(target_window) and r<len(avail_window):
         if target_window[3][l]==avail_window['word'][r]:
-            pairs.append([(target_window[3][l], target_window[5][l]), (avail_window['word'][r], avail_window['pa.32'][r])])
+            pairs.append([(target_window[3][l], target_window[4][l]), (avail_window['word'][r], avail_window['pa.32'][r])])
             l+=1
             r+=1
         else:
@@ -62,12 +64,20 @@ def eval_similarity(avail_window, target_window):
     v1 = np.asarray(v1)
     v2 = np.asarray(v2)
     
+    # print(v1)
+    # print(v2)
+
     # print(t1)
     # print(t2)
-    
+
     assert t1==t2
     assert v1.shape[0]==v2.shape[0]
     
-    result = 1 - spatial.distance.cosine(v1, v2)
+    print(f"{v1.shape[0]} tokens compared, {len(avail_window)} tokens were available in annotation")
+    if len(v1)>0 and len(v2)>0:
+        result = 1 - spatial.distance.cosine(v1, v2)
+    else:
+        result = None
+
     return result
 
