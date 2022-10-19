@@ -1,6 +1,8 @@
 """dataset.py - data loading"""
 
 
+import os
+
 import torch
 
 import emphases
@@ -24,6 +26,15 @@ class Dataset(torch.utils.data.Dataset):
     def __init__(self, name, partition):
         # Get list of stems
         self.stems = emphases.data.partitions(name)[partition]
+
+        # TODO - Get the length corresponding each stem so the sampler can
+        #        use it. Note: you should not load all of the dataset to
+        #        determine the lengths. Instead, you can use the file size.
+        #        Here is an example that assumes 16-bit audio. It might work
+        #        for your purposes.
+        audio_files = list([self.cache / f'{stem}.wav' for stem in self.stems])
+        self.lengths = [
+            os.path.getsize(audio_file) // 2 for audio_file in audio_files]
 
     def __getitem__(self, index):
         """Retrieve the indexth item"""
