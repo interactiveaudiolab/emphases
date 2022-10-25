@@ -59,6 +59,10 @@ EVALUATION_INTERVAL = 2500  # steps
 # Training parameters
 ###############################################################################
 
+# Size of each partition. Must add to 1.
+SPLIT_SIZE_TEST = .1
+SPLIT_SIZE_TRAIN = .8
+SPLIT_SIZE_VALID = .1
 
 # Batch size (per gpu)
 BATCH_SIZE = 64
