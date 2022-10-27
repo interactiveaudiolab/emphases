@@ -13,21 +13,35 @@ def collate(batch):
     # Unpack
     audio, prominence, word_bounds = zip(*batch)
 
-    # Get maximum length prominence
-    lengths = torch.tensor(
+    # Get word lengths
+    word_lengths = torch.tensor(
+        [p.shape[-1] for p in prominence],
+        dtype=torch.long)
+    max_word_length = word_lengths.max().values.item()
+
+    # Get frame lengths
+    frame_lengths = torch.tensor(
         [a.shape[-1] // emphases.HOPSIZE for a in audio],
         dtype=torch.long)
-    max_length = lengths.max().values.item()
+    max_frame_length = frame_lengths.max().values.item()
 
-    # Pad audio and prominence to maximum length
+    # Allocate padded tensors
     batch_size = audio.shape[0]
     padded_audio = torch.empty(
-        (batch_size, 1, max_length * emphases.HOPSIZE),
+        (batch_size, 1, max_frame_length * emphases.HOPSIZE),
         dtype=torch.float)
     padded_prominence = torch.empty(
-        (batch_size, 1, max_length))
-    for i, (a, p, l) in enumerate(zip(audio, prominence, lengths)):
-        padded_audio[i, :, :l * emphases.HOPSIZE] = a[i]
-        padded_prominence[i, :, :l] = p[i]
+        (batch_size, 1, max_word_length))
 
-    return padded_audio, padded_prominence, word_bounds, lengths
+    # Place batch in padded tensors
+    iterator = enumerate(zip(audio, prominence, frame_lengths, word_lengths))
+    for i, (a, p, fl, wl) in iterator:
+        padded_audio[i, :, :fl * emphases.HOPSIZE] = a[i]
+        padded_prominence[i, :, :wl] = p[i]
+
+    return (
+        padded_audio,
+        padded_prominence,
+        word_bounds,
+        word_lengths,
+        frame_lengths)

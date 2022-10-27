@@ -8,6 +8,8 @@ from emphases.build_textgrid_buckeye import build_textgrid
 import textgrids
 from tqdm import tqdm
 import shutil
+
+
 ###############################################################################
 # Preprocess
 ###############################################################################
@@ -42,7 +44,7 @@ def datasets(datasets):
 
         if not os.path.isdir(PHONES_DIR):
             os.mkdir(PHONES_DIR)
-            
+
         if not os.path.isdir(ANNOTATION_DIR):
             os.mkdir(ANNOTATION_DIR)
 
@@ -92,7 +94,7 @@ def datasets(datasets):
                     words = glob.glob(os.path.join(subdir, '*.words'))
                     for word in words:
                         basename = word.split('/')[-1].replace('.words', '')
-                        
+
                         wav_file = os.path.join(subdir, basename+'.wav')
                         word_file = os.path.join(subdir, basename+'.words')
                         phones_file = os.path.join(subdir, basename+'.phones')
