@@ -36,6 +36,9 @@ RUNS_DIR = Path(__file__).parent.parent.parent / 'runs'
 ###############################################################################
 
 
+# The number of samples between frames
+HOPSIZE = 160
+
 # The audio samling rate
 SAMPLE_RATE = 16000
 
