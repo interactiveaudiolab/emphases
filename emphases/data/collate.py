@@ -23,7 +23,7 @@ def collate(batch):
 
     # Get frame lengths
     frame_lengths = torch.tensor(
-        [a.shape[-1] // emphases.HOPSIZE for a in audio],
+        [a.shape[-1] for a in audio],
         dtype=torch.long)
     max_frame_length = frame_lengths.max().item()
 
@@ -31,23 +31,24 @@ def collate(batch):
     mel_lengths = torch.tensor(
         [mel.shape[-1] for mel in mel_spectrogram], 
         dtype=torch.long)
-    max_mel_lengths = mel_lengths.max().item()
+    max_mel_length = mel_lengths.max().item()
+    print(max_mel_length, mel_lengths)
 
     # Allocate padded tensors
     batch_size = len(audio)
     padded_audio = torch.empty(
-        (batch_size, 1, max_frame_length * emphases.HOPSIZE),
+        (batch_size, 1, max_frame_length),
         dtype=torch.float)
     padded_prominence = torch.empty(
         (batch_size, 1, max_word_length))
-    padded_mel_spectrogram = torch.empty((batch_size, 1, emphases.NUM_MELS, max_mel_lengths))
+    padded_mel_spectrogram = torch.empty((batch_size, 1, emphases.NUM_MELS, max_mel_length))
 
     # Place batch in padded tensors
     iterator = enumerate(zip(audio, prominence, mel_spectrogram, frame_lengths, word_lengths, mel_lengths))
     for i, (a, p, mel, fl, wl, ml) in tqdm.tqdm(iterator):
-        # padded_audio[i, :, :fl * emphases.HOPSIZE] = a[i].reshape(1, -1)
-        padded_prominence[i, :, :wl] = p[i]
-        # padded_mel_spectrogram[i, :, :, :ml] = mel[i]
+        padded_audio[i, :, :fl] = a
+        padded_prominence[i, :, :wl] = p
+        padded_mel_spectrogram[i, :, :, :ml] = mel
 
     return (
         padded_audio,
