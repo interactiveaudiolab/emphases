@@ -16,3 +16,5 @@ __pycache__/
 */.ipynb_checkpoints/*
 
 *.prom
+*.TextGrid
+*.wav

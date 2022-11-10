@@ -7,6 +7,7 @@ import pypar
 import torch
 
 import emphases
+import numpy as np
 
 
 ###############################################################################
@@ -28,7 +29,6 @@ class Dataset(torch.utils.data.Dataset):
         # Get list of stems
         self.cache = emphases.CACHE_DIR / name
         self.stems = emphases.load.partition(name)[partition]
-        print(self.cache)
 
         # TODO - Get the length corresponding each stem so the sampler can
         #        use it. Note: you should not load all of the dataset to
@@ -40,6 +40,11 @@ class Dataset(torch.utils.data.Dataset):
         self.lengths = [
             os.path.getsize(audio_file) // 2 for audio_file in audio_files]
 
+        self.spectrogram_lengths = []
+        for stem in self.stems:
+            mel_spectrogram = torch.tensor(np.load(self.cache / 'mels' / f'{stem}.npy'))
+            self.spectrogram_lengths.append(mel_spectrogram.shape[-1])
+
     def __getitem__(self, index):
         """Retrieve the indexth item"""
         stem = self.stems[index]
@@ -47,20 +52,26 @@ class Dataset(torch.utils.data.Dataset):
         # Load audio
         audio = emphases.load.audio(self.cache / 'wavs' / f'{stem}.wav')
 
+        # mel spectrogram
+        mel_spectrogram = torch.tensor(np.load(self.cache / 'mels' / f'{stem}.npy'))
+
         # Load alignment
         alignment = pypar.Alignment(
-            self.cache / 'annotation' / f'{stem}.TextGrid')
+            self.cache / 'alignment' / f'{stem}.TextGrid')
 
         # Load per-word ground truth prominence values
         # TODO - load prominence
-        prominence = None
+        # TODO - change the prominence files to ground truth files from the buckeye annotation
+        prominence = emphases.load.load_prominence(self.cache / 'annotation' / f'{stem}.prom')
 
         # Get word start and end indices
         word_bounds = alignment.word_bounds(
             emphases.SAMPLE_RATE,
             emphases.HOPSIZE)
 
-        return audio, prominence, word_bounds
+        # assert (len(alignment.word_bounds(emphases.SAMPLE_RATE)) == prominence.shape[0]), 'array length mismatch b/w input and ground truth'
+
+        return audio, mel_spectrogram, prominence, word_bounds
 
     def __len__(self):
         """Length of the dataset"""

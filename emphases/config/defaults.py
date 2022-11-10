@@ -42,6 +42,10 @@ HOPSIZE = 160
 # The audio samling rate
 SAMPLE_RATE = 16000
 
+# NUM_FFT is the length of the transformed axis of the output/ length of the windowed signal after padding with zeros
+# https://stackoverflow.com/questions/62584184/understanding-the-shape-of-spectrograms-and-n-mels
+NUM_FFT =  1024
+NUM_MELS = 80
 
 ###############################################################################
 # Logging parameters

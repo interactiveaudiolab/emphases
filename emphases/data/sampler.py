@@ -12,7 +12,8 @@ import emphases
 #        dataset into buckets. You might consider more or fewer buckets
 #        depending on the dataset.
 # BOUNDARIES = [32, 300, 400, 500, 600, 700, 800, 900, 1000]
-BOUNDARIES = [2, 5, 10]
+BOUNDARIES = [800, 1000, 1600]
+# for audio lengths
 
 ###############################################################################
 # Samplers

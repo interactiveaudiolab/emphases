@@ -77,8 +77,11 @@ DATASET`.
 ### Preprocess data - Done
 
 Complete all TODOs in `preprocess/`, then run `python -m emphases.preprocess
-DATASET`. All preprocessed data is saved in `data/cache/DATASET`. Temporarily its in DATA_DIR
+DATASET`. All preprocessed data is saved in `data/cache/DATASET`.
+
 `python -m emphases.preprocess Buckeye`
+
+After processing the Buckeye TextGrid excerpts from Prof. Cole's lab, we are manually removing the tonic and PointTier from textgrid files. And changing the size=2
 
 ### Train
 

@@ -1,6 +1,9 @@
 import json
 
 import torchaudio
+import torch
+import librosa
+import numpy as np
 
 import emphases
 
@@ -23,6 +26,75 @@ def audio(file):
         audio = resampler(audio)
 
     return audio
+
+def partition(dataset):
+    """Load partitions for dataset"""
+    with open(emphases.PARTITION_DIR / f'{dataset}.json') as file:
+        return json.load(file)
+
+def load_prominence(file):
+    with open(file, 'r') as f:
+        data = f.read()
+    # first line is header, skip it
+    lines = [x.split('\t') for x in data.split('\n')[1:]]
+    proms = torch.tensor([float(x[4]) for x in lines[:-1]])
+    return proms
+
+###############################################################################
+# Mel spectrogram
+###############################################################################
+
+
+class MelSpectrogram(torch.nn.Module):
+
+    def __init__(self):
+        super().__init__()
+        window = torch.hann_window(emphases.NUM_FFT, dtype=torch.float)
+        mel_basis = librosa.filters.mel(
+            emphases.SAMPLE_RATE,
+            emphases.NUM_FFT,
+            emphases.NUM_MELS
+        ).astype(np.float32)
+        mel_basis = torch.from_numpy(mel_basis)
+        self.register_buffer("mel_basis", mel_basis)
+        self.register_buffer("window", window)
+
+    @property
+    def device(self):
+        return self.mel_basis.device
+
+    def log_mel_spectrogram(self, audio):
+        # Compute STFT
+        stft = torch.stft(
+            audio,
+            n_fft=emphases.NUM_FFT,
+            window=self.window,
+            center=False,
+            return_complex=False)
+        
+        # Compute magnitude spectrogram
+        spectrogram = torch.sqrt(stft.pow(2).sum(-1) + 1e-9)
+
+        # Compute melspectrogram
+        melspectrogram = torch.matmul(self.mel_basis, spectrogram)
+
+        # Compute logmelspectrogram
+        return torch.log10(torch.clamp(melspectrogram, min=1e-5))
+
+    def forward(self, audio):
+        # Ensure correct shape
+        if audio.dim() == 2:
+            audio = audio[:, None, :]
+        elif audio.dim() == 1:
+            audio = audio[None, None, :]
+
+        # Pad audio
+        p = (emphases.NUM_FFT - emphases.HOPSIZE) // 2
+        audio = torch.nn.functional.pad(audio, (p, p), "reflect").squeeze(1)
+
+        # Compute logmelspectrogram
+        return self.log_mel_spectrogram(audio)
+
 
 # NOTE - tgt is GPL licensed. We cannot use GPL code in our final codebase if
 #        we want to release as MIT-licensed.
@@ -64,9 +136,3 @@ def audio(file):
 #         pass
 
 #     return labs
-
-
-def partition(dataset):
-    """Load partitions for dataset"""
-    with open(emphases.PARTITION_DIR / f'{dataset}.json') as file:
-        return json.load(file)

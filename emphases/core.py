@@ -1,5 +1,4 @@
 import json
-
 # import pyfoal
 import soundfile
 import tqdm
@@ -69,3 +68,4 @@ def from_text_and_audio(text, audio, sample_rate):
         pass
 
     return alignment, results
+
