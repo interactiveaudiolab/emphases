@@ -74,7 +74,7 @@ def train(
     #######################
 
     torch.manual_seed(emphases.RANDOM_SEED)
-    train_loader, valid_loader = emphases.data.loaders(dataset, gpu)
+    train_loader, valid_loader = emphases.data.loaders(dataset, 'train', 'valid', gpu)
 
     #################
     # Create models #
@@ -167,7 +167,13 @@ def train(
 
             # TODO - Unpack batch
             (
-            ) = (item.to(device) for item in batch[1:])
+            padded_audio,
+            padded_mel_spectrogram,
+            padded_prominence,
+            word_bounds,
+            word_lengths,
+            frame_lengths
+            ) = (item.to(device) for item in batch)
 
             # Bundle training input
             model_input = (""" TODO - pack network input""")

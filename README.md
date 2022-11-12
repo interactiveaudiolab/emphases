@@ -88,6 +88,7 @@ After processing the Buckeye TextGrid excerpts from Prof. Cole's lab, we are man
 Complete all TODOs in `data/` and `model.py`, then run `python -m emphases.train --config <config> --dataset
 DATASET --gpus <gpus>`.
 
+python -m emphases.train --config big_batch --dataset Buckeye
 
 ### Evaluate
 
