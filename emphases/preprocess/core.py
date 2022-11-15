@@ -11,6 +11,7 @@ import shutil
 import torchaudio
 import numpy as np
 import pandas as pd
+import pypar
 
 ###############################################################################
 # Preprocess
@@ -88,11 +89,13 @@ def buckeye(input_directory, output_directory, annotation_file):
                     speaker_df.sort_values(by='wordmin').to_csv(prominence_annotation_path, index=False)
 
                     if os.path.exists(textgrid_path):
-                        grid = textgrids.TextGrid(textgrid_path)
-                        grid.xmin = grid.interval_tier_to_array('words')[0]['begin']
-                        grid.xmax = grid.interval_tier_to_array('words')[-1]['end']
-                        grid.write(textgrid_path)
-                        shutil.copy(textgrid_path, os.path.join(ALIGNMENT_DIR,f"{basename}.TextGrid"))
+                        # grid = textgrids.TextGrid(textgrid_path)
+                        # grid.xmin = grid.interval_tier_to_array('words')[0]['begin']
+                        # grid.xmax = grid.interval_tier_to_array('words')[-1]['end']
+                        # grid.write(textgrid_path)
+                        # shutil.copy(textgrid_path, os.path.join(ALIGNMENT_DIR,f"{basename}.TextGrid"))
+                        json_save_path = os.path.join(ALIGNMENT_DIR,f"{basename}.json")
+                        save_corrected_textgrid(annotations, basename, textgrid_path, json_save_path)
                     else:
                         build_textgrid(word_file, phones_file, ALIGNMENT_DIR)
     else:
@@ -108,12 +111,15 @@ def buckeye(input_directory, output_directory, annotation_file):
                                                             encoding='utf-8',
                                                             index=False)
 
-                grid = textgrids.TextGrid(textgrid_path)
-                grid.xmin = grid.interval_tier_to_array('words')[0]['begin']
-                grid.xmax = grid.interval_tier_to_array('words')[-1]['end']
-                grid.write(textgrid_path)
-                shutil.copy(textgrid_path, os.path.join(ALIGNMENT_DIR,f"{basename}.TextGrid"))
+                # grid = textgrids.TextGrid(textgrid_path)
+                # grid.xmin = grid.interval_tier_to_array('words')[0]['begin']
+                # grid.xmax = grid.interval_tier_to_array('words')[-1]['end']
+                # grid.write(textgrid_path)
+                # shutil.copy(textgrid_path, os.path.join(ALIGNMENT_DIR,f"{basename}.TextGrid"))
 
+                json_save_path = os.path.join(ALIGNMENT_DIR,f"{basename}.json")
+                save_corrected_textgrid(annotations, basename, textgrid_path, json_save_path)
+                
     # save files in cache
     print('Populating the cache folder')
     dirc = glob.glob(os.path.join(input_directory, '*/'))
@@ -154,5 +160,32 @@ def buckeye(input_directory, output_directory, annotation_file):
             mel_spectrogram = mel_loader.forward(audio)
             mel_spectrogram_numpy = mel_spectrogram.numpy()
             np.save(os.path.join(MEL_DIR, basename+'.npy'), mel_spectrogram_numpy)
+
+
+def save_corrected_textgrid(annotations, speaker_id, textgrid_path, json_save_path):
+    """
+    It will compare the prominence annotation tokens with textgrid file, 
+    and save a new corrected .json textgrid file with only common tokens
+    """
+    
+    speaker_df = annotations[annotations['filename']==speaker_id][['filename', 'wordmin', 'wordmax', 'word', 'pa.32']]
+    speaker_df = speaker_df.sort_values(by='wordmin')
+    avail_start_times = speaker_df['wordmin'].apply(lambda x: round(x, 5)).tolist()
+    avail_end_times = speaker_df['wordmax'].apply(lambda x: round(x, 5)).tolist()
+
+    alignment = pypar.Alignment(textgrid_path)
+
+    json_align = alignment.json()
+    new_json = {'words':[]}
+    for obj in json_align['words']:
+        if obj['start'] in avail_start_times or obj['end'] in avail_end_times:
+            new_json['words'].append(obj)
+        
+    if len(new_json['words'])!=len(speaker_df):
+        print(f"WARNING: {speaker_id} Formulated alignment not matching with speaker annotation length dimensions")
+
+    new_alignment = pypar.Alignment(new_json)
+    new_alignment.save_json(json_save_path)
+
 
 

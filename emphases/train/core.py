@@ -80,7 +80,8 @@ def train(
     # Create models #
     #################
 
-    model = emphases.model.Model().to(device)
+    # model = emphases.model.Model().to(device)
+    model = emphases.model.BaselineModel().to(device)
 
     ##################################################
     # Maybe setup distributed data parallelism (DDP) #
@@ -173,17 +174,22 @@ def train(
             word_bounds,
             word_lengths,
             frame_lengths
-            ) = (item.to(device) for item in batch)
+            ) = (item.to(device) if torch.is_tensor(item) else item for item in batch)
 
             # Bundle training input
-            model_input = (""" TODO - pack network input""")
+            model_input = (padded_mel_spectrogram)
 
             with torch.cuda.amp.autocast():
 
                 # Forward pass
                 # TODO - unpack network output
+                # (
+                #     outputs
+                # ) = model(*model_input)
+
                 (
-                ) = model(*model_input)
+                    outputs
+                ) = model(model_input)
 
                 # TODO - compute losses
                 losses = 0.

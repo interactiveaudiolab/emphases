@@ -57,7 +57,7 @@ class Dataset(torch.utils.data.Dataset):
 
         # Load alignment
         alignment = pypar.Alignment(
-            self.cache / 'alignment' / f'{stem}.TextGrid')
+            self.cache / 'alignment' / f'{stem}.json')
 
         # Load per-word ground truth prominence values
         # TODO - load prominence
@@ -69,7 +69,7 @@ class Dataset(torch.utils.data.Dataset):
             emphases.SAMPLE_RATE,
             emphases.HOPSIZE)
 
-        # assert (len(alignment.word_bounds(emphases.SAMPLE_RATE)) == prominence.shape[0]), 'array length mismatch b/w input and ground truth'
+        assert (len(word_bounds) == prominence.shape[0]), 'array length mismatch b/w alignment and ground truth'
 
         return audio, mel_spectrogram, prominence, word_bounds
 

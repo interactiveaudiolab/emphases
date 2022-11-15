@@ -3,6 +3,7 @@
 
 import torch
 import emphases
+import functools
 
 ###############################################################################
 # Model
