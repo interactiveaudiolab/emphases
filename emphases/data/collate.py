@@ -34,12 +34,12 @@ def collate(batch):
 
     # Allocate padded tensors
     batch_size = len(audio)
-    padded_audio = torch.empty(
+    padded_audio = torch.zeros(
         (batch_size, 1, max_frame_length * emphases.HOPSIZE),
         dtype=torch.float)
-    padded_prominence = torch.empty(
+    padded_prominence = torch.zeros(
         (batch_size, 1, max_word_length))
-    padded_mel_spectrogram = torch.empty((batch_size, emphases.NUM_MELS, max_mel_length))
+    padded_mel_spectrogram = torch.zeros((batch_size, emphases.NUM_MELS, max_mel_length))
 
     # Place batch in padded tensors
     iterator = enumerate(zip(audio, prominence, mel_spectrogram, frame_lengths, word_lengths, mel_lengths))
