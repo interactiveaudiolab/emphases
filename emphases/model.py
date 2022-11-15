@@ -17,7 +17,8 @@ class BaselineModel(torch.nn.Sequential):
 
     def __init__(
         self,
-        input_channels=emphases.NUM_MELS, #TODO have this filled in dynamically
+        # input_channels=emphases.NUM_MELS, #TODO have this filled in dynamically
+        input_channels=1,
         output_channels=1,
         hidden_channels=128,
         kernel_size=5):

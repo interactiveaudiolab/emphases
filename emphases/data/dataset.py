@@ -60,8 +60,6 @@ class Dataset(torch.utils.data.Dataset):
             self.cache / 'alignment' / f'{stem}.json')
 
         # Load per-word ground truth prominence values
-        # TODO - load prominence
-        # TODO - change the prominence files to ground truth files from the buckeye annotation
         prominence = emphases.load.load_prominence(self.cache / 'annotation' / f'{stem}.prom')
 
         # Get word start and end indices
