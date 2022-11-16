@@ -193,7 +193,8 @@ def train(
 
                 # TODO - compute losses
                 loss_fn = torch.nn.MSELoss()
-                losses = loss_fn(outputs.reshape(64, 1, -1), padded_prominence)
+                outputs = outputs.to(device)
+                losses = loss_fn(outputs.reshape(emphases.BATCH_SIZE, 1, -1), padded_prominence)
 
             ######################
             # Optimize model #
