@@ -177,7 +177,7 @@ def train(
             ) = (item.to(device) if torch.is_tensor(item) else item for item in batch)
 
             # Bundle training input
-            model_input = (padded_mel_spectrogram)
+            model_input = (padded_audio, word_bounds, padded_prominence)
 
             with torch.cuda.amp.autocast():
 
@@ -192,7 +192,8 @@ def train(
                 ) = model(model_input)
 
                 # TODO - compute losses
-                losses = 0.
+                loss_fn = torch.nn.MSELoss()
+                losses = loss_fn(outputs.reshape(64, 1, -1), padded_prominence)
 
             ######################
             # Optimize model #
