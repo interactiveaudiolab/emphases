@@ -176,7 +176,7 @@ def train(
             ) = (item.to(device) if torch.is_tensor(item) else item for item in batch)
 
             # Bundle training input
-            model_input = (padded_audio, word_bounds, padded_prominence)
+            model_input = (padded_mel_spectrogram, word_bounds, padded_prominence)
 
             with torch.cuda.amp.autocast():
 

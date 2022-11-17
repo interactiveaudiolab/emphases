@@ -39,8 +39,9 @@ class BaselineModel(torch.nn.Sequential):
     def forward(self, features):
         # TODO: generate input slices for every item in batch, 
         # then form a padded tensor from all the slice tensors, and further pass down the network
-        padded_audio, word_bounds, padded_prominence = features
-        intermid_output = self.layers(padded_audio)
+        
+        padded_mel_spectrogram, word_bounds, padded_prominence = features
+        intermid_output = self.layers(padded_mel_spectrogram)
         
         feat_lens = []
         feats = []
@@ -55,7 +56,6 @@ class BaselineModel(torch.nn.Sequential):
             padded_features_2[idx, :f_item.shape[1], :f_item.shape[-1]] = f_item[:]
 
         lin_f1 = padded_features_2.shape[-1]
-        lin_f2 = lin_f1//2
         self.layers2 = torch.nn.Sequential(
             torch.nn.ReLU(), 
             torch.nn.Linear(lin_f1, 1)
@@ -71,7 +71,8 @@ class BaselineModel(torch.nn.Sequential):
         """
         duration_slices = []
         for bound in wb:
-            dur = (bound[1] - bound[0])*emphases.HOPSIZE
+            # dur = (bound[1] - bound[0])*emphases.HOPSIZE # for audio inputs
+            dur = (bound[1] - bound[0]) # for mel spectro inputs
             duration_slices.append(dur)
         
         extra_noise = False
