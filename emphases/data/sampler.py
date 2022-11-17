@@ -12,8 +12,8 @@ import emphases
 #        dataset into buckets. You might consider more or fewer buckets
 #        depending on the dataset.
 # BOUNDARIES = [32, 300, 400, 500, 600, 700, 800, 900, 1000]
-# BOUNDARIES = [ 797. ,  867.5,  938. , 1008.5, 1079. , 1149.5, 1220. , 1290.5, 1361. , 1431.5, 1502. ]
-BOUNDARIES = [797, 1143, 1502]
+
+BOUNDARIES = [1276, 1840, 2404]
 # for audio lengths (question: mel lengths?)
 
 ###############################################################################

@@ -166,7 +166,6 @@ def train(
         model.train()
         for batch in train_loader:
 
-            # TODO - Unpack batch
             (
             padded_audio,
             padded_mel_spectrogram,
@@ -182,16 +181,12 @@ def train(
             with torch.cuda.amp.autocast():
 
                 # Forward pass
-                # TODO - unpack network output
-                # (
-                #     outputs
-                # ) = model(*model_input)
 
                 (
                     outputs
                 ) = model(model_input)
 
-                # TODO - compute losses
+                # compute losses
                 loss_fn = torch.nn.MSELoss()
                 outputs = outputs.to(device)
                 losses = loss_fn(outputs.reshape(emphases.BATCH_SIZE, 1, -1), padded_prominence)

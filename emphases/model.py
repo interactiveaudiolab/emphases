@@ -14,11 +14,12 @@ import functools
 class BaselineModel(torch.nn.Sequential):
     # Question: let's say assuming framewise training 
     # why not output channel == no. of words (no. of prom values) for a given frame
+    # TODO - Use MEL features - change the network accordingly
+
 
     def __init__(
         self,
-        # input_channels=emphases.NUM_MELS, #TODO have this filled in dynamically
-        input_channels=1,
+        input_channels=emphases.NUM_MELS, #TODO have this filled in dynamically
         output_channels=1,
         hidden_channels=128,
         kernel_size=5):
@@ -57,8 +58,6 @@ class BaselineModel(torch.nn.Sequential):
         lin_f2 = lin_f1//2
         self.layers2 = torch.nn.Sequential(
             torch.nn.ReLU(), 
-            # torch.nn.Linear(lin_f1, lin_f2), 
-            # torch.nn.Linear(lin_f2, 1),
             torch.nn.Linear(lin_f1, 1)
             )
 

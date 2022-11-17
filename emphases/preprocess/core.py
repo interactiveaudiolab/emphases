@@ -36,7 +36,6 @@ def datasets(datasets):
             buckeye(input_directory, output_directory, annotation_file)
 
 def buckeye(input_directory, output_directory, annotation_file):
-    mel_loader = emphases.load.MelSpectrogram()
     annotations = pd.read_csv(annotation_file)
 
     WAVS_DIR = os.path.join(output_directory, 'wavs')
@@ -139,7 +138,8 @@ def buckeye(input_directory, output_directory, annotation_file):
                     audio = emphases.load.audio(wav_file)
                     torchaudio.save(os.path.join(WAVS_DIR, basename+'.wav'), audio, emphases.SAMPLE_RATE)
                     
-                    mel_spectrogram = mel_loader.forward(audio)
+                    # mel_spectrogram = mel_loader.forward(audio)
+                    mel_spectrogram = emphases.load.torch_melspectrogram(audio)
                     mel_spectrogram_numpy = mel_spectrogram.numpy()
                     np.save(os.path.join(MEL_DIR, basename+'.npy'), mel_spectrogram_numpy)
 
@@ -157,7 +157,8 @@ def buckeye(input_directory, output_directory, annotation_file):
             audio = emphases.load.audio(wav_file)
             torchaudio.save(os.path.join(WAVS_DIR, basename+'.wav'), audio, emphases.SAMPLE_RATE)
             
-            mel_spectrogram = mel_loader.forward(audio)
+            # mel_spectrogram = mel_loader.forward(audio)
+            mel_spectrogram = emphases.load.torch_melspectrogram(audio)
             mel_spectrogram_numpy = mel_spectrogram.numpy()
             np.save(os.path.join(MEL_DIR, basename+'.npy'), mel_spectrogram_numpy)
 

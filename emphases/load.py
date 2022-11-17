@@ -1,7 +1,9 @@
 import json
 
-import torchaudio
 import torch
+import torchaudio
+import torchaudio.functional as F
+import torchaudio.transforms as T
 import librosa
 import numpy as np
 
@@ -43,6 +45,25 @@ def load_prominence(file):
 ###############################################################################
 # Mel spectrogram
 ###############################################################################
+
+def torch_melspectrogram(audio):
+    win_length = None
+
+    mel_spectrogram = T.MelSpectrogram(
+        sample_rate=emphases.SAMPLE_RATE,
+        n_fft=emphases.NUM_FFT,
+        win_length=None,
+        hop_length=emphases.HOPSIZE,
+        center=True,
+        pad_mode="reflect",
+        power=2.0,
+        norm="slaney",
+        onesided=True,
+        n_mels=emphases.NUM_MELS,
+        mel_scale="htk",
+    )
+
+    return mel_spectrogram(audio)
 
 
 class MelSpectrogram(torch.nn.Module):
