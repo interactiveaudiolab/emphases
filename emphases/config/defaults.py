@@ -47,6 +47,9 @@ SAMPLE_RATE = 16000
 NUM_FFT =  1024
 NUM_MELS = 80
 
+MAX_NUM_OF_WORDS = 56 # set limit for number of words to be considered from in a given sample (truncating after this point for now)
+MAX_SLICE_DURATION = 96 # duration limit for a word based frame
+
 ###############################################################################
 # Logging parameters
 ###############################################################################

@@ -7,7 +7,6 @@ import tqdm
 
 import emphases
 
-
 ###############################################################################
 # Training interface
 ###############################################################################
@@ -81,7 +80,7 @@ def train(
     #################
 
     # model = emphases.model.Model().to(device)
-    model = emphases.model.BaselineModel().to(device)
+    model = emphases.model.BaselineModel(device=device).to(device)
 
     ##################################################
     # Maybe setup distributed data parallelism (DDP) #
@@ -181,15 +180,20 @@ def train(
             with torch.cuda.amp.autocast():
 
                 # Forward pass
+                # print("forward pass", model_input[0].shape, model_input[0].device, device)
 
                 (
                     outputs
                 ) = model(model_input)
 
+                # print('forward pass done')
+
                 # compute losses
-                loss_fn = torch.nn.MSELoss()
+                loss_fn =  torch.nn.SmoothL1Loss()
                 outputs = outputs.to(device)
-                losses = loss_fn(outputs.reshape(emphases.BATCH_SIZE, 1, -1), padded_prominence)
+                # losses = loss_fn(outputs.reshape(emphases.BATCH_SIZE, 1, -1), padded_prominence)
+                losses = loss_fn(outputs.squeeze(), padded_prominence.squeeze())
+                print("training loss:", losses)
 
             ######################
             # Optimize model #
@@ -225,7 +229,7 @@ def train(
                 ############
 
                 if step % emphases.EVALUATION_INTERVAL == 0:
-
+                    print('>>>>> Calling evaluation')
                     evaluate(
                         log_directory,
                         step,
@@ -275,6 +279,7 @@ def train(
 
 def evaluate(directory, step, model, valid_loader, gpu):
     """Perform model evaluation"""
+    # print('inside eval')
     device = 'cpu' if gpu is None else f'cuda:{gpu}'
 
     # Prepare model for evaluation
@@ -282,9 +287,26 @@ def evaluate(directory, step, model, valid_loader, gpu):
 
     # Turn off gradient computation
     with torch.no_grad():
+        for batch in valid_loader:
+            (
+            padded_audio,
+            padded_mel_spectrogram,
+            padded_prominence,
+            word_bounds,
+            word_lengths,
+            frame_lengths
+            ) = (item.to(device) if torch.is_tensor(item) else item for item in batch)
 
-        # TODO - evaluate
-        pass
+            # Bundle training input
+            model_input = (padded_mel_spectrogram, word_bounds, padded_prominence)
+
+            valid_outputs = model(model_input)
+            valid_outputs = valid_outputs.to(device)
+
+            cosine = torch.nn.CosineSimilarity()
+            val_sim = cosine(valid_outputs.squeeze(), padded_prominence.squeeze())
+
+            print('>>>>> cosine similarity values for validation set:', val_sim, '\n>>>>> mean cosine similarity:', torch.mean(val_sim))
 
     # Prepare model for training
     model.train()

@@ -22,7 +22,12 @@ class BaselineModel(torch.nn.Sequential):
         input_channels=emphases.NUM_MELS, #TODO have this filled in dynamically
         output_channels=1,
         hidden_channels=128,
-        kernel_size=5):
+        kernel_size=5,
+        device='cpu'):
+
+        self.device = device
+
+        self.MAX_NUM_OF_WORDS = emphases.MAX_NUM_OF_WORDS
 
         conv_fn = functools.partial(
             torch.nn.Conv1d,
@@ -47,7 +52,10 @@ class BaselineModel(torch.nn.Sequential):
             torch.nn.ReLU(),
             conv2d_fn(hidden_channels, hidden_channels),
             torch.nn.ReLU(),
-            conv2d_fn(hidden_channels, output_channels))
+            conv2d_fn(hidden_channels, output_channels),
+            torch.nn.ReLU(),
+            torch.nn.Linear(emphases.MAX_SLICE_DURATION, 1)
+            )
 
         # TODO - add layer to convert final feature set into BATCH_SIZE * 1 * MAX_NUM_WORD
         # maybe linear layer - but it needs input dim, which might change
@@ -68,10 +76,13 @@ class BaselineModel(torch.nn.Sequential):
 
         max_flen = max(feat_lens) # max_slice_duration_len sampled from the sliced samples of a batch
         # BATCH * HIDDEN_CHANNEL * MAX_NUM_OF_WORDS * max_slice_duration_len
-        padded_features_2 = torch.zeros((emphases.BATCH_SIZE, intermid_output.shape[1], padded_prominence.shape[-1], max_flen))
+        padded_features_2 = torch.zeros((emphases.BATCH_SIZE, intermid_output.shape[1], 
+                                        emphases.MAX_NUM_OF_WORDS, emphases.MAX_SLICE_DURATION))
 
         for idx, (f_len, f_item) in enumerate(zip(feat_lens, feats)):
             padded_features_2[idx, :, :f_item.shape[1], :f_item.shape[-1]] = f_item[:]
+        
+        padded_features_2 = padded_features_2.to(self.device)
 
         return self.layers2(padded_features_2)
 
@@ -95,11 +106,16 @@ class BaselineModel(torch.nn.Sequential):
             duration_slices.append(input_features_channels.shape[-1] - sum(duration_slices))
 
         if extra_noise:
+            # padded_features = torch.zeros(
+            #         (len(input_features_channels), len(duration_slices[:-1]), max(duration_slices[:-1])))
+
             padded_features = torch.zeros(
-                    (len(input_features_channels), len(duration_slices[:-1]), max(duration_slices[:-1])))
+                    (len(input_features_channels), emphases.MAX_NUM_OF_WORDS, emphases.MAX_SLICE_DURATION))
         else:
+            # padded_features = torch.zeros(
+            #         (len(input_features_channels), len(duration_slices), max(duration_slices)))
             padded_features = torch.zeros(
-                    (len(input_features_channels), len(duration_slices), max(duration_slices)))
+                    (len(input_features_channels), emphases.MAX_NUM_OF_WORDS, emphases.MAX_SLICE_DURATION))
 
         for channel_idx, input_features in enumerate(input_features_channels):
 
@@ -108,8 +124,13 @@ class BaselineModel(torch.nn.Sequential):
             if extra_noise:
                 slices = slices[:-1]
 
-            for idx, sl in enumerate(slices):
-                padded_features[channel_idx, idx, :len(sl)] = sl
+            for idx, sl in enumerate(slices[:emphases.MAX_NUM_OF_WORDS]):
+
+                if len(sl)<=emphases.MAX_SLICE_DURATION:
+                    padded_features[channel_idx, idx, :len(sl)] = sl[:emphases.MAX_SLICE_DURATION]
+
+                else:
+                    padded_features[channel_idx, idx, :emphases.MAX_SLICE_DURATION] = sl[:emphases.MAX_SLICE_DURATION]
 
         return padded_features, padded_features.shape[-1]
 

@@ -38,14 +38,20 @@ def collate(batch):
         (batch_size, 1, max_frame_length * emphases.HOPSIZE),
         dtype=torch.float)
     padded_prominence = torch.zeros(
-        (batch_size, 1, max_word_length))
+        (batch_size, 1, emphases.MAX_NUM_OF_WORDS))
     padded_mel_spectrogram = torch.zeros((batch_size, emphases.NUM_MELS, max_mel_length))
 
     # Place batch in padded tensors
     iterator = enumerate(zip(audio, prominence, mel_spectrogram, frame_lengths, word_lengths, mel_lengths))
     for i, (a, p, mel, fl, wl, ml) in tqdm.tqdm(iterator):
         padded_audio[i, :, :fl * emphases.HOPSIZE] = a[:, :fl * emphases.HOPSIZE]
-        padded_prominence[i, :, :wl] = p
+
+        # truncating the num of words to a limit for now
+        if len(p)<=emphases.MAX_NUM_OF_WORDS:
+            padded_prominence[i, :, :len(p)] = p
+        else:
+            padded_prominence[i, :, :emphases.MAX_NUM_OF_WORDS] = p[:emphases.MAX_NUM_OF_WORDS]
+
         padded_mel_spectrogram[i, :, :ml] = mel
 
     return (
