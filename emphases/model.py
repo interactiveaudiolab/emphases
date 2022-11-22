@@ -57,11 +57,8 @@ class BaselineModel(torch.nn.Sequential):
             torch.nn.Linear(emphases.MAX_SLICE_DURATION, 1)
             )
 
-        # TODO - add layer to convert final feature set into BATCH_SIZE * 1 * MAX_NUM_WORD
-        # maybe linear layer - but it needs input dim, which might change
-
     def forward(self, features):
-        # TODO: generate input slices for every item in batch, 
+        # generate input slices for every item in batch, 
         # then form a padded tensor from all the slice tensors, and further pass down the network
         
         padded_mel_spectrogram, word_bounds, padded_prominence = features
@@ -74,8 +71,7 @@ class BaselineModel(torch.nn.Sequential):
             feats.append(feat)
             feat_lens.append(feat_length)
 
-        max_flen = max(feat_lens) # max_slice_duration_len sampled from the sliced samples of a batch
-        # BATCH * HIDDEN_CHANNEL * MAX_NUM_OF_WORDS * max_slice_duration_len
+        # BATCH * HIDDEN_CHANNEL * MAX_NUM_OF_WORDS * MAX_SLICE_DURATION
         padded_features_2 = torch.zeros((emphases.BATCH_SIZE, intermid_output.shape[1], 
                                         emphases.MAX_NUM_OF_WORDS, emphases.MAX_SLICE_DURATION))
 
@@ -133,43 +129,6 @@ class BaselineModel(torch.nn.Sequential):
                     padded_features[channel_idx, idx, :emphases.MAX_SLICE_DURATION] = sl[:emphases.MAX_SLICE_DURATION]
 
         return padded_features, padded_features.shape[-1]
-
-    def get_slices(self, input_features, wb):
-        """
-        Generate framewise slices as per word bounds
-        return a padded tensor for given input_features
-
-        """
-        duration_slices = []
-        for bound in wb:
-            # dur = (bound[1] - bound[0])*emphases.HOPSIZE # for audio inputs
-            dur = (bound[1] - bound[0]) # for mel spectro inputs
-            duration_slices.append(dur)
-        
-        extra_noise = False
-        
-        if sum(duration_slices)!=input_features.shape[-1]:
-            extra_noise = True
-            duration_slices.append(input_features.shape[-1] - sum(duration_slices))
-
-        slices = torch.split(input_features, duration_slices)
-
-        if extra_noise:
-            # get rid of the extra noise duration
-            duration_slices = duration_slices[:-1]
-            slices = slices[:-1]
-
-        # forming a padded tensor to stack all the duration slices, 
-        # using maximum slice-duration size for padding dimension
-        padded_features = torch.zeros(
-                (1, len(duration_slices), max(duration_slices)))
-
-        for idx, sl in enumerate(slices):
-            padded_features[:, idx, :len(sl)] = sl
-
-        feat_len = padded_features.shape[-1]
-
-        return padded_features, feat_len
 
 # class Model(torch.nn.Module):
 #     """Model definition"""
