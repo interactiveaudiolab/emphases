@@ -189,10 +189,20 @@ def train(
                 # print('forward pass done')
 
                 # compute losses
-                loss_fn =  torch.nn.SmoothL1Loss()
+                loss_fn =  torch.nn.MSELoss()
                 outputs = outputs.to(device)
+
                 # losses = loss_fn(outputs.reshape(emphases.BATCH_SIZE, 1, -1), padded_prominence)
-                losses = loss_fn(outputs.squeeze(), padded_prominence.squeeze())
+                # losses = loss_fn(outputs.squeeze(), padded_prominence.squeeze())
+
+                losses = 0
+                for idx in range(len(outputs)):
+                    # masking the loss
+                    losses += loss_fn(
+                        outputs.squeeze()[idx, 0:word_lengths[idx]], 
+                        padded_prominence.squeeze()[idx, 0:word_lengths[idx]]
+                        )
+
                 print("training loss:", losses)
 
             ######################

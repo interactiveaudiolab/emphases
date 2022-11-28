@@ -26,8 +26,8 @@ class BaselineModel(torch.nn.Sequential):
         device='cpu'):
 
         self.device = device
-
         self.MAX_NUM_OF_WORDS = emphases.MAX_NUM_OF_WORDS
+        self.MAX_SLICE_DURATION = emphases.MAX_SLICE_DURATION
 
         conv_fn = functools.partial(
             torch.nn.Conv1d,
@@ -101,17 +101,15 @@ class BaselineModel(torch.nn.Sequential):
             extra_noise = True
             duration_slices.append(input_features_channels.shape[-1] - sum(duration_slices))
 
-        if extra_noise:
+        # if extra_noise:
             # padded_features = torch.zeros(
             #         (len(input_features_channels), len(duration_slices[:-1]), max(duration_slices[:-1])))
-
-            padded_features = torch.zeros(
-                    (len(input_features_channels), emphases.MAX_NUM_OF_WORDS, emphases.MAX_SLICE_DURATION))
-        else:
+        # else:
             # padded_features = torch.zeros(
             #         (len(input_features_channels), len(duration_slices), max(duration_slices)))
-            padded_features = torch.zeros(
-                    (len(input_features_channels), emphases.MAX_NUM_OF_WORDS, emphases.MAX_SLICE_DURATION))
+
+        padded_features = torch.zeros(
+                (len(input_features_channels), emphases.MAX_NUM_OF_WORDS, emphases.MAX_SLICE_DURATION))
 
         for channel_idx, input_features in enumerate(input_features_channels):
 
