@@ -29,7 +29,7 @@ def loaders(dataset, train_partition, valid_partition, gpu=None):
         valid_dataset,
         num_workers=emphases.NUM_WORKERS,
         shuffle=False,
-        batch_size=1,
+        batch_size=emphases.BATCH_SIZE, # changing it from 1 to BATCH_SIZE
         pin_memory=gpu is not None,
         drop_last=False,
         collate_fn=emphases.data.collate)

@@ -52,9 +52,9 @@ class BaselineModel(torch.nn.Sequential):
             torch.nn.ReLU(),
             conv2d_fn(hidden_channels, hidden_channels),
             torch.nn.ReLU(),
-            conv2d_fn(hidden_channels, output_channels),
+            torch.nn.Linear(emphases.MAX_SLICE_DURATION, 1),
             torch.nn.ReLU(),
-            torch.nn.Linear(emphases.MAX_SLICE_DURATION, 1)
+            conv2d_fn(hidden_channels, output_channels)
             )
 
     def forward(self, features):

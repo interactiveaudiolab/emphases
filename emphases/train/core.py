@@ -289,11 +289,13 @@ def train(
 
 def evaluate(directory, step, model, valid_loader, gpu):
     """Perform model evaluation"""
-    # print('inside eval')
+    # eval batchsize is set to 1
+
     device = 'cpu' if gpu is None else f'cuda:{gpu}'
 
     # Prepare model for evaluation
     model.eval()
+    loss_fn =  torch.nn.MSELoss()
 
     # Turn off gradient computation
     with torch.no_grad():
@@ -317,6 +319,26 @@ def evaluate(directory, step, model, valid_loader, gpu):
             val_sim = cosine(valid_outputs.squeeze(), padded_prominence.squeeze())
 
             print('>>>>> cosine similarity values for validation set:', val_sim, '\n>>>>> mean cosine similarity:', torch.mean(val_sim))
+            
+            losses = 0
+            for idx in range(len(valid_outputs)):
+                # masking the loss
+                # print(padded_prominence, valid_outputs, word_lengths, idx)
+
+                losses += loss_fn(
+                    valid_outputs.squeeze()[idx, 0:word_lengths[idx]], 
+                    padded_prominence.squeeze()[idx, 0:word_lengths[idx]]
+                    )
+
+            ######################
+            # Logging Evaluation #
+            ######################
+            # Log losses
+            scalars_eval = {
+                'eval_loss/total': losses,
+                'mean_cosine_score': torch.mean(val_sim)}
+
+            emphases.write.scalars(directory, step, scalars_eval)
 
     # Prepare model for training
     model.train()
