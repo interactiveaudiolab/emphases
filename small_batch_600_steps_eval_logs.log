@@ -1,188 +1,0 @@
-Training small_batch_600_steps_eval_logs:   0%|          | 0/600 [00:00<?, ?it/s]
-0it [00:00, ?it/s][A
-0it [00:00, ?it/s][A2it [00:00, 225.72it/s]2it [00:00, 191.93it/s]
-
-0it [00:00, ?it/s][A
-
-0it [00:00, ?it/s][A2it [00:00, 248.97it/s]2it [00:00, 209.51it/s]2022-11-29 12:13:34.960751: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
-To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
-2022-11-29 12:13:35.104751: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-11-29 12:13:35.104793: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
-2022-11-29 12:13:35.132860: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-2022-11-29 12:13:35.785962: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
-2022-11-29 12:13:35.786080: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
-2022-11-29 12:13:35.786094: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
-training loss: tensor(0.1394, device='cuda:0', grad_fn=<AddBackward0>)
->>>>> Calling evaluation
-
-0it [00:00, ?it/s][A2it [00:00, 254.87it/s]
-Training small_batch_600_steps_eval_logs:   0%|          | 1/600 [00:04<46:30,  4.66s/it]Training small_batch_600_steps_eval_logs:   0%|          | 2/600 [00:07<33:06,  3.32s/it]Training small_batch_600_steps_eval_logs:   0%|          | 3/600 [00:08<25:40,  2.58s/it]Training small_batch_600_steps_eval_logs:   1%|          | 4/600 [00:10<23:01,  2.32s/it]
-
->>>>> cosine similarity values for validation set: tensor([-0.6507, -0.4550], device='cuda:0') 
->>>>> mean cosine similarity: tensor(-0.5528, device='cuda:0')
-training loss: tensor(0.1541, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1846, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1549, device='cuda:0', grad_fn=<AddBackward0>)
-
-0it [00:00, ?it/s][A
-0it [00:00, ?it/s][A2it [00:00, 134.81it/s]2it [00:00, 123.59it/s]
-
-0it [00:00, ?it/s][A
-
-0it [00:00, ?it/s][A2it [00:00, 168.76it/s]2it [00:00, 163.74it/s]Training small_batch_600_steps_eval_logs:   1%|          | 5/600 [00:13<24:23,  2.46s/it]Training small_batch_600_steps_eval_logs:   1%|          | 6/600 [00:15<24:45,  2.50s/it]Training small_batch_600_steps_eval_logs:   1%|          | 7/600 [00:17<22:31,  2.28s/it]Training small_batch_600_steps_eval_logs:   1%|▏         | 8/600 [00:19<21:27,  2.17s/it]
-
-training loss: tensor(0.1388, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1359, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1700, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1396, device='cuda:0', grad_fn=<AddBackward0>)
-
-0it [00:00, ?it/s][A
-0it [00:00, ?it/s][A2it [00:00, 134.79it/s]2it [00:00, 124.61it/s]
-
-0it [00:00, ?it/s][A
-
-0it [00:00, ?it/s][A2it [00:00, 255.99it/s]2it [00:00, 162.05it/s]Training small_batch_600_steps_eval_logs:   2%|▏         | 9/600 [00:22<23:57,  2.43s/it]Training small_batch_600_steps_eval_logs:   2%|▏         | 10/600 [00:24<23:22,  2.38s/it]Training small_batch_600_steps_eval_logs:   2%|▏         | 11/600 [00:26<21:25,  2.18s/it]Training small_batch_600_steps_eval_logs:   2%|▏         | 12/600 [00:28<20:56,  2.14s/it]
-
-training loss: tensor(0.1212, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.9416, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1143, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1000, device='cuda:0', grad_fn=<AddBackward0>)
-
-0it [00:00, ?it/s][A
-0it [00:00, ?it/s][A2it [00:00, 216.25it/s]2it [00:00, 164.95it/s]
-
-0it [00:00, ?it/s][A
-
-0it [00:00, ?it/s][A2it [00:00, 159.65it/s]2it [00:00, 113.28it/s]Training small_batch_600_steps_eval_logs:   2%|▏         | 13/600 [00:31<22:43,  2.32s/it]Training small_batch_600_steps_eval_logs:   2%|▏         | 14/600 [00:33<22:36,  2.32s/it]Training small_batch_600_steps_eval_logs:   2%|▎         | 15/600 [00:35<21:06,  2.16s/it]Training small_batch_600_steps_eval_logs:   3%|▎         | 16/600 [00:37<21:09,  2.17s/it]
-
-training loss: tensor(0.1011, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1165, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1106, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.4114, device='cuda:0', grad_fn=<AddBackward0>)
-
-0it [00:00, ?it/s][A
-0it [00:00, ?it/s][A2it [00:00, 218.88it/s]2it [00:00, 165.33it/s]
-
-0it [00:00, ?it/s][A
-
-0it [00:00, ?it/s][A2it [00:00, 158.15it/s]2it [00:00, 113.19it/s]Training small_batch_600_steps_eval_logs:   3%|▎         | 17/600 [00:40<23:09,  2.38s/it]Training small_batch_600_steps_eval_logs:   3%|▎         | 18/600 [00:43<22:56,  2.36s/it]Training small_batch_600_steps_eval_logs:   3%|▎         | 19/600 [00:44<20:49,  2.15s/it]Training small_batch_600_steps_eval_logs:   3%|▎         | 20/600 [00:46<20:50,  2.16s/it]
-
-training loss: tensor(0.1150, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1315, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1682, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1310, device='cuda:0', grad_fn=<AddBackward0>)
-
-0it [00:00, ?it/s][A
-0it [00:00, ?it/s][A2it [00:00, 168.43it/s]2it [00:00, 153.47it/s]
-
-0it [00:00, ?it/s][A
-
-0it [00:00, ?it/s][A2it [00:00, 200.94it/s]2it [00:00, 163.43it/s]Training small_batch_600_steps_eval_logs:   4%|▎         | 21/600 [00:49<22:23,  2.32s/it]Training small_batch_600_steps_eval_logs:   4%|▎         | 22/600 [00:51<20:40,  2.15s/it]Training small_batch_600_steps_eval_logs:   4%|▍         | 23/600 [00:53<19:56,  2.07s/it]Training small_batch_600_steps_eval_logs:   4%|▍         | 24/600 [00:55<21:05,  2.20s/it]
-
-training loss: tensor(0.1541, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1747, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1461, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1161, device='cuda:0', grad_fn=<AddBackward0>)
-
-0it [00:00, ?it/s][A
-0it [00:00, ?it/s][A2it [00:00, 206.60it/s]2it [00:00, 162.10it/s]
-
-0it [00:00, ?it/s][A
-
-0it [00:00, ?it/s][A2it [00:00, 172.85it/s]2it [00:00, 122.61it/s]Training small_batch_600_steps_eval_logs:   4%|▍         | 25/600 [00:58<22:24,  2.34s/it]Training small_batch_600_steps_eval_logs:   4%|▍         | 26/600 [01:00<20:52,  2.18s/it]Training small_batch_600_steps_eval_logs:   4%|▍         | 27/600 [01:02<20:00,  2.09s/it]Training small_batch_600_steps_eval_logs:   5%|▍         | 28/600 [01:04<21:07,  2.22s/it]
-
-training loss: tensor(0.1505, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1699, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1390, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1087, device='cuda:0', grad_fn=<AddBackward0>)
-
-0it [00:00, ?it/s][A
-0it [00:00, ?it/s][A2it [00:00, 169.03it/s]2it [00:00, 148.93it/s]
-
-0it [00:00, ?it/s][A2it [00:00, 165.87it/s]
-
-0it [00:00, ?it/s][A2it [00:00, 155.97it/s]Training small_batch_600_steps_eval_logs:   5%|▍         | 29/600 [01:06<21:22,  2.25s/it]Training small_batch_600_steps_eval_logs:   5%|▌         | 30/600 [01:09<22:11,  2.34s/it]Training small_batch_600_steps_eval_logs:   5%|▌         | 31/600 [01:11<20:28,  2.16s/it]Training small_batch_600_steps_eval_logs:   5%|▌         | 32/600 [01:13<21:15,  2.25s/it]
-
-training loss: tensor(0.1320, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1160, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1453, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1065, device='cuda:0', grad_fn=<AddBackward0>)
-
-0it [00:00, ?it/s][A
-0it [00:00, ?it/s][A2it [00:00, 163.48it/s]2it [00:00, 143.91it/s]
-
-0it [00:00, ?it/s][A
-
-0it [00:00, ?it/s][A2it [00:00, 173.51it/s]2it [00:00, 169.99it/s]Training small_batch_600_steps_eval_logs:   6%|▌         | 33/600 [01:15<21:18,  2.25s/it]Training small_batch_600_steps_eval_logs:   6%|▌         | 34/600 [01:18<21:23,  2.27s/it]Training small_batch_600_steps_eval_logs:   6%|▌         | 35/600 [01:19<19:54,  2.11s/it]Training small_batch_600_steps_eval_logs:   6%|▌         | 36/600 [01:22<20:36,  2.19s/it]
-
-training loss: tensor(0.1126, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.0958, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1149, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1133, device='cuda:0', grad_fn=<AddBackward0>)
-
-0it [00:00, ?it/s][A
-0it [00:00, ?it/s][A2it [00:00, 129.67it/s]2it [00:00, 124.22it/s]
-
-0it [00:00, ?it/s][A
-
-0it [00:00, ?it/s][A2it [00:00, 185.30it/s]2it [00:00, 161.70it/s]Training small_batch_600_steps_eval_logs:   6%|▌         | 37/600 [01:25<23:27,  2.50s/it]Training small_batch_600_steps_eval_logs:   6%|▋         | 38/600 [01:27<22:26,  2.40s/it]Training small_batch_600_steps_eval_logs:   6%|▋         | 39/600 [01:29<20:07,  2.15s/it]Training small_batch_600_steps_eval_logs:   7%|▋         | 40/600 [01:31<19:45,  2.12s/it]
-
-training loss: tensor(0.1014, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.0862, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1073, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1042, device='cuda:0', grad_fn=<AddBackward0>)
-
-0it [00:00, ?it/s][A
-0it [00:00, ?it/s][A2it [00:00, 210.21it/s]2it [00:00, 116.15it/s]
-
-0it [00:00, ?it/s][A2it [00:00, 182.07it/s]
-
-0it [00:00, ?it/s][A2it [00:00, 144.73it/s]Training small_batch_600_steps_eval_logs:   7%|▋         | 41/600 [01:34<22:02,  2.37s/it]Training small_batch_600_steps_eval_logs:   7%|▋         | 42/600 [01:36<22:37,  2.43s/it]Training small_batch_600_steps_eval_logs:   7%|▋         | 43/600 [01:38<20:16,  2.18s/it]Training small_batch_600_steps_eval_logs:   7%|▋         | 44/600 [01:40<20:08,  2.17s/it]
-
-training loss: tensor(0.0927, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.0839, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1047, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1029, device='cuda:0', grad_fn=<AddBackward0>)
-
-0it [00:00, ?it/s][A
-0it [00:00, ?it/s][A2it [00:00, 129.53it/s]2it [00:00, 124.52it/s]
-
-0it [00:00, ?it/s][A
-
-0it [00:00, ?it/s][A2it [00:00, 209.24it/s]2it [00:00, 217.07it/s]Training small_batch_600_steps_eval_logs:   8%|▊         | 45/600 [01:43<21:42,  2.35s/it]Training small_batch_600_steps_eval_logs:   8%|▊         | 46/600 [01:45<21:19,  2.31s/it]Training small_batch_600_steps_eval_logs:   8%|▊         | 47/600 [01:47<19:46,  2.14s/it]Training small_batch_600_steps_eval_logs:   8%|▊         | 48/600 [01:49<19:38,  2.13s/it]
-
-training loss: tensor(0.0872, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.0836, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1022, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1023, device='cuda:0', grad_fn=<AddBackward0>)
-
-0it [00:00, ?it/s][A
-0it [00:00, ?it/s][A2it [00:00, 169.46it/s]2it [00:00, 136.31it/s]
-
-0it [00:00, ?it/s][A
-
-0it [00:00, ?it/s][A2it [00:00, 139.88it/s]2it [00:00, 187.00it/s]Training small_batch_600_steps_eval_logs:   8%|▊         | 49/600 [01:51<20:50,  2.27s/it]Training small_batch_600_steps_eval_logs:   8%|▊         | 50/600 [01:54<21:26,  2.34s/it]Training small_batch_600_steps_eval_logs:   8%|▊         | 51/600 [01:56<21:39,  2.37s/it]Training small_batch_600_steps_eval_logs:   9%|▊         | 52/600 [01:58<19:47,  2.17s/it]
-
-training loss: tensor(0.0999, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.0709, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.0898, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.1005, device='cuda:0', grad_fn=<AddBackward0>)
-
-0it [00:00, ?it/s][A
-0it [00:00, ?it/s][A2it [00:00, 172.66it/s]2it [00:00, 149.49it/s]
-
-0it [00:00, ?it/s][A
-
-0it [00:00, ?it/s][A2it [00:00, 162.83it/s]2it [00:00, 135.58it/s]Training small_batch_600_steps_eval_logs:   9%|▉         | 53/600 [02:01<20:28,  2.25s/it]Training small_batch_600_steps_eval_logs:   9%|▉         | 54/600 [02:03<20:54,  2.30s/it]Training small_batch_600_steps_eval_logs:   9%|▉         | 55/600 [02:06<22:04,  2.43s/it]Training small_batch_600_steps_eval_logs:   9%|▉         | 56/600 [02:07<19:59,  2.20s/it]
-
-training loss: tensor(0.0970, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.0671, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.0874, device='cuda:0', grad_fn=<AddBackward0>)
-training loss: tensor(0.0969, device='cuda:0', grad_fn=<AddBackward0>)
-
-0it [00:00, ?it/s][A
-0it [00:00, ?it/s][A2it [00:00, 192.29it/s]2it [00:00, 166.83it/s]
-
-0it [00:00, ?it/s][A
-
-0it [00:00, ?it/s][A2it [00:00, 153.93it/s]2it [00:00, 151.38it/s]
