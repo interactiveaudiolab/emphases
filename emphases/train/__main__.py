@@ -10,7 +10,7 @@ import emphases
 ###############################################################################
 
 
-def main(config, dataset, gpus=None):
+def main(config, dataset, gpus=None, task_type='word_wise'):
     # Create output directory
     directory = emphases.RUNS_DIR / config.stem
     directory.mkdir(parents=True, exist_ok=True)
@@ -24,7 +24,8 @@ def main(config, dataset, gpus=None):
         directory,
         directory,
         directory,
-        gpus)
+        gpus,
+        task_type)
 
     # Evaluate
     emphases.evaluate.datasets([dataset], directory, gpus[0])
@@ -47,6 +48,10 @@ def parse_args():
         type=int,
         nargs='+',
         help='The gpus to run training on')
+    parser.add_argument(
+        '--task_type',
+        default='word_wise',
+        help='training task type: [word_based, frame_based]')
     return parser.parse_args()
 
 

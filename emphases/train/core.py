@@ -17,7 +17,8 @@ def run(
     checkpoint_directory,
     output_directory,
     log_directory,
-    gpus=None):
+    gpus=None,
+    task_type='word_wise'):
     """Run model training"""
     # Distributed data parallelism
     if gpus and len(gpus) > 1:
@@ -26,7 +27,8 @@ def run(
             checkpoint_directory,
             output_directory,
             log_directory,
-            gpus)
+            gpus,
+            task_type)
         torch.multiprocessing.spawn(
             train_ddp,
             args=args,
@@ -41,7 +43,8 @@ def run(
             checkpoint_directory,
             output_directory,
             log_directory,
-            None if gpus is None else gpus[0])
+            None if gpus is None else gpus[0],
+            task_type)
 
     # Return path to model checkpoint
     return emphases.checkpoint.latest_path(output_directory)
@@ -57,7 +60,8 @@ def train(
     checkpoint_directory,
     output_directory,
     log_directory,
-    gpu=None):
+    gpu=None,
+    task_type='word_wise'):
     """Train a model"""
     # Get DDP rank
     if torch.distributed.is_initialized():
@@ -80,7 +84,10 @@ def train(
     #################
 
     # model = emphases.model.Model().to(device)
-    model = emphases.model.BaselineModel(device=device).to(device)
+    if task_type=='word_wise':
+        model = emphases.model.BaselineModel(device=device).to(device)
+    if task_type=='frame_wise':
+        model = emphases.model.FramewiseModel().to(device)
 
     ##################################################
     # Maybe setup distributed data parallelism (DDP) #
@@ -169,13 +176,19 @@ def train(
             padded_audio,
             padded_mel_spectrogram,
             padded_prominence,
+            padded_interpolated_prominence,
             word_bounds,
             word_lengths,
-            frame_lengths
+            frame_lengths,
+            interpolated_prom_lengths
             ) = (item.to(device) if torch.is_tensor(item) else item for item in batch)
 
-            # Bundle training input
-            model_input = (padded_mel_spectrogram, word_bounds, padded_prominence)
+            if task_type=='word_wise':
+                # Bundle training input
+                model_input = (padded_mel_spectrogram, word_bounds, padded_prominence)
+            
+            if task_type=='frame_wise':
+                model_input = padded_mel_spectrogram
 
             with torch.cuda.amp.autocast():
 
@@ -186,22 +199,27 @@ def train(
                     outputs
                 ) = model(model_input)
 
-                # print('forward pass done')
-
                 # compute losses
                 loss_fn =  torch.nn.MSELoss()
                 outputs = outputs.to(device)
 
-                # losses = loss_fn(outputs.reshape(emphases.BATCH_SIZE, 1, -1), padded_prominence)
-                # losses = loss_fn(outputs.squeeze(), padded_prominence.squeeze())
+                if task_type=='word_wise':
+                    losses = 0
+                    for idx in range(len(outputs)):
+                        # masking the loss
+                        losses += loss_fn(
+                            outputs.squeeze()[idx, 0:word_lengths[idx]], 
+                            padded_prominence.squeeze()[idx, 0:word_lengths[idx]]
+                            )
 
-                losses = 0
-                for idx in range(len(outputs)):
-                    # masking the loss
-                    losses += loss_fn(
-                        outputs.squeeze()[idx, 0:word_lengths[idx]], 
-                        padded_prominence.squeeze()[idx, 0:word_lengths[idx]]
-                        )
+                if task_type=='frame_wise':
+                    losses = 0
+                    for idx in range(len(outputs)):
+                        # masking the loss
+                        losses += loss_fn(
+                            outputs.squeeze()[idx, 0:interpolated_prom_lengths[idx]], 
+                            padded_interpolated_prominence.squeeze()[idx, 0:interpolated_prom_lengths[idx]]
+                            )
 
                 print("training loss:", losses)
 
@@ -245,7 +263,8 @@ def train(
                         step,
                         model,
                         valid_loader,
-                        gpu)
+                        gpu,
+                        task_type)
 
                 ###################
                 # Save checkpoint #
@@ -287,7 +306,7 @@ def train(
 ###############################################################################
 
 
-def evaluate(directory, step, model, valid_loader, gpu):
+def evaluate(directory, step, model, valid_loader, gpu, task_type):
     """Perform model evaluation"""
     # eval batchsize is set to 1
 
@@ -304,31 +323,66 @@ def evaluate(directory, step, model, valid_loader, gpu):
             padded_audio,
             padded_mel_spectrogram,
             padded_prominence,
+            padded_interpolated_prominence,
             word_bounds,
             word_lengths,
-            frame_lengths
+            frame_lengths,
+            interpolated_prom_lengths
             ) = (item.to(device) if torch.is_tensor(item) else item for item in batch)
 
-            # Bundle training input
-            model_input = (padded_mel_spectrogram, word_bounds, padded_prominence)
-
-            valid_outputs = model(model_input)
-            valid_outputs = valid_outputs.to(device)
-
             cosine = torch.nn.CosineSimilarity()
-            val_sim = cosine(valid_outputs.squeeze(), padded_prominence.squeeze())
 
-            print('>>>>> cosine similarity values for validation set:', val_sim, '\n>>>>> mean cosine similarity:', torch.mean(val_sim))
+            if task_type=='word_wise':
+                # Bundle training input
+                model_input = (padded_mel_spectrogram, word_bounds, padded_prominence)
+
+                valid_outputs = model(model_input)
+                valid_outputs = valid_outputs.to(device)
+
+                val_sim = []
+                for idx in range(len(valid_outputs)):
+                    val_sim.append(
+                        cosine(
+                        valid_outputs.squeeze()[idx, 0:word_lengths[idx]].reshape(1, -1), 
+                        padded_prominence.squeeze()[idx, 0:word_lengths[idx]].reshape(1, -1)
+                        )
+                        )
+                
+                losses = 0
+                for idx in range(len(valid_outputs)):
+                    # masking the loss
+                    losses += loss_fn(
+                        valid_outputs.squeeze()[idx, 0:word_lengths[idx]], 
+                        padded_prominence.squeeze()[idx, 0:word_lengths[idx]]
+                        )
+
             
-            losses = 0
-            for idx in range(len(valid_outputs)):
-                # masking the loss
-                # print(padded_prominence, valid_outputs, word_lengths, idx)
+            if task_type=='frame_wise':
+                # Bundle training input
+                model_input = padded_mel_spectrogram
 
-                losses += loss_fn(
-                    valid_outputs.squeeze()[idx, 0:word_lengths[idx]], 
-                    padded_prominence.squeeze()[idx, 0:word_lengths[idx]]
-                    )
+                valid_outputs = model(model_input)
+                valid_outputs = valid_outputs.to(device)
+
+                val_sim = []
+                for idx in range(len(valid_outputs)):
+                    val_sim.append(
+                        cosine(
+                        valid_outputs.squeeze()[idx, 0:interpolated_prom_lengths[idx]].reshape(1, -1), 
+                        padded_interpolated_prominence.squeeze()[idx, 0:interpolated_prom_lengths[idx]].reshape(1, -1)
+                        )
+                        )
+                
+                losses = 0
+                for idx in range(len(valid_outputs)):
+                    # masking the loss
+                    losses += loss_fn(
+                        valid_outputs.squeeze()[idx, 0:interpolated_prom_lengths[idx]], 
+                        padded_interpolated_prominence.squeeze()[idx, 0:interpolated_prom_lengths[idx]]
+                        )
+
+            print('>>>>> cosine similarity values for validation set:', 
+                    val_sim, '\n>>>>> mean cosine similarity:', torch.tensor(val_sim).mean())
 
             ######################
             # Logging Evaluation #
@@ -336,7 +390,7 @@ def evaluate(directory, step, model, valid_loader, gpu):
             # Log losses
             scalars_eval = {
                 'eval_loss/total': losses,
-                'mean_cosine_score': torch.mean(val_sim)}
+                'mean_cosine_score': torch.tensor(val_sim).mean()}
 
             emphases.write.scalars(directory, step, scalars_eval)
 

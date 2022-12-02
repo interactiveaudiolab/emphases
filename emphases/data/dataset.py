@@ -8,7 +8,7 @@ import torch
 
 import emphases
 import numpy as np
-
+from emphases.data.utils import constant, grid_sample, interpolate_numpy
 
 ###############################################################################
 # Dataset
@@ -66,10 +66,42 @@ class Dataset(torch.utils.data.Dataset):
         word_bounds = alignment.word_bounds(
             emphases.SAMPLE_RATE,
             emphases.HOPSIZE)
-
+                
         assert (len(word_bounds) == prominence.shape[0]), 'array length mismatch b/w alignment and ground truth'
 
-        return audio, mel_spectrogram, prominence, word_bounds
+        # updating word bounds with padding on silent time stamps
+        wb_prom_pairs = []
+        audio_len = audio.shape[-1]
+
+        if word_bounds[0][0]!=0:
+            wb_prom_pairs.append([(0, word_bounds[0][0]), 0])
+
+        for idx in range(len(word_bounds)):
+            wb_prom_pairs.append([word_bounds[idx], prominence[idx].item()])
+            if idx+1<len(word_bounds):
+                if word_bounds[idx][-1]!=word_bounds[idx+1][0]:
+                    start = word_bounds[idx][-1]
+                    end = word_bounds[idx+1][0]
+                    wb_prom_pairs.append([(start, end), 0])
+
+        # generating interpolated prom vector
+        prom_extended = []
+        for wb in wb_prom_pairs:
+            start, end = wb[0][0], wb[0][1]
+            prom_extended.extend([wb[-1]]*(end-start)*emphases.HOPSIZE)
+            
+        if word_bounds[-1][-1]!=audio_len//emphases.HOPSIZE:
+            pad_len = audio_len - len(prom_extended)
+            prom_extended.extend([0]*pad_len)
+
+        prom_extended = torch.tensor(prom_extended)
+
+        # frame based prominence values
+        grid = constant(audio, emphases.HOPSIZE)
+        # interpolated_prom_values = grid_sample(prominence, grid)
+        interpolated_prom_values = interpolate_numpy(prom_extended, grid)
+
+        return audio, mel_spectrogram, prominence, word_bounds, interpolated_prom_values
 
     def __len__(self):
         """Length of the dataset"""

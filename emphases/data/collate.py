@@ -12,7 +12,7 @@ import tqdm
 def collate(batch):
     """Batch collation"""
     # Unpack
-    audio, mel_spectrogram, prominence, word_bounds = zip(*batch)
+    audio, mel_spectrogram, prominence, word_bounds, interpolated_prom_values = zip(*batch)
 
     # Get word lengths
     word_lengths = torch.tensor(
@@ -32,6 +32,12 @@ def collate(batch):
         dtype=torch.long)
     max_mel_length = mel_lengths.max().item()
 
+    # Get max interpolated prom
+    interpolated_prom_lengths = torch.tensor(
+        [prom.shape[-1] for prom in interpolated_prom_values], 
+        dtype=torch.long)
+    max_interpolated_prom_length = interpolated_prom_lengths.max().item()
+
     # Allocate padded tensors
     batch_size = len(audio)
     padded_audio = torch.zeros(
@@ -39,11 +45,13 @@ def collate(batch):
         dtype=torch.float)
     padded_prominence = torch.zeros(
         (batch_size, 1, emphases.MAX_NUM_OF_WORDS))
+    padded_interpolated_prominence = torch.zeros(
+        (batch_size, 1, max_interpolated_prom_length))
     padded_mel_spectrogram = torch.zeros((batch_size, emphases.NUM_MELS, max_mel_length))
 
     # Place batch in padded tensors
-    iterator = enumerate(zip(audio, prominence, mel_spectrogram, frame_lengths, word_lengths, mel_lengths))
-    for i, (a, p, mel, fl, wl, ml) in tqdm.tqdm(iterator):
+    iterator = enumerate(zip(audio, prominence, interpolated_prom_values, mel_spectrogram, frame_lengths, word_lengths, mel_lengths))
+    for i, (a, p, ip, mel, fl, wl, ml) in tqdm.tqdm(iterator):
         padded_audio[i, :, :fl * emphases.HOPSIZE] = a[:, :fl * emphases.HOPSIZE]
 
         # truncating the num of words to a limit for now
@@ -51,6 +59,8 @@ def collate(batch):
             padded_prominence[i, :, :len(p)] = p
         else:
             padded_prominence[i, :, :emphases.MAX_NUM_OF_WORDS] = p[:emphases.MAX_NUM_OF_WORDS]
+        
+        padded_interpolated_prominence[i, :, :len(ip)] = ip
 
         padded_mel_spectrogram[i, :, :ml] = mel
 
@@ -58,6 +68,8 @@ def collate(batch):
         padded_audio,
         padded_mel_spectrogram,
         padded_prominence,
+        padded_interpolated_prominence,
         word_bounds,
         word_lengths,
-        frame_lengths)
+        frame_lengths,
+        interpolated_prom_lengths)
