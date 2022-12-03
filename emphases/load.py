@@ -48,8 +48,6 @@ def load_prominence(file):
 
 def torch_melspectrogram(audio):
     win_length = None
-    # TODO - padding for spectro, check center
-    # 
     mel_spectrogram = T.MelSpectrogram(
         sample_rate=emphases.SAMPLE_RATE,
         n_fft=emphases.NUM_FFT,

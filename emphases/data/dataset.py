@@ -8,7 +8,7 @@ import torch
 
 import emphases
 import numpy as np
-from emphases.data.utils import constant, grid_sample, interpolate_numpy
+from emphases.data.utils import nearest_neighbour_interpolation
 
 ###############################################################################
 # Dataset
@@ -97,9 +97,9 @@ class Dataset(torch.utils.data.Dataset):
         prom_extended = torch.tensor(prom_extended)
 
         # frame based prominence values
-        grid = constant(audio, emphases.HOPSIZE)
-        # interpolated_prom_values = grid_sample(prominence, grid)
-        interpolated_prom_values = interpolate_numpy(prom_extended, grid)
+        interpolated_prom_values = nearest_neighbour_interpolation(audio, word_bounds, prominence)
+
+        assert (mel_spectrogram.shape[-1] == interpolated_prom_values.shape[-1]), f'{stem} mismatch in num frames for melspec and interpolated prominence'
 
         return audio, mel_spectrogram, prominence, word_bounds, interpolated_prom_values
 
