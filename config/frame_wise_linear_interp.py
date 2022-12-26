@@ -10,4 +10,4 @@ CHECKPOINT_INTERVAL = 200  # steps
 LOG_INTERVAL = 50  # steps
 EVALUATION_INTERVAL = 100  # steps
 
-INTERPOLATION = "nearest_neighbour"
+INTERPOLATION = "linear"

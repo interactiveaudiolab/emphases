@@ -2,6 +2,22 @@ import torch
 import numpy as np
 import emphases
 
+def interpolate_numpy(sequence, positions, pred_grid):
+    fp = sequence
+    xp = positions
+    return torch.tensor(np.interp(pred_grid, xp, fp))
+
+def linear_interpolation(audio, word_bounds, prominence):
+    positions = []
+    for bound in word_bounds:
+        mid = (bound[0] + bound [1])//2
+        positions.append(mid)
+    
+    audio_len = audio.shape[-1]
+    pred_grid = list(range(0, audio_len//160 + 1))
+    interp_prom = interpolate_numpy(prominence, positions, pred_grid)
+    return interp_prom
+
 def nearest_neighbour_interpolation(audio, word_bounds, prominence):
     """
     Performs nearest neighbour interpolation to estimate prominence values for every frame
@@ -39,8 +55,7 @@ def constant(tensor, ratio):
     return torch.linspace(
         0.,
         tensor.shape[-1] - 1,
-        # round((tensor.shape[-1]) / ratio + 1e-4),
-        round((tensor.shape[-1]) / (ratio + 0.4)),
+        round((tensor.shape[-1]) / ratio + 1e-4),
         dtype=torch.float,
         device=tensor.device)
 
@@ -69,8 +84,4 @@ def grid_sample(sequence, grid, method='linear'):
 
     else:
         raise ValueError(f'Grid sampling method {method} is not defined')
-
-def interpolate_numpy(sequence, grid):
-    xp = torch.arange(sequence.shape[-1], device=sequence.device)
-    fp = sequence
-    return torch.tensor(np.interp(grid, xp, fp))
+    

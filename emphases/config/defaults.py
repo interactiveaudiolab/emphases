@@ -50,6 +50,8 @@ NUM_MELS = 80
 MAX_NUM_OF_WORDS = 56 # set limit for number of words to be considered from in a given sample (truncating after this point for now)
 MAX_WORD_DURATION = 96 # duration limit for a word based frame
 
+INTERPOLATION = "linear" # interpolation method for framewise training
+
 ###############################################################################
 # Logging parameters
 ###############################################################################
