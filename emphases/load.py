@@ -21,18 +21,14 @@ def audio(file):
     audio, sample_rate = torchaudio.load(file)
 
     # Maybe resample
-    if sample_rate != emphases.SAMPLE_RATE:
-        resampler = torchaudio.transforms.Resample(
-            sample_rate,
-            emphases.SAMPLE_RATE)
-        audio = resampler(audio)
+    return emphases.resample(audio, sample_rate)
 
-    return audio
 
 def partition(dataset):
     """Load partitions for dataset"""
     with open(emphases.PARTITION_DIR / f'{dataset}.json') as file:
         return json.load(file)
+
 
 def load_prominence(file):
     with open(file, 'r') as f:
@@ -42,9 +38,11 @@ def load_prominence(file):
     proms = torch.tensor([float(x[4]) for x in lines[:-1]])
     return proms
 
+
 ###############################################################################
 # Mel spectrogram
 ###############################################################################
+
 
 def torch_melspectrogram(audio):
     win_length = None
@@ -91,7 +89,7 @@ class MelSpectrogram(torch.nn.Module):
             window=self.window,
             center=False,
             return_complex=False)
-        
+
         # Compute magnitude spectrogram
         spectrogram = torch.sqrt(stft.pow(2).sum(-1) + 1e-9)
 

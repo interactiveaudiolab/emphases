@@ -1,14 +1,11 @@
-"""model.py - model definition"""
-
-
 import torch
 import emphases
 import functools
 
+
 ###############################################################################
 # Model
 ###############################################################################
-
 
 
 class BaselineModel(torch.nn.Sequential):
@@ -54,12 +51,12 @@ class BaselineModel(torch.nn.Sequential):
             )
 
     def forward(self, features):
-        # generate input slices for every item in batch, 
+        # generate input slices for every item in batch,
         # then form a padded tensor from all the slice tensors, and further pass down the network
-        
+
         padded_mel_spectrogram, word_bounds, padded_prominence = features
         intermid_output = self.layers(padded_mel_spectrogram)
-        
+
         feat_lens = []
         feats = []
 
@@ -71,12 +68,12 @@ class BaselineModel(torch.nn.Sequential):
             feat_lens.append(feat_length)
 
         # BATCH * HIDDEN_CHANNEL * MAX_NUM_OF_WORDS * MAX_WORD_DURATION
-        padded_features_2 = torch.zeros((emphases.BATCH_SIZE, intermid_output.shape[1], 
+        padded_features_2 = torch.zeros((emphases.BATCH_SIZE, intermid_output.shape[1],
                                         emphases.MAX_NUM_OF_WORDS, emphases.MAX_WORD_DURATION))
 
         for idx, (f_len, f_item) in enumerate(zip(feat_lens, feats)):
             padded_features_2[idx, :, :f_item.shape[1], :f_item.shape[-1]] = f_item[:]
-        
+
         padded_features_2 = padded_features_2.to(self.device)
 
         return self.layers2(padded_features_2)

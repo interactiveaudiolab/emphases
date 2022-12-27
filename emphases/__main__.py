@@ -14,22 +14,48 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description='Determine which words in a speech file are emphasized')
     parser.add_argument(
-        'text_files',
+        '--text_files',
         type=Path,
         nargs='+',
-        help='Text file containing transcripts')
+        required=True,
+        help='The speech transcript text files')
     parser.add_argument(
-        'audio_files',
+        '--audio_files',
         type=Path,
         nargs='+',
+        required=True,
         help='The corresponding speech audio files')
     parser.add_argument(
-        '--output_file',
+        '--output_files',
         type=Path,
         nargs='+',
         required=False,
-        help='Json files to save results. ' +
-             'Defaults to text files with json extension.')
+        help='The output files. Default is text files with json suffix.')
+    parser.add_argument(
+        '--hopsize',
+        type=float,
+        default=emphases.HOPSIZE_SECONDS,
+        help='The hopsize in seconds')
+    parser.add_argument(
+        '--checkpoint',
+        type=Path,
+        default=emphases.DEFAULT_CHECKPOINT,
+        help='The model checkpoint to use for inference')
+    parser.add_argument(
+        '--batch_size',
+        type=int,
+        default=emphases.EVALUATION_BATCH_SIZE,
+        help='The maximum number of frames per batch')
+    parser.add_argument(
+        '--pad',
+        action='store_true',
+        help=(
+            'If true, centers frames at '
+            'hopsize / 2, 3 * hopsize / 2, 5 * ...'))
+    parser.add_argument(
+        '--gpu',
+        type=int,
+        help='The index of the gpu to run inference on')
     return parser.parse_args()
 
 

@@ -52,6 +52,16 @@ MAX_WORD_DURATION = 96 # duration limit for a word based frame
 
 INTERPOLATION = "linear" # interpolation method for framewise training
 
+
+###############################################################################
+# Evaluation parameters
+###############################################################################
+
+
+# Maximum number of frames to perform inference on at once
+EVALUATION_BATCH_SIZE = 1024
+
+
 ###############################################################################
 # Logging parameters
 ###############################################################################

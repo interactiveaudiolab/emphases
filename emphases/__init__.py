@@ -8,7 +8,7 @@ from .config import defaults
 
 # Modify configuration
 import yapecs
-yapecs.configure(defaults)
+yapecs.configure('emphases', defaults)
 
 # Import configuration parameters
 from .config.defaults import *

@@ -1,5 +1,36 @@
-# emphases
-Representations of prosody for detecting emphases
+<h1 align="center">emphases</h1>
+<div align="center">
+
+[![PyPI](https://img.shields.io/pypi/v/emphases.svg)](https://pypi.python.org/pypi/emphases)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Downloads](https://pepy.tech/badge/emphases)](https://pepy.tech/project/emphases)
+
+</div>
+
+Official code for the paper _Datasets and Scaling Laws for Neural Emphasis Prediction_
+
+
+## Table of contents
+
+- [Installation](#installation)
+- [Inference](#inference)
+    * [Application programming interface](#application-programming-interface)
+        * [`emphases.from_audio`](#emphasesfrom_audio)
+        * [`emphases.from_file`](#emphasesfrom_file)
+        * [`emphases.from_file_to_file`](#emphasesfrom_file_to_file)
+        * [`emphases.from_files_to_files`](#emphasesfrom_files_to_files)
+    * [Command-line interface](#command-line-interface)
+- [Training](#training)
+    * [Download](#download)
+    * [Preprocess](#preprocess)
+    * [Partition](#partition)
+    * [Train](#train)
+    * [Monitor](#monitor)
+- [Evaluation](#reproducing-results)
+    * [Evaluate](#evaluate)
+    * [Analyze](#analyze)
+    * [Plot](#plot)
+- [Citation](#citation)
 
 
 ## Installation
@@ -10,9 +41,9 @@ You must also install HTK to use the pyfoal aligner. See
 [here](https://github.com/maxrmorrison/pyfoal).
 
 
-## Usage
+## Inference
 
-### Application programming interface
+Perform automatic emphasis annotation using our best pretrained model
 
 ```
 import emphases
@@ -30,70 +61,173 @@ for word, result in zip(alignment.words(), results):
         print(f'{word} was emphasized')
 ```
 
-The `alignment` is a `pypar.Alignment` object. You can also use
-`emphases.from_text_and_audio` to compute emphases from a string and,
-numpy array, `emphases.from_file_to_file` to automatically save
-results to disk, or `emphases.from_files_to_files` to compute the
-emphases of many files. Emphases are saved as a list of four-tuples
-containing the word, start time, end time, and boolean that is true if
-the word is emphasized.
+The `alignment` is a [`pypar.Alignment`](https://github.com/maxrmorrison/pypar)
+object.
+
+
+### Application programming interface
+
+#### `emphases.from_text_and_audio`
+
+```
+"""Produce emphasis scores for each word
+
+Args:
+    text: The speech transcript
+    audio: The speech waveform
+    sample_rate: The audio sampling rate
+    hopsize: The hopsize in seconds
+    checkpoint: The model checkpoint to use for inference
+    batch_size: The maximum number of frames per batch
+    pad: If true, centers frames at hopsize / 2, 3 * hopsize / 2, 5 * ...
+    gpu: The index of the gpu to run inference on
+
+Returns:
+    alignment: The forced phoneme alignment
+    scores: The float-valued emphasis scores for each word
+"""
+```
+
+
+#### `emphases.from_file`
+
+```
+"""Produce emphasis scores for each word for files on disk
+
+Args:
+    text_file: The speech transcript text file
+    audio_file: The speech waveform audio file
+    hopsize: The hopsize in seconds
+    checkpoint: The model checkpoint to use for inference
+    batch_size: The maximum number of frames per batch
+    pad: If true, centers frames at hopsize / 2, 3 * hopsize / 2, 5 * ...
+    gpu: The index of the gpu to run inference on
+
+Returns:
+    alignment: The forced phoneme alignment
+    scores: The float-valued emphasis scores for each word
+"""
+```
+
+
+#### `emphases.from_file_to_file`
+
+```
+"""Produce emphasis scores for each word for files on disk and save to disk
+
+Args:
+    text_file: The speech transcript text file
+    audio_file: The speech waveform audio file
+    output_file: The output file. Defaults to text file with json suffix.
+    hopsize: The hopsize in seconds
+    checkpoint: The model checkpoint to use for inference
+    batch_size: The maximum number of frames per batch
+    pad: If true, centers frames at hopsize / 2, 3 * hopsize / 2, 5 * ...
+    gpu: The index of the gpu to run inference on
+"""
+```
+
+Emphases are saved as a list of five-tuples containing the word, start time,
+end time, a float-valued emphasis score, and a boolean that is true if the
+word is emphasized.
+
+
+#### `emphases.from_files_to_files`
+
+```
+"""Produce emphasis scores for each word for many files and save to disk
+
+Args:
+    text_files: The speech transcript text files
+    audio_files: The corresponding speech audio files
+    output_files: The output files. Default is text files with json suffix.
+    hopsize: The hopsize in seconds
+    checkpoint: The model checkpoint to use for inference
+    batch_size: The maximum number of frames per batch
+    pad: If true, centers frames at hopsize / 2, 3 * hopsize / 2, 5 * ...
+    gpu: The index of the gpu to run inference on
+"""
+```
 
 
 ### Command-line interface
 
 ```
 python -m emphases
-    text_files [text_files ...]
-    audio_files [audio_files ...]
-    [--output_file OUTPUT_FILE [OUTPUT_FILE ...]]
+    [-h]
+    --text_files TEXT_FILES [TEXT_FILES ...]
+    --audio_files AUDIO_FILES [AUDIO_FILES ...]
+    [--output_files OUTPUT_FILES [OUTPUT_FILES ...]]
+    [--hopsize HOPSIZE]
+    [--checkpoint CHECKPOINT]
+    [--batch_size BATCH_SIZE]
+    [--pad]
+    [--gpu GPU]
 
 Determine which words in a speech file are emphasized
 
-positional arguments:
-  text_files            Text file containing transcripts
-  audio_files           The corresponding speech audio files
-
-optional arguments:
+options:
   -h, --help            show this help message and exit
-  --output_file OUTPUT_FILE [OUTPUT_FILE ...]
-                        Json files to save results.
-                        Defaults to text files with json extension.
+  --text_files TEXT_FILES [TEXT_FILES ...]
+                        The speech transcript text files
+  --audio_files AUDIO_FILES [AUDIO_FILES ...]
+                        The corresponding speech audio files
+  --output_files OUTPUT_FILES [OUTPUT_FILES ...]
+                        The output files. Default is text files with json suffix.
+  --hopsize HOPSIZE     The hopsize in seconds
+  --checkpoint CHECKPOINT
+                        The model checkpoint to use for inference
+  --batch_size BATCH_SIZE
+                        The maximum number of frames per batch
+  --pad                 If true, centers frames at hopsize / 2, 3 * hopsize / 2, 5 * ...
+  --gpu GPU             The index of the gpu to run inference on
 ```
 
 
 ## Training
 
-### Download data - Done
+### Download data
 
-Complete all TODOs in `data/download/`, then run `python -m emphases.download DATASET`.
-`python -m emphases.data.download --datasets Buckeye`
+`python -m emphases.download`.
+
+Downloads and uncompresses datasets.
+
 
 ### Partition data
 
-Complete all TODOs in `partition/`, then run `python -m emphases.partition
-DATASET`.
+`python -m emphases.partition`
+
+Generates `train`, `valid`, and `test` partitions for all datasets.
+Partitioning is deterministic given the same random seed. You do not need to
+run this step, as the original partitions are saved in
+`emphases/assets/partitions`.
 
 
-### Preprocess data - Done
+### Preprocess
 
-Complete all TODOs in `preprocess/`, then run `python -m emphases.preprocess
-DATASET`. All preprocessed data is saved in `data/cache/DATASET`.
+`python -m emphases.preprocess`
 
-`python -m emphases.preprocess Buckeye`
-
-After processing the Buckeye TextGrid excerpts from Prof. Cole's lab, we are manually removing the tonic and PointTier from textgrid files. And changing the size=2
 
 ### Train
 
-Complete all TODOs in `data/` and `model.py`, then run `python -m emphases.train --config <config> --dataset
-DATASET --gpus <gpus>`.
+`python -m emphases.train --config <config> --dataset <dataset> --gpus <gpus>`
 
-python -m emphases.train --config config/small_batch.py --gpus 0 --dataset Buckeye
+Trains a model according to a given configuration. Uses a list of GPU
+indices as an argument, and uses distributed data parallelism (DDP)
+if more than one index is given. For example, `--gpus 0 3` will train
+using DDP on GPUs `0` and `3`.
+
+
+## Evaluation
 
 ### Evaluate
 
-Complete all TODOs in `evaluate/`, then run `python -m emphases.evaluate
---datasets <datasets> --checkpoint <checkpoint> --gpu <gpu>`.
+`python -m emphases.evaluate --config <config> --checkpoint <checkpoint> --gpu <gpu>`
+
+
+### Plot
+
+**TODO**
 
 
 ### Monitor
@@ -109,32 +243,19 @@ Tensorboard. This can be done with `ssh -L 6006:localhost:6006
 `pip install pytest && pytest`
 
 
-## FAQ
+## Citation
 
-### What is the directory `emphases/assets` for?
-
-This directory is for
-[_package data_](https://packaging.python.org/guides/distributing-packages-using-setuptools/#package-data).
-When you pip install a package, pip will
-automatically copy the python files to the installation folder (in
-`site_packages`). Pip will _not_ automatically copy files that are not Python
-files. So if your code depends on non-Python files to run (e.g., a pretrained
-model, normalizing statistics, or data partitions), you have to manually
-specify these files in `setup.py`. This is done for you in this repo. In
-general, only small files that are essential at runtime should be placed in
-this folder.
+### IEEE
+P. Pawar, M. Morrison, N. Pruyne, J. Cole, and B. Pardo, "Datasets and Scaling Laws for Neural Emphasis Prediction," Interspeech, <TODO - month> 2023.
 
 
-### What if my evaluation includes subjective experiments?
+### BibTex
 
-In this case, replace the `<file>` argument of `emphases.evaluate` with a
-directory. Write any objective metrics to a file within this directory, as well
-as any generated files that will be subjectively evaluated.
-
-
-### How do I release my code so that it can be downloaded via pip?
-
-Code release involves making sure that `setup.py` is up-to-date and then
-uploading your code to [`pypi`](https://www.pypi.org).
-[Here](https://packaging.python.org/tutorials/packaging-projects/) is a good
-tutorial for this process.
+```
+@inproceedings{pawar2023datasets,
+    title={Datasets and Scaling Laws for Neural Emphasis Prediction},
+    author={Pawar, Pranav and Morrison, Max and Pruyne, Nathan and Cole, Jennifer and Pardo, Bryan},
+    booktitle={Interspeech},
+    month={TODO},
+    year={2023}
+}
