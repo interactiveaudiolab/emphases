@@ -1,39 +1,40 @@
-"""core.py - data preprocessing"""
-
-import os
 import glob
-import sys
-import emphases
-from emphases.build_textgrid_buckeye import build_textgrid
-import textgrids
-from tqdm import tqdm
+import os
 import shutil
-import torchaudio
+
 import numpy as np
 import pandas as pd
 import pypar
+import torchaudio
+
+import emphases
+
 
 ###############################################################################
 # Preprocess
 ###############################################################################
 
-def datasets(datasets):
-    """Preprocess a dataset
 
-    Arguments
-        name - string
-            The name of the dataset to preprocess
-    """
+def datasets(datasets):
+    """Preprocess datasets"""
     for dataset in datasets:
         input_directory = emphases.DATA_DIR / dataset
         output_directory = emphases.CACHE_DIR / dataset
+        output_directory.mkdir(exist_ok=True, parents=True)
         annotation_file = emphases.DATA_DIR / dataset / 'annotations.csv'
 
-        if not os.path.isdir(output_directory):
-            os.mkdir(output_directory)
-        
-        if dataset=='Buckeye':
+        if dataset == 'buckeye':
             buckeye(input_directory, output_directory, annotation_file)
+        elif dataset == 'libritts':
+            libritts()
+        else:
+            raise ValueError(f'Dataset {dataset} is not defined')
+
+
+###############################################################################
+# Individual datasets
+###############################################################################
+
 
 def buckeye(input_directory, output_directory, annotation_file):
     annotations = pd.read_csv(annotation_file)
@@ -96,7 +97,8 @@ def buckeye(input_directory, output_directory, annotation_file):
                         json_save_path = os.path.join(ALIGNMENT_DIR,f"{basename}.json")
                         save_corrected_textgrid(annotations, basename, textgrid_path, json_save_path)
                     else:
-                        build_textgrid(word_file, phones_file, ALIGNMENT_DIR)
+                        emphases.build_textgrid_buckeye.build_textgrid(
+                            word_file, phones_file, ALIGNMENT_DIR)
     else:
         textgrid_files = glob.glob(os.path.join(input_directory, '*.TextGrid'))
         for textgrid_path in textgrid_files:
@@ -118,7 +120,7 @@ def buckeye(input_directory, output_directory, annotation_file):
 
                 json_save_path = os.path.join(ALIGNMENT_DIR,f"{basename}.json")
                 save_corrected_textgrid(annotations, basename, textgrid_path, json_save_path)
-                
+
     # save files in cache
     print('Populating the cache folder')
     dirc = glob.glob(os.path.join(input_directory, '*/'))
@@ -133,13 +135,12 @@ def buckeye(input_directory, output_directory, annotation_file):
                     phones_file = os.path.join(subdir, basename+'.phones')
                     text_file = os.path.join(subdir, basename+'.txt')
                     log_file = os.path.join(subdir, basename+'.log')
-                    
+
                     # save audio fles using torchaudio, to maintain standrad loading
                     audio = emphases.load.audio(wav_file)
                     torchaudio.save(os.path.join(WAVS_DIR, basename+'.wav'), audio, emphases.SAMPLE_RATE)
-                    
-                    # mel_spectrogram = mel_loader.forward(audio)
-                    mel_spectrogram = emphases.load.torch_melspectrogram(audio)
+
+                    mel_spectrogram = emphases.preprocess.mels.from_audio(audio)
                     mel_spectrogram_numpy = mel_spectrogram.numpy()
                     np.save(os.path.join(MEL_DIR, basename+'.npy'), mel_spectrogram_numpy)
 
@@ -151,24 +152,33 @@ def buckeye(input_directory, output_directory, annotation_file):
         wav_files = glob.glob(os.path.join(input_directory, '*.wav'))
         for wav_file in wav_files:
             basename = wav_file.split('/')[-1].replace('.wav', '')
-            # shutil.copy(wav_file, os.path.join(WAVS_DIR, basename+'.wav'))
 
             # save audio fles using torchaudio, to maintain standrad loading
             audio = emphases.load.audio(wav_file)
             torchaudio.save(os.path.join(WAVS_DIR, basename+'.wav'), audio, emphases.SAMPLE_RATE)
-            
-            # mel_spectrogram = mel_loader.forward(audio)
-            mel_spectrogram = emphases.load.torch_melspectrogram(audio)
+
+            mel_spectrogram = emphases.preprocess.mels.from_audio(audio)
             mel_spectrogram_numpy = mel_spectrogram.numpy()
             np.save(os.path.join(MEL_DIR, basename+'.npy'), mel_spectrogram_numpy)
 
 
+def libritts():
+    """Preprocess libritts dataset"""
+    # TODO
+    pass
+
+
+###############################################################################
+# Utilities
+###############################################################################
+
+
 def save_corrected_textgrid(annotations, speaker_id, textgrid_path, json_save_path):
     """
-    It will compare the prominence annotation tokens with textgrid file, 
+    It will compare the prominence annotation tokens with textgrid file,
     and save a new corrected .json textgrid file with only common tokens
     """
-    
+
     speaker_df = annotations[annotations['filename']==speaker_id][['filename', 'wordmin', 'wordmax', 'word', 'pa.32']]
     speaker_df = speaker_df.sort_values(by='wordmin')
     avail_start_times = speaker_df['wordmin'].apply(lambda x: round(x, 5)).tolist()
@@ -181,12 +191,9 @@ def save_corrected_textgrid(annotations, speaker_id, textgrid_path, json_save_pa
     for obj in json_align['words']:
         if obj['start'] in avail_start_times or obj['end'] in avail_end_times:
             new_json['words'].append(obj)
-        
+
     if len(new_json['words'])!=len(speaker_df):
         print(f"WARNING: {speaker_id} Formulated alignment not matching with speaker annotation length dimensions")
 
     new_alignment = pypar.Alignment(new_json)
     new_alignment.save_json(json_save_path)
-
-
-

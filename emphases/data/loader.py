@@ -3,35 +3,35 @@ import torch
 import emphases
 
 
-def loaders(dataset, train_partition, valid_partition, gpu=None):
-    """Setup data loaders"""
+def loader(dataset, partition, gpu=None):
+    """Retrieve a data loader"""
     # Get dataset
-    train_dataset = emphases.data.Dataset(dataset, train_partition)
-    valid_dataset = emphases.data.Dataset(dataset, valid_partition)
+    dataset = emphases.data.Dataset(dataset, partition)
 
     # Get sampler
-    if torch.distributed.is_initialized():
-        train_sampler = emphases.data.sampler.DistributedSampler(
-            train_dataset,
-            shuffle=True)
+    sampler = emphases.data.sampler(dataset, partition)
+
+    # Get batch size
+    if partition == 'train':
+
+        # Maybe split batch over GPUs
+        if torch.distributed.is_initialized():
+            batch_size = emphases.BATCH_SIZE // torch.distributed.get_world_size()
+        else:
+            batch_size = emphases.BATCH_SIZE
+
+    elif partition == 'valid':
+        batch_size = emphases.BATCH_SIZE
+    elif partition == 'test':
+        batch_size = 1
     else:
-        train_sampler = emphases.data.sampler.Sampler(train_dataset)
+        raise ValueError(f'Partition {partition} is not defined')
 
     # Create loaders
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset,
+    return torch.utils.data.DataLoader(
+        dataset,
+        batch_size=batch_size,
         num_workers=emphases.NUM_WORKERS,
-        shuffle=False,
         pin_memory=gpu is not None,
         collate_fn=emphases.data.collate,
-        batch_sampler=train_sampler)
-    valid_loader = torch.utils.data.DataLoader(
-        valid_dataset,
-        num_workers=emphases.NUM_WORKERS,
-        shuffle=False,
-        batch_size=emphases.BATCH_SIZE, # changing it from 1 to BATCH_SIZE
-        pin_memory=gpu is not None,
-        drop_last=False,
-        collate_fn=emphases.data.collate)
-
-    return train_loader, valid_loader
+        batch_sampler=sampler)

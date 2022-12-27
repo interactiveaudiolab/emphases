@@ -17,8 +17,7 @@ def run(
     checkpoint_directory,
     output_directory,
     log_directory,
-    gpus=None,
-    task_type='word_wise'):
+    gpus=None):
     """Run model training"""
     # Distributed data parallelism
     if gpus and len(gpus) > 1:
@@ -27,8 +26,7 @@ def run(
             checkpoint_directory,
             output_directory,
             log_directory,
-            gpus,
-            task_type)
+            gpus)
         torch.multiprocessing.spawn(
             train_ddp,
             args=args,
@@ -43,8 +41,7 @@ def run(
             checkpoint_directory,
             output_directory,
             log_directory,
-            None if gpus is None else gpus[0],
-            task_type)
+            None if gpus is None else gpus[0])
 
     # Return path to model checkpoint
     return emphases.checkpoint.latest_path(output_directory)
@@ -60,8 +57,7 @@ def train(
     checkpoint_directory,
     output_directory,
     log_directory,
-    gpu=None,
-    task_type='word_wise'):
+    gpu=None):
     """Train a model"""
     # Get DDP rank
     if torch.distributed.is_initialized():
@@ -83,11 +79,12 @@ def train(
     # Create models #
     #################
 
-    # model = emphases.model.Model().to(device)
-    if task_type=='word_wise':
+    if emphases.METHOD == 'wordwise':
         model = emphases.model.BaselineModel(device=device).to(device)
-    if task_type=='frame_wise':
+    elif emphases.METHOD == 'framewise':
         model = emphases.model.FramewiseModel().to(device)
+    else:
+        raise ValueError(f'Method {emphases.METHOD} is not defined')
 
     ##################################################
     # Maybe setup distributed data parallelism (DDP) #
@@ -137,16 +134,6 @@ def train(
         # Train from scratch
         step = 0
 
-    #####################
-    # Create schedulers #
-    #####################
-
-    scheduler_fn = functools.partial(
-        torch.optim.lr_scheduler.ExponentialLR,
-        gamma=emphases.LEARNING_RATE_DECAY,
-        last_epoch=step // len(train_loader.dataset) if step else -1)
-    scheduler = scheduler_fn(optimizer)
-
     #########
     # Train #
     #########
@@ -169,59 +156,48 @@ def train(
         # Seed sampler
         train_loader.batch_sampler.set_epoch(step // len(train_loader.dataset))
 
-        model.train()
         for batch in train_loader:
 
             (
-            padded_audio,
-            padded_mel_spectrogram,
-            padded_prominence,
-            padded_interpolated_prominence,
+            audio,
+            features,
+            prominence,
+            interpolated_prominence,
             word_bounds,
             word_lengths,
             frame_lengths,
             interpolated_prom_lengths
             ) = (item.to(device) if torch.is_tensor(item) else item for item in batch)
 
-            if task_type=='word_wise':
-                # Bundle training input
-                model_input = (padded_mel_spectrogram, word_bounds, padded_prominence)
-            
-            if task_type=='frame_wise':
-                model_input = padded_mel_spectrogram
-
             with torch.cuda.amp.autocast():
 
                 # Forward pass
-                # print("forward pass", model_input[0].shape, model_input[0].device, device)
-
-                (
-                    outputs
-                ) = model(model_input)
+                scores = model(features, word_bounds)
 
                 # compute losses
                 loss_fn =  torch.nn.MSELoss()
-                outputs = outputs.to(device)
 
-                if task_type=='word_wise':
+                if emphases.METHOD == 'wordwise':
+
+                    # TODO - no for loop
                     losses = 0
-                    for idx in range(len(outputs)):
+                    for idx in range(len(scores)):
                         # masking the loss
                         losses += loss_fn(
-                            outputs.squeeze()[idx, 0:word_lengths[idx]], 
-                            padded_prominence.squeeze()[idx, 0:word_lengths[idx]]
+                            scores.squeeze()[idx, :word_lengths[idx]],
+                            prominence.squeeze()[idx, :word_lengths[idx]]
                             )
 
-                if task_type=='frame_wise':
+                elif emphases.METHOD == 'framewise':
+
+                    # TODO - no for loop
                     losses = 0
-                    for idx in range(len(outputs)):
+                    for idx in range(len(scores)):
                         # masking the loss
                         losses += loss_fn(
-                            outputs.squeeze()[idx, 0:interpolated_prom_lengths[idx]], 
-                            padded_interpolated_prominence.squeeze()[idx, 0:interpolated_prom_lengths[idx]]
+                            scores.squeeze()[idx, :interpolated_prom_lengths[idx]],
+                            interpolated_prominence.squeeze()[idx, :interpolated_prom_lengths[idx]]
                             )
-
-                print("training loss:", losses)
 
             ######################
             # Optimize model #
@@ -244,27 +220,19 @@ def train(
 
             if not rank:
 
-                if step % emphases.LOG_INTERVAL == 0:
-
-                    # Log losses
-                    scalars = {
-                        'loss/total': losses,
-                        'learning_rate': optimizer.param_groups[0]['lr']}
-                    emphases.write.scalars(log_directory, step, scalars)
-
                 ############
                 # Evaluate #
                 ############
 
                 if step % emphases.EVALUATION_INTERVAL == 0:
-                    print('>>>>> Calling evaluation')
-                    evaluate(
+                    evaluate_fn = functools.partial(
+                        evaluate,
                         log_directory,
                         step,
                         model,
-                        valid_loader,
-                        gpu,
-                        task_type)
+                        gpu)
+                    evaluate_fn('train', train_loader)
+                    evaluate_fn('valid', valid_loader)
 
                 ###################
                 # Save checkpoint #
@@ -286,9 +254,6 @@ def train(
             if not rank:
                 progress.update()
 
-        # Update learning rate every epoch
-        scheduler.step()
-
     # Close progress bar
     if not rank:
         progress.close()
@@ -306,96 +271,75 @@ def train(
 ###############################################################################
 
 
-def evaluate(directory, step, model, valid_loader, gpu, task_type):
+def evaluate(directory, step, model, gpu, condition, loader):
     """Perform model evaluation"""
-    # eval batchsize is set to 1
-
     device = 'cpu' if gpu is None else f'cuda:{gpu}'
 
-    # Prepare model for evaluation
-    model.eval()
-    loss_fn =  torch.nn.MSELoss()
+    # Setup evaluation metrics
+    metrics = emphases.evaluate.Metrics()
 
-    # Turn off gradient computation
-    with torch.no_grad():
-        for batch in valid_loader:
+    # Prepare model for inference
+    with emphases.inference_context(model):
+
+        for i, batch in enumerate(loader):
+
+            # Unpack batch
             (
-            padded_audio,
-            padded_mel_spectrogram,
-            padded_prominence,
-            padded_interpolated_prominence,
-            word_bounds,
-            word_lengths,
-            frame_lengths,
-            interpolated_prom_lengths
+                audio,
+                features,
+                prominence,
+                interpolated_prominence,
+                word_bounds,
+                word_lengths,
+                frame_lengths,
+                interpolated_prom_lengths
             ) = (item.to(device) if torch.is_tensor(item) else item for item in batch)
 
-            cosine = torch.nn.CosineSimilarity()
+            # Forward pass
+            scores = model(features, word_bounds)
 
-            if task_type=='word_wise':
-                # Bundle training input
-                model_input = (padded_mel_spectrogram, word_bounds, padded_prominence)
-
-                valid_outputs = model(model_input)
-                valid_outputs = valid_outputs.to(device)
-
+            if emphases.METHOD == 'wordwise':
                 val_sim = []
-                for idx in range(len(valid_outputs)):
+                for idx in range(len(scores)):
                     val_sim.append(
                         cosine(
-                        valid_outputs.squeeze()[idx, 0:word_lengths[idx]].reshape(1, -1), 
-                        padded_prominence.squeeze()[idx, 0:word_lengths[idx]].reshape(1, -1)
+                        scores.squeeze()[idx, 0:word_lengths[idx]].reshape(1, -1),
+                        prominence.squeeze()[idx, 0:word_lengths[idx]].reshape(1, -1)
                         )
                         )
-                
+
                 losses = 0
-                for idx in range(len(valid_outputs)):
+                for idx in range(len(scores)):
                     # masking the loss
                     losses += loss_fn(
-                        valid_outputs.squeeze()[idx, 0:word_lengths[idx]], 
-                        padded_prominence.squeeze()[idx, 0:word_lengths[idx]]
+                        scores.squeeze()[idx, 0:word_lengths[idx]],
+                        prominence.squeeze()[idx, 0:word_lengths[idx]]
                         )
 
-            
-            if task_type=='frame_wise':
-                # Bundle training input
-                model_input = padded_mel_spectrogram
-
-                valid_outputs = model(model_input)
-                valid_outputs = valid_outputs.to(device)
-
+            elif emphases.METHOD == 'framewise':
                 val_sim = []
-                for idx in range(len(valid_outputs)):
+                for idx in range(len(scores)):
                     val_sim.append(
                         cosine(
-                        valid_outputs.squeeze()[idx, 0:interpolated_prom_lengths[idx]].reshape(1, -1), 
-                        padded_interpolated_prominence.squeeze()[idx, 0:interpolated_prom_lengths[idx]].reshape(1, -1)
+                        scores.squeeze()[idx, 0:interpolated_prom_lengths[idx]].reshape(1, -1),
+                        interpolated_prominence.squeeze()[idx, 0:interpolated_prom_lengths[idx]].reshape(1, -1)
                         )
                         )
-                
+
                 losses = 0
-                for idx in range(len(valid_outputs)):
+                for idx in range(len(scores)):
                     # masking the loss
                     losses += loss_fn(
-                        valid_outputs.squeeze()[idx, 0:interpolated_prom_lengths[idx]], 
-                        padded_interpolated_prominence.squeeze()[idx, 0:interpolated_prom_lengths[idx]]
+                        scores.squeeze()[idx, 0:interpolated_prom_lengths[idx]],
+                        interpolated_prominence.squeeze()[idx, 0:interpolated_prom_lengths[idx]]
                         )
 
-            print('>>>>> cosine similarity values for validation set:', 
-                    val_sim, '\n>>>>> mean cosine similarity:', torch.tensor(val_sim).mean())
+    # Format results
+    scalars = {
+        f'{key}/{condition}': value for key, value in metrics().items()}
 
-            ######################
-            # Logging Evaluation #
-            ######################
-            # Log losses
-            scalars_eval = {
-                'eval_loss/total': losses,
-                'mean_cosine_score': torch.tensor(val_sim).mean()}
-
-            emphases.write.scalars(directory, step, scalars_eval)
-
-    # Prepare model for training
-    model.train()
+    # Write to tensorboard
+    emphases.write.scalars(directory, step, scalars)
 
 
 ###############################################################################
@@ -430,3 +374,14 @@ def ddp_context(rank, world_size):
 
         # Close ddp
         torch.distributed.destroy_process_group()
+
+
+###############################################################################
+# Utilities
+###############################################################################
+
+
+def loss(scores, targets, mask):
+    """Compute masked loss"""
+    # TODO
+    pass

@@ -9,11 +9,8 @@ def parse_args():
     parser.add_argument(
         '--datasets',
         nargs='+',
+        default=emphases.DATASETS,
         help='The datasets to partition')
-    parser.add_argument(
-        '--overwrite',
-        action='store_true',
-        help='Whether to overwrite existing partitions')
     return parser.parse_args()
 
 

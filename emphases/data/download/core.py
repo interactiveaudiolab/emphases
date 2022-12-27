@@ -1,16 +1,11 @@
-import os
-import emphases
-from io import BytesIO
-from zipfile import ZipFile
-from urllib.request import urlopen
-import requests, zipfile, io
-from tqdm import tqdm
+import io
+import requests
 import shutil
 import ssl
 import tarfile
 import urllib
+import zipfile
 
-import torch
 import torchaudio
 import tqdm
 
@@ -21,6 +16,59 @@ import emphases
 # Constants
 ###############################################################################
 
+
+# BuckEye corpus speakers under consideration
+# https://buckeyecorpus.osu.edu/php/speech.php?PHPSESSID=njvutg9l90fc3ebg7v30vnhmk1
+BUCKEYE_SPEAKERS = {
+    's02-1': [
+        "https://buckeyecorpus.osu.edu/speechfiles/s02/s0201a.zip",
+        "https://buckeyecorpus.osu.edu/speechfiles/s02/s0201b.zip"],
+    's03-1': [
+        "https://buckeyecorpus.osu.edu/speechfiles/s03/s0301a.zip",
+        "https://buckeyecorpus.osu.edu/speechfiles/s03/s0301b.zip"],
+    's04-1': [
+        "https://buckeyecorpus.osu.edu/speechfiles/s04/s0401a.zip",
+        "https://buckeyecorpus.osu.edu/speechfiles/s04/s0401b.zip"],
+    's10-1': [
+        "https://buckeyecorpus.osu.edu/speechfiles/s10/s1001a.zip",
+        "https://buckeyecorpus.osu.edu/speechfiles/s10/s1001b.zip"],
+    's11-1': [
+        "https://buckeyecorpus.osu.edu/speechfiles/s11/s1101a.zip",
+        "https://buckeyecorpus.osu.edu/speechfiles/s11/s1101b.zip"],
+    's14-1': [
+        "https://buckeyecorpus.osu.edu/speechfiles/s14/s1401a.zip",
+        "https://buckeyecorpus.osu.edu/speechfiles/s14/s1401b.zip"],
+    's16-1': [
+        "https://buckeyecorpus.osu.edu/speechfiles/s16/s1601a.zip",
+        "https://buckeyecorpus.osu.edu/speechfiles/s16/s1601b.zip"],
+    's17-1': [
+        "https://buckeyecorpus.osu.edu/speechfiles/s17/s1701a.zip",
+        "https://buckeyecorpus.osu.edu/speechfiles/s17/s1701b.zip"],
+    's21-1': [
+        "https://buckeyecorpus.osu.edu/speechfiles/s21/s2101a.zip",
+        "https://buckeyecorpus.osu.edu/speechfiles/s21/s2101b.zip"],
+    's22-1': [
+        "https://buckeyecorpus.osu.edu/speechfiles/s22/s2201a.zip",
+        "https://buckeyecorpus.osu.edu/speechfiles/s22/s2201b.zip"],
+    's24-1': [
+        "https://buckeyecorpus.osu.edu/speechfiles/s24/s2401a.zip",
+        "https://buckeyecorpus.osu.edu/speechfiles/s24/s2401b.zip"],
+    's25-1': [
+        "https://buckeyecorpus.osu.edu/speechfiles/s25/s2501a.zip",
+        "https://buckeyecorpus.osu.edu/speechfiles/s25/s2501b.zip"],
+    's26-1': [
+        "https://buckeyecorpus.osu.edu/speechfiles/s26/s2601a.zip",
+        "https://buckeyecorpus.osu.edu/speechfiles/s26/s2601b.zip"],
+    's32-1': [
+        "https://buckeyecorpus.osu.edu/speechfiles/s32/s3201a.zip",
+        "https://buckeyecorpus.osu.edu/speechfiles/s32/s3201b.zip"],
+    's33-1': [
+        "https://buckeyecorpus.osu.edu/speechfiles/s33/s3301a.zip",
+        "https://buckeyecorpus.osu.edu/speechfiles/s33/s3301b.zip"],
+    's35-1': [
+        "https://buckeyecorpus.osu.edu/speechfiles/s35/s3501a.zip",
+        "https://buckeyecorpus.osu.edu/speechfiles/s35/s3501b.zip"]
+}
 
 # Speakers selected by sorting the train-clean-100 speakers by longest total
 # recording duration and manually selecting speakers with more natural,
@@ -38,7 +86,7 @@ LIBRITTS_SPEAKERS = [
     460,
     1355,
     3664,
-    7067  # uses characters
+    7067  # uses character voices
 ]
 
 
@@ -52,23 +100,24 @@ def datasets(datasets):
     for dataset in datasets:
         if dataset == 'libritts':
             libritts()
-        if dataset == 'Buckeye':
+        if dataset == 'buckeye':
             buckeye(dataset)
+
 
 def libritts():
     """Download libritts dataset"""
     # Download
     url = 'https://us.openslr.org/resources/60/train-clean-100.tar.gz'
-    file = emphases.DATA_DIR / 'libritts-train-clean-100.tar.gz'
-    # download_file(url, file)
+    file = emphases.SOURCE_DIR / 'libritts-train-clean-100.tar.gz'
+    download_file(url, file)
 
     # Unzip
-    # with tarfile.open(file, 'r:gz') as tfile:
-    #     tfile.extractall(emphases.DATA_DIR)
+    with tarfile.open(file, 'r:gz') as tfile:
+        tfile.extractall(emphases.DATA_DIR)
 
     # Rename folder
     directory = emphases.DATA_DIR / 'libritts'
-    # shutil.move(emphases.DATA_DIR / 'LibriTTS', directory)
+    shutil.move(emphases.DATA_DIR / 'LibriTTS', directory)
 
     # Get list of audio files for each speaker
     audio_files = {
@@ -92,13 +141,8 @@ def libritts():
 
         for i, audio_file in enumerate(files):
 
-            # Convert to 22.05k wav
+            # Load and resample
             audio = emphases.load.audio(audio_file)
-
-            # If audio is too quiet, increase the volume
-            maximum = torch.abs(audio).max()
-            if maximum < .35:
-                audio *= .35 / maximum
 
             # Save to disk
             stem = f'{i:06d}'
@@ -112,43 +156,30 @@ def libritts():
                 audio_file.with_suffix('.normalized.txt'),
                 speaker_directory / f'{stem}.txt')
 
+
 def buckeye(dataset):
-    """Download libritts dataset"""
+    """Download buckeye dataset"""
+    directory = emphases.DATA_DIR / dataset
+    directory.mkdir(exist_ok=True, parents=True)
 
-    DATA_DIR = emphases.DATA_DIR / dataset
+    # Download data for all speakers
+    for speaker in tqdm.tqdm(BUCKEYE_SPEAKERS):
+        speaker_directory = directory / speaker
+        speaker_directory.mkdir(exist_ok=True, parents=True)
 
-    if not os.path.isdir(DATA_DIR):
-        os.mkdir(DATA_DIR)
-    
-    # BuckEye corpus - https://buckeyecorpus.osu.edu/php/speech.php?PHPSESSID=njvutg9l90fc3ebg7v30vnhmk1
-    # speakers under consideration
-    speakers = {
-        's02-1': ["https://buckeyecorpus.osu.edu/speechfiles/s02/s0201a.zip", "https://buckeyecorpus.osu.edu/speechfiles/s02/s0201b.zip"],
-        's03-1': ["https://buckeyecorpus.osu.edu/speechfiles/s03/s0301a.zip", "https://buckeyecorpus.osu.edu/speechfiles/s03/s0301b.zip"],
-        's04-1': ["https://buckeyecorpus.osu.edu/speechfiles/s04/s0401a.zip", "https://buckeyecorpus.osu.edu/speechfiles/s04/s0401b.zip"],
-        's10-1': ["https://buckeyecorpus.osu.edu/speechfiles/s10/s1001a.zip", "https://buckeyecorpus.osu.edu/speechfiles/s10/s1001b.zip"],
-        's11-1': ["https://buckeyecorpus.osu.edu/speechfiles/s11/s1101a.zip", "https://buckeyecorpus.osu.edu/speechfiles/s11/s1101b.zip"],
-        's14-1': ["https://buckeyecorpus.osu.edu/speechfiles/s14/s1401a.zip", "https://buckeyecorpus.osu.edu/speechfiles/s14/s1401b.zip"],
-        's16-1': ["https://buckeyecorpus.osu.edu/speechfiles/s16/s1601a.zip", "https://buckeyecorpus.osu.edu/speechfiles/s16/s1601b.zip"],
-        's17-1': ["https://buckeyecorpus.osu.edu/speechfiles/s17/s1701a.zip", "https://buckeyecorpus.osu.edu/speechfiles/s17/s1701b.zip"],
-        's21-1': ["https://buckeyecorpus.osu.edu/speechfiles/s21/s2101a.zip", "https://buckeyecorpus.osu.edu/speechfiles/s21/s2101b.zip"],
-        's22-1': ["https://buckeyecorpus.osu.edu/speechfiles/s22/s2201a.zip", "https://buckeyecorpus.osu.edu/speechfiles/s22/s2201b.zip"],
-        's24-1': ["https://buckeyecorpus.osu.edu/speechfiles/s24/s2401a.zip", "https://buckeyecorpus.osu.edu/speechfiles/s24/s2401b.zip"],
-        's25-1': ["https://buckeyecorpus.osu.edu/speechfiles/s25/s2501a.zip", "https://buckeyecorpus.osu.edu/speechfiles/s25/s2501b.zip"],
-        's26-1': ["https://buckeyecorpus.osu.edu/speechfiles/s26/s2601a.zip", "https://buckeyecorpus.osu.edu/speechfiles/s26/s2601b.zip"],
-        's32-1': ["https://buckeyecorpus.osu.edu/speechfiles/s32/s3201a.zip", "https://buckeyecorpus.osu.edu/speechfiles/s32/s3201b.zip"],
-        's33-1': ["https://buckeyecorpus.osu.edu/speechfiles/s33/s3301a.zip", "https://buckeyecorpus.osu.edu/speechfiles/s33/s3301b.zip"],
-        's35-1': ["https://buckeyecorpus.osu.edu/speechfiles/s35/s3501a.zip", "https://buckeyecorpus.osu.edu/speechfiles/s35/s3501b.zip"]
-    }
+        # Download and extract all zip files for this speaker
+        for url in BUCKEYE_SPEAKERS[speaker]:
 
-    for speaker_id in tqdm(speakers):
-        SPEAKER_FOLDER = os.path.join(DATA_DIR, speaker_id)
-        if not os.path.isdir(SPEAKER_FOLDER):
-            os.mkdir(SPEAKER_FOLDER)
-            for link in speakers[speaker_id]:
-                r = requests.get(link)
-                z = zipfile.ZipFile(io.BytesIO(r.content))
-                z.extractall(SPEAKER_FOLDER)
+            # Download
+            response = requests.get(url)
+            file = zipfile.ZipFile(io.BytesIO(response.content))
+
+            # Extract
+            file.extractall(speaker_directory)
+
+    # TODO - format
+    pass
+
 
 ###############################################################################
 # Utilities

@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 AUTHOR
 
@@ -398,9 +396,9 @@ def main():
             try:
                 analysis(f, configuration, logger, args.annotation_directory, args.output_directory, plot_flag)
             except:
-                print(f'analysis failed for file {f}')                
+                print(f'analysis failed for file {f}')
                 continue
-                
+
 ###############################################################################
 #  Envelopping
 ###############################################################################

@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import List, Optional, Tuple, Type
 
-# import pyfoal
+import pyfoal
 import pypar
 import torch
 import torchaudio
@@ -275,27 +275,44 @@ def preprocess(
     batch_size = total_frames if batch_size is None else batch_size
 
     # Generate batches
-    # TODO - use a while loop over words
-    for i in range(0, total_frames, batch_size):
+    start = 0
+    while start < len(alignment):
 
-        # Size of this batch
-        batch = min(total_frames - i, batch_size)
+        # Accumulate enough frames for this batch
+        frames = 0
+        end = start
+        while end < len(alignment):
 
-        # Batch indices
-        start = i * hopsize
-        end = start + int((batch - 1) * hopsize) + emphases.WINDOW_SIZE
+            # Get duration of this word in frames
+            duration = emphases.convert.seconds_to_frames(
+                alignment[end].duration())
 
-        # Slice and chunk audio
-        # frames = torch.nn.functional.unfold(
-        #     audio[:, None, None, start:end],
-        #     kernel_size=(1, emphases.WINDOW_SIZE),
-        #     stride=(1, hopsize)).permute(2, 0, 1)
+            # Stop if we've accumulated enough frames
+            if frames + duration > batch_size:
+                break
 
-        # TODO - spectrogram
+            # Update frames
+            frames += duration
+            end += 1
 
-        # TODO - slice alignment
+        # Slice alignment
+        batch_alignment = alignment[start:end]
 
-        yield frames, batch
+        # Slice audio
+        start_sample = emphases.convert.frames_to_samples(
+            alignment[start].start())
+        end_sample = emphases.convert.frames_to_samples(
+            alignment[end - 1].end())
+        batch_audio = audio[:, start_sample, end_sample]
+
+        # Preprocess audio
+        batch_features = emphases.preprocess.from_audio(batch_audio, gpu=gpu)
+
+        # Run inference
+        yield batch_alignment, batch_features
+
+        # Update start word
+        start = end
 
 
 def resample(audio, sample_rate, target_rate=emphases.SAMPLE_RATE):

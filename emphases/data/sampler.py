@@ -4,7 +4,7 @@ import emphases
 
 
 ###############################################################################
-# Samplers
+# Constants
 ###############################################################################
 
 
@@ -14,6 +14,34 @@ import emphases
 
 BOUNDARIES = [1276, 1840, 2404]
 # for mel lengths when input is mel length
+
+
+###############################################################################
+# Sampler selection
+###############################################################################
+
+
+def sampler(dataset, partition):
+    """Create batch sampler"""
+    # Maybe use distributed sampler for training
+    if partition == 'train':
+        if torch.distributed.is_initialized():
+            return DistributedSampler(dataset, shuffle=True)
+        else:
+            return Sampler(dataset)
+
+    # Deterministic random sampler for validation
+    elif partition == 'valid':
+        # TODO - make deterministically random
+        return Sampler()
+
+    # Sample test data sequentially
+    elif partition == 'test':
+        return Sampler(dataset, False)
+
+    else:
+        raise ValueError(f'Partition {partition} is not defined')
+
 
 ###############################################################################
 # Samplers
@@ -46,19 +74,21 @@ class DistributedSampler(torch.utils.data.distributed.DistributedSampler):
         return self.num_samples // emphases.BATCH_SIZE
 
 
-class Sampler(torch.utils.data.RandomSampler):
+class Sampler(torch.utils.data.Sampler):
 
-    def __init__(self, dataset):
+    def __init__(self, dataset, shuffle=True):
         super().__init__(dataset)
         self.buckets, self.samples_per_bucket = create_buckets(
             dataset.spectrogram_lengths)
         self.total_size = sum(self.samples_per_bucket)
+        self.shuffle = shuffle
 
     def __iter__(self):
         self.batches = make_batches(
             self.buckets,
             self.samples_per_bucket,
-            self.epoch)
+            self.epoch,
+            self.shuffle)
         return iter(self.batches)
 
     def __len__(self):
@@ -145,9 +175,9 @@ def make_batches(buckets, samples_per_bucket, epoch, shuffle=True):
 
         # Subsample
         if torch.distributed.is_initialized():
-                rank = torch.distributed.get_rank()
-                world_size = torch.distributed.get_world_size()
-                ids_bucket = ids_bucket[rank::world_size]
+            rank = torch.distributed.get_rank()
+            world_size = torch.distributed.get_world_size()
+            ids_bucket = ids_bucket[rank::world_size]
 
         # Batch
         for j in range(len(ids_bucket) // emphases.BATCH_SIZE):

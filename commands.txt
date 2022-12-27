@@ -8,8 +8,8 @@ python3 emphases/prosody_labeller.py -v -o test_libri -c emphases/configs/librit
 python3 emphases/prosody_labeller.py -v -o test_libri -c emphases/configs/libritts.yaml utils
 
 pip install -e .
-python -m emphases.data.download --datasets Buckeye
-python -m emphases.preprocess Buckeye
+python -m emphases.data.download --datasets buckeye
+python -m emphases.preprocess buckeye
 
 python3 prosody_labeller.py -v -o test_libri -c /home/pranav/prominence-estimation-exp/emphases/emphases/assets/configs/prominence/libritts.yaml /home/pranav/prominence-estimation-exp/emphases/utils
 headers for the .prom file ("Basename", "start", "end", "label", "prominence", "boundary")
@@ -17,21 +17,21 @@ headers for the .prom file ("Basename", "start", "end", "label", "prominence", "
 
 #############################################
 python3 core.py -v -o test_outputs_buckeye -j 1 \
-        -a /home/pranav/prominence-estimation-exp/emphases/data/cache/Buckeye_archive/annotation/ \
-        /home/pranav/prominence-estimation-exp/emphases/data/cache/Buckeye_archive/wavs/s1401a.wav
+        -a /home/pranav/prominence-estimation-exp/emphases/data/cache/buckeye_archive/annotation/ \
+        /home/pranav/prominence-estimation-exp/emphases/data/cache/buckeye_archive/wavs/s1401a.wav
 
 python3 core.py -v -o test_outputs_buckeye -j 1 \
-        -a /home/pranav/prominence-estimation-exp/emphases/data/cache/Buckeye_archive/annotation/ \
-        /home/pranav/prominence-estimation-exp/emphases/data/cache/Buckeye_archive/wavs
+        -a /home/pranav/prominence-estimation-exp/emphases/data/cache/buckeye_archive/annotation/ \
+        /home/pranav/prominence-estimation-exp/emphases/data/cache/buckeye_archive/wavs
 #############################################
 
-python3 core.py -v -o /home/pranav/prominence-estimation-exp/emphases/eval/Buckeye -j 1 \
-        -a /home/pranav/prominence-estimation-exp/emphases/data/cache/Buckeye/annotation/ \
-        /home/pranav/prominence-estimation-exp/emphases/data/cache/Buckeye/wavs
+python3 core.py -v -o /home/pranav/prominence-estimation-exp/emphases/eval/buckeye -j 1 \
+        -a /home/pranav/prominence-estimation-exp/emphases/data/cache/buckeye/annotation/ \
+        /home/pranav/prominence-estimation-exp/emphases/data/cache/buckeye/wavs
 
-python -m emphases.evaluate --dataset Buckeye
+python -m emphases.evaluate --dataset buckeye
 
 # Training prep
 ## Partition data
-python3 -m emphases.partition --dataset Buckeye
+python3 -m emphases.partition --dataset buckeye
 

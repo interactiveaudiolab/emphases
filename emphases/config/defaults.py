@@ -30,6 +30,9 @@ EVAL_DIR = Path(__file__).parent.parent.parent / 'eval'
 # Location to save training and adaptation artifacts
 RUNS_DIR = Path(__file__).parent.parent.parent / 'runs'
 
+# Location of compressed datasets on disk
+SOURCE_DIR = Path(__file__).parent.parent.parent / 'data' / 'sources'
+
 
 ###############################################################################
 # Audio parameters
@@ -58,23 +61,23 @@ INTERPOLATION = "linear" # interpolation method for framewise training
 ###############################################################################
 
 
-# Maximum number of frames to perform inference on at once
-EVALUATION_BATCH_SIZE = 1024
-
-
-###############################################################################
-# Logging parameters
-###############################################################################
-
-
 # Number of steps between saving checkpoints
 CHECKPOINT_INTERVAL = 25000  # steps
+
+# List of all datasets
+DATASETS = ['buckeye', 'libritts']
+
+# Maximum number of frames to perform inference on at once
+MAX_FRAMES_PER_BATCH = 1024
+
+# Number of steps between evaluation
+EVALUATION_INTERVAL = 2500  # steps
 
 # Number of steps between logging to Tensorboard
 LOG_INTERVAL = 1000  # steps
 
-# Number of steps between evaluation
-EVALUATION_INTERVAL = 2500  # steps
+# Method to use for evaluation
+METHOD = 'framewise'
 
 
 ###############################################################################

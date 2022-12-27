@@ -1,6 +1,3 @@
-"""__main__.py - entry point for emphases.evaluate"""
-
-
 import argparse
 from pathlib import Path
 
@@ -18,6 +15,7 @@ def parse_args():
     parser.add_argument(
         '--datasets',
         nargs='+',
+        default=emphases.EVALUATION_DATASETS,
         help='The datasets to evaluate')
     parser.add_argument(
         '--checkpoint',

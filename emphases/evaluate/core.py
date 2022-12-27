@@ -1,13 +1,6 @@
-"""core.py - model evaluation"""
-
-
 import emphases
 from emphases.evaluate.metrics import eval_similarity
-import os
-import glob
-import sys
-import pandas as pd
-import numpy as np
+
 
 ###############################################################################
 # Evaluate
@@ -17,18 +10,30 @@ import numpy as np
 def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
     """Perform evaluation"""
     for dataset in datasets:
-        # TODO - perform evaluation
-        eval_dir = emphases.EVAL_DIR / dataset
-        print('evaluating: ', dataset)
-        if dataset.startswith('Buckeye'):
-            ground_truth_file = "utils/BuckEye-annotations.csv"
-            # buckeye(ground_truth_file, eval_dir)
-            # turning it off for now
-            pass
+        if dataset == 'buckeye':
+            buckeye()
+        elif dataset == 'libritts':
+            libritts()
+        else:
+            raise ValueError(f'Dataset {dataset} is not defined')
 
-def buckeye(ground_truth_file, eval_dir):
-    for prom_file in os.listdir(eval_dir):
-        filename = prom_file.split('/')[-1].replace('.prom', '')
-        prom_file = os.path.join(eval_dir, prom_file)
-        prominence_cosine_similarity = eval_similarity(prom_file, ground_truth_file)
-        print(f"cosine similarity for {filename}: {prominence_cosine_similarity} \n")
+
+###############################################################################
+# Evaluate
+###############################################################################
+
+
+def buckeye(ground_truth_file='utils/BuckEye-annotations.csv'):
+    """Evaluate on buckeye dataset"""
+    directory = emphases.EVAL_DIR / 'buckeye'
+
+    # Iterate over test partition
+    # TODO - this is iterating over all partitions, not test partition
+    for file in directory.glob('*'):
+        prominence_cosine_similarity = eval_similarity(directory / file, ground_truth_file)
+
+
+def libritts():
+    """Evaluate on libritts dataset"""
+    # TODO
+    pass

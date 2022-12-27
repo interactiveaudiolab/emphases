@@ -44,7 +44,6 @@ def parse_args():
     parser.add_argument(
         '--batch_size',
         type=int,
-        default=emphases.EVALUATION_BATCH_SIZE,
         help='The maximum number of frames per batch')
     parser.add_argument(
         '--pad',

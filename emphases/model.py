@@ -50,11 +50,11 @@ class BaselineModel(torch.nn.Sequential):
             conv2d_fn(hidden_channels, output_channels)
             )
 
-    def forward(self, features):
+    def forward(self, features, word_bounds):
         # generate input slices for every item in batch,
         # then form a padded tensor from all the slice tensors, and further pass down the network
 
-        padded_mel_spectrogram, word_bounds, padded_prominence = features
+        padded_mel_spectrogram, word_bounds = features
         intermid_output = self.layers(padded_mel_spectrogram)
 
         feat_lens = []

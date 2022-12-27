@@ -1,6 +1,3 @@
-"""__main__.py - entry point for emphases.preprocess"""
-
-
 import argparse
 
 import emphases
@@ -15,9 +12,10 @@ def parse_args():
     """Parse command-line arguments"""
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        'datasets',
+        '--datasets',
         nargs='+',
-        help='The name of the datasets to preprocess')
+        default=emphases.DATASETS,
+        help='The datasets to preprocess')
     return parser.parse_args()
 
 

@@ -1,14 +1,12 @@
-"""dataset.py - data loading"""
-
-
 import os
 
+import numpy as np
 import pypar
 import torch
 
 import emphases
-import numpy as np
 from emphases.data.utils import nearest_neighbour_interpolation, linear_interpolation
+
 
 ###############################################################################
 # Dataset
@@ -16,14 +14,6 @@ from emphases.data.utils import nearest_neighbour_interpolation, linear_interpol
 
 
 class Dataset(torch.utils.data.Dataset):
-    """PyTorch dataset
-
-    Arguments
-        name - string
-            The name of the dataset
-        partition - string
-            The name of the data partition
-    """
 
     def __init__(self, name, partition):
         # Get list of stems
@@ -60,13 +50,13 @@ class Dataset(torch.utils.data.Dataset):
             self.cache / 'alignment' / f'{stem}.json')
 
         # Load per-word ground truth prominence values
-        prominence = emphases.load.load_prominence(self.cache / 'annotation' / f'{stem}.prom')
+        prominence = emphases.load.prominence(self.cache / 'annotation' / f'{stem}.prom')
 
         # Get word start and end indices
         word_bounds = alignment.word_bounds(
             emphases.SAMPLE_RATE,
             emphases.HOPSIZE)
-                
+
         assert (len(word_bounds) == prominence.shape[0]), 'array length mismatch b/w alignment and ground truth'
 
         # updating word bounds with padding on silent time stamps
@@ -89,7 +79,7 @@ class Dataset(torch.utils.data.Dataset):
         for wb in wb_prom_pairs:
             start, end = wb[0][0], wb[0][1]
             prom_extended.extend([wb[-1]]*(end-start)*emphases.HOPSIZE)
-            
+
         if word_bounds[-1][-1]!=audio_len//emphases.HOPSIZE:
             pad_len = audio_len - len(prom_extended)
             prom_extended.extend([0]*pad_len)
