@@ -109,9 +109,13 @@ def datasets(datasets):
 
 def libritts():
     """Download libritts dataset"""
+    # Setup source directory
+    source_directory = emphases.SOURCE_DIR / 'libritts'
+    source_directory.mkdir(exist_ok=True, parents=True)
+
     # Download
     url = 'https://us.openslr.org/resources/60/train-clean-100.tar.gz'
-    file = emphases.SOURCE_DIR / 'libritts-train-clean-100.tar.gz'
+    file = source_directory / 'libritts-train-clean-100.tar.gz'
     download_file(url, file)
 
     # Unzip
@@ -185,8 +189,7 @@ def buckeye():
     cache_directory.mkdir(exist_ok=True, parents=True)
 
     # Read buckeye annotations
-    # TODO - this is not currently found
-    annotation_file = emphases.DATA_DIR / 'buckeye' / 'annotations.csv'
+    annotation_file = emphases.SOURCE_DIR / 'buckeye' / 'annotations.csv'
     annotations = pd.read_csv(annotation_file)
 
     # Create subdirectories

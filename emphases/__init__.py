@@ -1,11 +1,12 @@
 # Development
+# - Wordwise model****
 # - Buckeye
-#   - annotation file
-#   - score files
-#   - alignment files
+#   - alignment files***
+#   - score files**
 #   - text files
-# - Wordwise model
+# - Prominence loading*
 # - Config files
+
 
 ###############################################################################
 # Configuration
