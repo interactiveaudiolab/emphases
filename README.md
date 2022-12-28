@@ -15,7 +15,8 @@ Official code for the paper _Datasets and Scaling Laws for Neural Emphasis Predi
 - [Installation](#installation)
 - [Inference](#inference)
     * [Application programming interface](#application-programming-interface)
-        * [`emphases.from_audio`](#emphasesfrom_audio)
+        * [`emphases.from_alignment_and_audio`](#emphasesfrom_alignment_and_audio)
+        * [`emphases.from_text_and_audio`](#emphasesfrom_text_and_audio)
         * [`emphases.from_file`](#emphasesfrom_file)
         * [`emphases.from_file_to_file`](#emphasesfrom_file_to_file)
         * [`emphases.from_files_to_files`](#emphasesfrom_files_to_files)
@@ -66,6 +67,26 @@ object.
 
 
 ### Application programming interface
+
+#### `emphases.from_alignment_and_audio`
+
+```
+"""Produce emphasis scores for each word
+
+Args:
+    alignment: The forced phoneme alignment
+    audio: The speech waveform
+    sample_rate: The audio sampling rate
+    hopsize: The hopsize in seconds
+    checkpoint: The model checkpoint to use for inference
+    batch_size: The maximum number of frames per batch
+    pad: If true, centers frames at hopsize / 2, 3 * hopsize / 2, 5 * ...
+    gpu: The index of the gpu to run inference on
+
+Returns:
+    scores: The float-valued emphasis scores for each word
+"""
+```
 
 #### `emphases.from_text_and_audio`
 

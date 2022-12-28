@@ -34,16 +34,21 @@ def load(checkpoint_path, model, optimizer=None):
     # Restore training state
     step = checkpoint_dict['step']
 
-    print("Loaded checkpoint '{}' (step {})" .format(checkpoint_path, step))
-
     return model, optimizer, step
 
 
 def save(model, optimizer, step, file):
     """Save training checkpoint to disk"""
-    print(f'Saving model and optimizer at step {step} to {file}')
+    # Maybe unpack DDP
+    if torch.distributed.is_initialized():
+        model_state_dict = model.module.state_dict()
+    else:
+        model_state_dict = model.state_dict()
+
+    # Save
     checkpoint = {
         'step': step,
         'model': model.state_dict(),
+        'model': model_state_dict,
         'optimizer': optimizer.state_dict()}
     torch.save(checkpoint, file)

@@ -61,18 +61,15 @@ class Wordwise(torch.nn.Module):
             torch.nn.ReLU(),
             conv2d(hidden_channels, output_channels))
 
-    def forward(self, features, word_bounds):
-        # generate input slices for every item in batch,
-        # then form a padded tensor from all the slice tensors, and further pass down the network
-
+    def forward(self, word_bounds, features):
         # Embed frames
         frame_embedding = self.frame_encoder(features)
 
         # Slice embeddings into words
         # TODO - separate MAX_NUM_OF_WORDS, MAX_WORD_DURATION in forward pass
         feats, feat_lens = [], []
-        for idx, (input_features, wb) in enumerate(zip(frame_embedding, word_bounds)):
-            feat, feat_length = self.get_slices_spectro_channels(input_features, wb)
+        for idx, (input_features, bounds) in enumerate(zip(frame_embedding, word_bounds)):
+            feat, feat_length = self.get_slices_spectro_channels(input_features, bounds)
             feats.append(feat)
             feat_lens.append(feat_length)
 
@@ -110,13 +107,6 @@ class Wordwise(torch.nn.Module):
         if sum(duration_slices)!=input_features_channels.shape[-1]:
             extra_noise = True
             duration_slices.append(input_features_channels.shape[-1] - sum(duration_slices))
-
-        # if extra_noise:
-            # padded_features = torch.zeros(
-            #         (len(input_features_channels), len(duration_slices[:-1]), max(duration_slices[:-1])))
-        # else:
-            # padded_features = torch.zeros(
-            #         (len(input_features_channels), len(duration_slices), max(duration_slices)))
 
         padded_features = torch.zeros(
                 (len(input_features_channels), emphases.MAX_NUM_OF_WORDS, emphases.MAX_WORD_DURATION))
@@ -161,3 +151,6 @@ class Framewise(torch.nn.Sequential):
             conv_fn(hidden_channels, hidden_channels),
             torch.nn.ReLU(),
             conv_fn(hidden_channels, output_channels))
+
+    def forward(self, word_bounds, features):
+        return super().forward(features)

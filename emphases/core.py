@@ -138,7 +138,11 @@ def from_files_to_files(
         batch_size=batch_size,
         pad=pad,
         gpu=gpu)
-    for files in tqdm.tqdm(zip(text_files, audio_files, output_files)):
+    for files in iterator(
+        zip(text_files, audio_files, output_files),
+        emphases.CONFIG,
+        len(text_files)
+    ):
         annotation_fn(*files)
 
 
@@ -167,10 +171,48 @@ def from_text_and_audio(
         alignment: The forced phoneme alignment
         scores: The float-valued emphasis scores for each word
     """
-    scores = []
-
     # Get word alignment
     alignment = pyfoal.align(text, audio, sample_rate)
+
+    # Infer
+    scores = from_alignment_and_audio(
+        alignment,
+        audio,
+        sample_rate,
+        hopsize,
+        checkpoint,
+        batch_size,
+        pad,
+        gpu)
+
+    return alignment, scores
+
+
+def from_alignment_and_audio(
+    alignment: pypar.Alignment,
+    audio: torch.Tensor,
+    sample_rate: int,
+    hopsize: float = emphases.HOPSIZE_SECONDS,
+    checkpoint: Path = emphases.DEFAULT_CHECKPOINT,
+    batch_size: Optional[int] = None,
+    pad: bool = False,
+    gpu: Optional[int] = None) -> Tuple[Type[pypar.Alignment], torch.Tensor]:
+    """Produce emphasis scores for each word
+
+    Args:
+        alignment: The forced phoneme alignment
+        audio: The speech waveform
+        sample_rate: The audio sampling rate
+        hopsize: The hopsize in seconds
+        checkpoint: The model checkpoint to use for inference
+        batch_size: The maximum number of frames per batch
+        pad: If true, centers frames at hopsize / 2, 3 * hopsize / 2, 5 * ...
+        gpu: The index of the gpu to run inference on
+
+    Returns:
+        scores: The float-valued emphasis scores for each word
+    """
+    scores = []
 
     # Preprocess audio
     iterator = preprocess(
@@ -189,11 +231,11 @@ def from_text_and_audio(
     # Concatenate results
     scores = torch.cat(scores, 1)
 
-    return alignment, scores
+    return scores
 
 
 ###############################################################################
-# Utilities
+# Inference steps
 ###############################################################################
 
 
@@ -221,29 +263,6 @@ def infer(alignment, audio, checkpoint=emphases.DEFAULT_CHECKPOINT):
 
     # Infer
     return infer.model(alignment, audio)
-
-
-@contextlib.contextmanager
-def inference_context(model):
-    """Prepare model for inference"""
-    device_type = next(model.parameters()).device.type
-
-    # Prepare model for evaluation
-    model.eval()
-
-    # Turn off gradient computation
-    with torch.no_grad():
-
-        # Automatic mixed precision on GPU
-        if device_type == 'cuda':
-            with torch.autocast(device_type):
-                yield
-
-        else:
-            yield
-
-    # Prepare model for training
-    model.train()
 
 
 def preprocess(
@@ -312,6 +331,45 @@ def preprocess(
 
         # Update start word
         start = end
+
+
+###############################################################################
+# Utilities
+###############################################################################
+
+
+@contextlib.contextmanager
+def inference_context(model):
+    """Prepare model for inference"""
+    device_type = next(model.parameters()).device.type
+
+    # Prepare model for evaluation
+    model.eval()
+
+    # Turn off gradient computation
+    with torch.no_grad():
+
+        # Automatic mixed precision on GPU
+        if device_type == 'cuda':
+            with torch.autocast(device_type):
+                yield
+
+        else:
+            yield
+
+    # Prepare model for training
+    model.train()
+
+
+def iterator(iterable, message, initial=0, total=None):
+    """Create a tqdm iterator"""
+    total = len(iterable) if total is None else total
+    return tqdm.tqdm(
+        iterable,
+        desc=message,
+        dynamic_ncols=True,
+        initial=initial,
+        total=total)
 
 
 def resample(audio, sample_rate, target_rate=emphases.SAMPLE_RATE):

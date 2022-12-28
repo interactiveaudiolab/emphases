@@ -3,7 +3,6 @@ import functools
 import os
 
 import torch
-import tqdm
 
 import emphases
 
@@ -86,20 +85,11 @@ def train(
     else:
         raise ValueError(f'Method {emphases.METHOD} is not defined')
 
-    ##################################################
-    # Maybe setup distributed data parallelism (DDP) #
-    ##################################################
-
-    if rank is not None:
-        model = torch.nn.parallel.DistributedDataParallel(
-            model,
-            device_ids=[rank])
-
     ####################
     # Create optimizer #
     ####################
 
-    optimizer = torch.optim.AdamW(
+    optimizer = torch.optim.Adam(
         model.parameters(),
         lr=2e-4,
         betas=[.80, .99],
@@ -134,6 +124,15 @@ def train(
         # Train from scratch
         step = 0
 
+    ##################################################
+    # Maybe setup distributed data parallelism (DDP) #
+    ##################################################
+
+    if rank is not None:
+        model = torch.nn.parallel.DistributedDataParallel(
+            model,
+            device_ids=[rank])
+
     #########
     # Train #
     #########
@@ -141,63 +140,39 @@ def train(
     # Automatic mixed precision (amp) gradient scaler
     scaler = torch.cuda.amp.GradScaler()
 
-    # Get total number of steps
-    steps = emphases.NUM_STEPS
-
     # Setup progress bar
     if not rank:
-        progress = tqdm.tqdm(
-            initial=step,
-            total=steps,
-            dynamic_ncols=True,
-            desc=f'Training {emphases.CONFIG}')
-    while step < steps:
+        progress = emphases.iterator(
+            range(step, emphases.NUM_STEPS),
+            f'Training {emphases.CONFIG}',
+            step,
+            emphases.NUM_STEPS)
+    while step < emphases.NUM_STEPS:
 
         # Seed sampler
-        train_loader.batch_sampler.set_epoch(step // len(train_loader.dataset))
+        epoch = step // len(train_loader.dataset)
+        train_loader.batch_sampler.set_epoch(epoch)
 
         for batch in train_loader:
 
+            # Unpack batch
             (
-                audio,
-                features,
-                prominence,
-                interpolated_prominence,
+                _,           # alignment
                 word_bounds,
-                word_lengths,
-                frame_lengths,
-                interpolated_prom_lengths
+                _,           # audio
+                features,
+                targets,
+                lengths,
+                _            # stem
             ) = (item.to(device) if torch.is_tensor(item) else item for item in batch)
 
             with torch.cuda.amp.autocast():
 
                 # Forward pass
-                scores = model(features, word_bounds)
+                scores = model(word_bounds, features)
 
-                # compute losses
-                loss_fn =  torch.nn.MSELoss()
-
-                if emphases.METHOD == 'wordwise':
-
-                    # TODO - no for loop
-                    losses = 0
-                    for idx in range(len(scores)):
-                        # masking the loss
-                        losses += loss_fn(
-                            scores.squeeze()[idx, :word_lengths[idx]],
-                            prominence.squeeze()[idx, :word_lengths[idx]]
-                            )
-
-                elif emphases.METHOD == 'framewise':
-
-                    # TODO - no for loop
-                    losses = 0
-                    for idx in range(len(scores)):
-                        # masking the loss
-                        losses += loss_fn(
-                            scores.squeeze()[idx, :interpolated_prom_lengths[idx]],
-                            interpolated_prominence.squeeze()[idx, :interpolated_prom_lengths[idx]]
-                            )
+                # Compute loss
+                train_loss = loss(scores, targets, lengths)
 
             ######################
             # Optimize model #
@@ -206,7 +181,7 @@ def train(
             optimizer.zero_grad()
 
             # Backward pass
-            scaler.scale(losses).backward()
+            scaler.scale(train_loss).backward()
 
             # Update weights
             scaler.step(optimizer)
@@ -246,7 +221,7 @@ def train(
                         output_directory / f'{step:08d}.pt')
 
             # Update training step count
-            if step >= steps:
+            if step >= emphases.NUM_STEPS:
                 break
             step += 1
 
@@ -281,58 +256,24 @@ def evaluate(directory, step, model, gpu, condition, loader):
     # Prepare model for inference
     with emphases.inference_context(model):
 
-        for i, batch in enumerate(loader):
+        for batch in loader:
 
             # Unpack batch
             (
-                audio,
-                features,
-                prominence,
-                interpolated_prominence,
+                _,           # alignment
                 word_bounds,
-                word_lengths,
-                frame_lengths,
-                interpolated_prom_lengths
+                _,           # audio
+                features,
+                targets,
+                mask,
+                _            # stems
             ) = (item.to(device) if torch.is_tensor(item) else item for item in batch)
 
             # Forward pass
             scores = model(features, word_bounds)
 
-            if emphases.METHOD == 'wordwise':
-                val_sim = []
-                for idx in range(len(scores)):
-                    val_sim.append(
-                        cosine(
-                        scores.squeeze()[idx, 0:word_lengths[idx]].reshape(1, -1),
-                        prominence.squeeze()[idx, 0:word_lengths[idx]].reshape(1, -1)
-                        )
-                        )
-
-                losses = 0
-                for idx in range(len(scores)):
-                    # masking the loss
-                    losses += loss_fn(
-                        scores.squeeze()[idx, 0:word_lengths[idx]],
-                        prominence.squeeze()[idx, 0:word_lengths[idx]]
-                        )
-
-            elif emphases.METHOD == 'framewise':
-                val_sim = []
-                for idx in range(len(scores)):
-                    val_sim.append(
-                        cosine(
-                        scores.squeeze()[idx, 0:interpolated_prom_lengths[idx]].reshape(1, -1),
-                        interpolated_prominence.squeeze()[idx, 0:interpolated_prom_lengths[idx]].reshape(1, -1)
-                        )
-                        )
-
-                losses = 0
-                for idx in range(len(scores)):
-                    # masking the loss
-                    losses += loss_fn(
-                        scores.squeeze()[idx, 0:interpolated_prom_lengths[idx]],
-                        interpolated_prominence.squeeze()[idx, 0:interpolated_prom_lengths[idx]]
-                        )
+            # Update metrics
+            metrics.update(scores, targets, mask)
 
     # Format results
     scalars = {
@@ -383,5 +324,6 @@ def ddp_context(rank, world_size):
 
 def loss(scores, targets, mask):
     """Compute masked loss"""
-    # TODO
-    pass
+    return torch.nn.functional.mse_loss(
+        scores.where(mask),
+        targets.where(mask))

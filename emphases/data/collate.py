@@ -2,7 +2,6 @@ import torch
 
 import emphases
 
-import tqdm
 
 ###############################################################################
 # Batch collation
@@ -12,64 +11,59 @@ import tqdm
 def collate(batch):
     """Batch collation"""
     # Unpack
-    audio, mel_spectrogram, prominence, word_bounds, interpolated_prom_values = zip(*batch)
+    alignments, audios, mels, scores, stems = zip(*batch)
 
     # Get word lengths
     word_lengths = torch.tensor(
-        [p.shape[-1] for p in prominence],
+        [score.shape[-1] for score in scores],
         dtype=torch.long)
     max_word_length = word_lengths.max().item()
 
     # Get frame lengths
     frame_lengths = torch.tensor(
-        [a.shape[-1] // emphases.HOPSIZE for a in audio],
+        [mel.shape[-1] for mel in mels],
         dtype=torch.long)
     max_frame_length = frame_lengths.max().item()
 
-    # Get max time axis mel
-    mel_lengths = torch.tensor(
-        [mel.shape[-1] for mel in mel_spectrogram], 
-        dtype=torch.long)
-    max_mel_length = mel_lengths.max().item()
-
-    # Get max interpolated prom
-    interpolated_prom_lengths = torch.tensor(
-        [prom.shape[-1] for prom in interpolated_prom_values], 
-        dtype=torch.long)
-    max_interpolated_prom_length = interpolated_prom_lengths.max().item()
-
     # Allocate padded tensors
-    batch_size = len(audio)
     padded_audio = torch.zeros(
-        (batch_size, 1, max_frame_length * emphases.HOPSIZE),
-        dtype=torch.float)
-    padded_prominence = torch.zeros(
-        (batch_size, 1, emphases.MAX_NUM_OF_WORDS))
-    padded_interpolated_prominence = torch.zeros(
-        (batch_size, 1, max_interpolated_prom_length))
-    padded_mel_spectrogram = torch.zeros((batch_size, emphases.NUM_MELS, max_mel_length))
+        (len(audios), 1, max_frame_length * emphases.HOPSIZE))
+    padded_scores = torch.zeros((len(scores), 1, max_word_length))
+    padded_mels = torch.zeros(
+        (len(mels), emphases.NUM_MELS, max_frame_length))
 
     # Place batch in padded tensors
-    iterator = enumerate(zip(audio, prominence, interpolated_prom_values, mel_spectrogram, frame_lengths, word_lengths, mel_lengths))
-    for i, (a, p, ip, mel, fl, wl, ml) in tqdm.tqdm(iterator):
-        padded_audio[i, :, :fl * emphases.HOPSIZE] = a[:, :fl * emphases.HOPSIZE]
+    iterator = enumerate(
+        zip(audios, mels, scores, frame_lengths, word_lengths))
+    for i, (audio, mel, score, frame_length, word_length) in iterator:
 
-        # truncating the num of words to a limit for now
-        if len(p)<=emphases.MAX_NUM_OF_WORDS:
-            padded_prominence[i, :, :len(p)] = p
-        else:
-            padded_prominence[i, :, :emphases.MAX_NUM_OF_WORDS] = p[:emphases.MAX_NUM_OF_WORDS]
-        
-        padded_interpolated_prominence[i, :, :len(ip)] = ip
+        # Pad audio
+        end_sample = frame_length * emphases.HOPSIZE
+        padded_audio[i, :, :end_sample] = audio[:, :end_sample]
 
-        padded_mel_spectrogram[i, :, :ml] = mel
+        # Pad scores
+        padded_scores[i, :, :word_length] = score[:, :word_length]
+
+        # Pad mels
+        padded_mels[i, :, :frame_length] = mel
+
+    # Network output lengths
+    if emphases.METHOD == 'framewise':
+        output_lengths = frame_lengths
+    elif emphases.METHOD == 'wordwise':
+        output_lengths = word_lengths
+    else:
+        raise ValueError(f'Inference method {emphases.METHOD} is not defined')
+
+    # Create mask
+    mask = torch.zeros((len(scores), 1, output_lengths))
+    for i, length in enumerate(output_lengths):
+        mask[:, :, :length] = 1.
 
     return (
+        alignments,
         padded_audio,
-        padded_mel_spectrogram,
-        padded_prominence,
-        padded_interpolated_prominence,
-        word_bounds,
-        word_lengths,
-        frame_lengths,
-        interpolated_prom_lengths)
+        padded_mels,
+        padded_scores,
+        mask,
+        stems)

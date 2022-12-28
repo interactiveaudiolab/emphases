@@ -6,8 +6,9 @@ import tarfile
 import urllib
 import zipfile
 
+import pandas as pd
+import pypar
 import torchaudio
-import tqdm
 
 import emphases
 
@@ -100,8 +101,10 @@ def datasets(datasets):
     for dataset in datasets:
         if dataset == 'libritts':
             libritts()
-        if dataset == 'buckeye':
-            buckeye(dataset)
+        elif dataset == 'buckeye':
+            buckeye()
+        else:
+            raise ValueError(f'Dataset {dataset} is not defined')
 
 
 def libritts():
@@ -128,10 +131,9 @@ def libritts():
     # Write audio to cache
     output_directory = emphases.CACHE_DIR / 'libritts'
     output_directory.mkdir(exist_ok=True, parents=True)
-    iterator = tqdm.tqdm(
+    iterator = emphases.iterator(
         audio_files.items(),
-        desc='Formatting libritts',
-        dynamic_ncols=True,
+        'Formatting libritts',
         total=len(audio_files))
     for speaker, files in iterator:
 
@@ -157,14 +159,15 @@ def libritts():
                 speaker_directory / f'{stem}.txt')
 
 
-def buckeye(dataset):
+def buckeye():
     """Download buckeye dataset"""
-    directory = emphases.DATA_DIR / dataset
-    directory.mkdir(exist_ok=True, parents=True)
+    # Setup data directory
+    data_directory = emphases.DATA_DIR / 'buckeye'
+    data_directory.mkdir(exist_ok=True, parents=True)
 
     # Download data for all speakers
-    for speaker in tqdm.tqdm(BUCKEYE_SPEAKERS):
-        speaker_directory = directory / speaker
+    for speaker in BUCKEYE_SPEAKERS:
+        speaker_directory = data_directory / speaker
         speaker_directory.mkdir(exist_ok=True, parents=True)
 
         # Download and extract all zip files for this speaker
@@ -177,8 +180,102 @@ def buckeye(dataset):
             # Extract
             file.extractall(speaker_directory)
 
-    # TODO - format
-    pass
+    # Setup cache directory
+    cache_directory = emphases.CACHE_DIR / 'buckeye'
+    cache_directory.mkdir(exist_ok=True, parents=True)
+
+    # Read buckeye annotations
+    # TODO - this is not currently found
+    annotation_file = emphases.DATA_DIR / 'buckeye' / 'annotations.csv'
+    annotations = pd.read_csv(annotation_file)
+
+    # Create subdirectories
+    features = ['alignment', 'audio', 'scores', 'text']
+    for feature in features:
+        (cache_directory / feature).mkdir(exist_ok=True, parents=True)
+
+    # Get phoneme alignment files
+    phoneme_files = sorted(data_directory.rglob('*.phones'))
+
+    # Get word alignment files
+    word_files = sorted(data_directory.rglob('*.words'))
+
+    # Build alignments using pypar
+    for phoneme_file, word_file in zip(phoneme_files, word_files):
+
+        # Make alignment
+        alignment = make_buckeye_alignment(phoneme_file, word_file)
+
+        # Save
+        alignment.save(
+            cache_directory / 'alignment' / f'{phoneme_file.stem}.TextGrid')
+
+    # Get audio files
+    audio_files = sorted(data_directory.rglob('*.wav'))
+
+    # Resample audio
+    for audio_file in audio_files:
+
+        # Load and resample
+        audio = emphases.load.audio(audio_file)
+
+        # Save to disk
+        torchaudio.save(
+            cache_directory / 'audio' / audio_file.name,
+            audio,
+            emphases.SAMPLE_RATE)
+
+    # TODO - extract per-word emphasis scores and text
+
+    # # REFACTOR
+    # # generate the TextGrid files and prominence ground truth files
+    # speakers = data_directory.glob('*')
+    # if dirc:
+    #     for subdir in dirc:
+    #         words = glob.glob(os.path.join(subdir, '*.words'))
+    #         for word in words:
+    #             basename = word.split('/')[-1].replace('.words', '')
+    #             word_file = os.path.join(subdir, basename+'.words')
+    #             phones_file = os.path.join(subdir, basename+'.phones')
+    #             textgrid_path = os.path.join(
+    #                 cache_directory / 'alignment', f"{basename}.TextGrid")
+    #             prominence_annotation_path = os.path.join(
+    #                  cache_directory / 'annotation', f"{basename}.prom")
+
+    #             speaker_df = annotations[annotations['filename'] == basename][[
+    #                 'filename', 'wordmin', 'wordmax', 'word', 'pa.32']]
+    #             speaker_df.sort_values(by='wordmin').to_csv(
+    #                 prominence_annotation_path, index=False)
+
+    #             if os.path.exists(textgrid_path):
+    #                 json_save_path = os.path.join(
+    #                     output_directory / 'alignment', f"{basename}.json")
+    #                 save_corrected_textgrid(
+    #                     annotations, basename, textgrid_path, json_save_path)
+    #             else:
+    #                 emphases.build_textgrid_buckeye.build_textgrid(
+    #                     word_file, phones_file, output_directory / 'alignment')
+    # else:
+    #     textgrid_files = glob.glob(os.path.join(input_directory, '*.TextGrid'))
+    #     for textgrid_path in textgrid_files:
+    #         if os.path.exists(textgrid_path):
+    #             basename = textgrid_path.split(
+    #                 '/')[-1].replace('.TextGrid', '')
+    #             prominence_annotation_path = os.path.join(
+    #                 output_directory / 'annotation', f"{basename}.prom")
+
+    #             speaker_df = annotations[annotations['filename'] == basename][[
+    #                 'filename', 'wordmin', 'wordmax', 'word', 'pa.32']]
+    #             speaker_df.sort_values(by='wordmin').to_csv(prominence_annotation_path,
+    #                                                         sep='\t',
+    #                                                         encoding='utf-8',
+    #                                                         index=False)
+
+    #             json_save_path = os.path.join(
+    #                 output_directory / 'alignment', f"{basename}.json")
+    #             save_corrected_textgrid(
+    #                 annotations, basename, textgrid_path, json_save_path)
+
 
 
 ###############################################################################
@@ -191,3 +288,93 @@ def download_file(url, file):
     with urllib.request.urlopen(url, context=ssl.SSLContext()) as response, \
             open(file, 'wb') as output:
         shutil.copyfileobj(response, output)
+
+
+# def save_corrected_textgrid(annotations, speaker_id, textgrid_path, json_save_path):
+#     """
+#     It will compare the prominence annotation tokens with textgrid file,
+#     and save a new corrected .json textgrid file with only common tokens
+#     """
+
+#     speaker_df = annotations[annotations['filename'] == speaker_id][[
+#         'filename', 'wordmin', 'wordmax', 'word', 'pa.32']]
+#     speaker_df = speaker_df.sort_values(by='wordmin')
+#     avail_start_times = speaker_df['wordmin'].apply(
+#         lambda x: round(x, 5)).tolist()
+#     avail_end_times = speaker_df['wordmax'].apply(
+#         lambda x: round(x, 5)).tolist()
+
+#     alignment = pypar.Alignment(textgrid_path)
+
+#     json_align = alignment.json()
+#     new_json = {'words': []}
+#     for obj in json_align['words']:
+#         if obj['start'] in avail_start_times or obj['end'] in avail_end_times:
+#             new_json['words'].append(obj)
+
+#     if len(new_json['words']) != len(speaker_df):
+#         print(
+#             f"WARNING: {speaker_id} Formulated alignment not matching with speaker annotation length dimensions")
+
+#     new_alignment = pypar.Alignment(new_json)
+#     new_alignment.save_json(json_save_path)
+
+
+def make_buckeye_alignment(word_file, phoneme_file):
+    """Create phoneme alignment object from buckeye alignment format"""
+    # Load words
+    with open(word_file) as file:
+        words = file.read()
+    words = [
+        row.strip().split(';')[0].split() for row in words.split('\n')[9:-1]]
+
+    # Load phonemes
+    with open(phoneme_file) as file:
+        phonemes = file.read()
+    phonemes = [row.strip().split(';')[0].split()
+                       for row in phonemes.split('\n')[9:-1]]
+
+    # TODO - create pypar alignment
+    alignment = None
+
+    # grid_word_tuples = []
+    # start = 0.0
+    # for row in words[1:-1]:
+    #     # getting rid of the redundant tokens (<IVER>, <VOCNOISE>, etc.)
+    #     if not row[-1].startswith('<') and not row[-1].startswith('{'):
+    #         end = row[0]
+    #         if start == end:
+    #             continue
+    #         tup = (float(start), float(end), row[-1])
+    #         grid_word_tuples.append(tup)
+    #         start = row[0]
+
+    # grid_phones_tuples = []
+    # start = 0.0
+    # for row in phonemes[1:-1]:
+    #     # assuming all phoneme values are always lowercased,
+    #     # getting rid of the redundant tokens (IVER, VOCNOISE, etc.)
+    #     if not row[-1].isupper():
+    #         end = row[0]
+    #         if start == end:
+    #             continue
+    #         tup = (float(start), float(end), row[-1])
+    #         grid_phones_tuples.append(tup)
+    #         start = row[0]
+
+    # # Build the grids
+    # tg = textgrid.Textgrid()
+
+    # if grid_word_tuples:
+    #     end_time = grid_word_tuples[-1][1]
+    # else:
+    #     end_time = 1
+
+    # wordTier = textgrid.IntervalTier('words', grid_word_tuples, 0, end_time)
+    # phoneTier = textgrid.IntervalTier(
+    #     'phones', grid_phones_tuples, 0, end_time)
+
+    # tg.addTier(wordTier)
+    # tg.addTier(phoneTier)
+
+    return alignment

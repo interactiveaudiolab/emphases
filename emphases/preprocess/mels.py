@@ -1,3 +1,5 @@
+import multiprocessing as mp
+
 import librosa
 import numpy as np
 import torch
@@ -10,7 +12,7 @@ import emphases
 ###############################################################################
 
 
-def from_audio(audio, sample_rate=emphases.SAMPLE_RATE, gpu=None):
+def from_audio(audio, sample_rate=emphases.SAMPLE_RATE):
     """Compute mels from audio"""
     # Mayble resample
     audio = emphases.resample(audio, sample_rate)
@@ -24,6 +26,28 @@ def from_audio(audio, sample_rate=emphases.SAMPLE_RATE, gpu=None):
 
     # Compute mels
     return from_audio.mels(audio)
+
+
+def from_file(audio_file):
+    """Load audio and compute mels"""
+    audio = emphases.load.audio(audio_file)
+
+    # Compute mels
+    return from_audio(audio)
+
+
+def from_file_to_file(audio_file, output_file):
+    """Compute mels from audio file and save to disk"""
+    mels = from_file(audio_file)
+
+    # Save to disk
+    torch.save(mels, output_file)
+
+
+def from_files_to_files(audio_files, output_files):
+    """Compute mels for many files and save to disk"""
+    with mp.Pool() as pool:
+        pool.starmap(from_file_to_file, zip(audio_files, output_files))
 
 
 ###############################################################################

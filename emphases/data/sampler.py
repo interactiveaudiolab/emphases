@@ -32,7 +32,6 @@ def sampler(dataset, partition):
 
     # Deterministic random sampler for validation
     elif partition == 'valid':
-        # TODO - make deterministically random
         return Sampler()
 
     # Sample test data sequentially
