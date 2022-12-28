@@ -28,15 +28,21 @@ class Dataset(torch.utils.data.Dataset):
         """Retrieve the indexth item"""
         stem = self.stems[index]
 
+        # Load alignment
+        alignment = pypar.Alignment(
+            self.cache / 'alignment' / f'{stem}.TextGrid')
+
+        # Compute word bounds and lengths
+        bounds = alignment.word_bounds(emphases.SAMPLE_RATE, emphases.HOPSIZE)
+        word_bounds = torch.cat(
+            torch.tensor(bound for bound in bounds)[None],
+            dim=1)
+
         # Load audio
         audio = emphases.load.audio(self.cache / 'audio' / f'{stem}.wav')
 
         # Load mels
         mels = torch.tensor(self.cache / 'mels' / f'{stem}.pt')
-
-        # Load alignment
-        alignment = pypar.Alignment(
-            self.cache / 'alignment' / f'{stem}.TextGrid')
 
         # Load per-word ground truth emphasis scores
         scores = torch.load(self.cache / 'scores' / f'{stem}.pt')
@@ -44,44 +50,16 @@ class Dataset(torch.utils.data.Dataset):
         # Maybe interpolate scores for framewise model
         if emphases.METHOD == 'framewise':
 
-            # TODO - interpolate
-            pass
+            # Get center time of each word in frames
+            word_centers = (word_bounds[1] - word_bounds[0]) / 2.
 
-        # # REFACTOR
-        # # updating word bounds with padding on silent time stamps
-        # wb_prom_pairs = []
-        # audio_len = audio.shape[-1]
+            # Get frame centers
+            frame_centers = .5 + torch.arange(mels.shape[-1])
 
-        # if word_bounds[0][0]!=0:
-        #     wb_prom_pairs.append([(0, word_bounds[0][0]), 0])
+            # Interpolate
+            scores = emphases.interpolate(scores, word_centers, frame_centers)
 
-        # for idx in range(len(word_bounds)):
-        #     wb_prom_pairs.append([word_bounds[idx], scores[idx].item()])
-        #     if idx+1<len(word_bounds):
-        #         if word_bounds[idx][-1]!=word_bounds[idx+1][0]:
-        #             start = word_bounds[idx][-1]
-        #             end = word_bounds[idx+1][0]
-        #             wb_prom_pairs.append([(start, end), 0])
-
-        # # generating interpolated prom vector
-        # prom_extended = []
-        # for wb in wb_prom_pairs:
-        #     start, end = wb[0][0], wb[0][1]
-        #     prom_extended.extend([wb[-1]]*(end-start)*emphases.HOPSIZE)
-
-        # if word_bounds[-1][-1]!=audio_len//emphases.HOPSIZE:
-        #     pad_len = audio_len - len(prom_extended)
-        #     prom_extended.extend([0]*pad_len)
-
-        # prom_extended = torch.tensor(prom_extended)
-
-        # # frame based scores values
-        # if emphases.INTERPOLATION=='nearest_neighbour':
-        #     interpolated_prom_values = nearest_neighbour_interpolation(audio, word_bounds, scores)
-        # elif emphases.INTERPOLATION=='linear':
-        #     interpolated_prom_values = linear_interpolation(audio, word_bounds, scores)
-
-        return alignment, audio, mels, scores, stem
+        return mels, scores, word_bounds, alignment, audio, stem
 
     def __len__(self):
         """Length of the dataset"""

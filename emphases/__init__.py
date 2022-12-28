@@ -1,3 +1,12 @@
+# Development
+# - Buckeye
+#   - annotation file
+#   - score files
+#   - alignment files
+#   - text files
+# - Wordwise model
+# - Config files
+
 ###############################################################################
 # Configuration
 ###############################################################################
@@ -26,9 +35,9 @@ from . import checkpoint
 from . import data
 from . import evaluate
 from . import load
-from . import model
 from . import partition
 from . import preprocess
 from . import train
 from . import write
+from .interpolate import interpolate
 from .model import Model

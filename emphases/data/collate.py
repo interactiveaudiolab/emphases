@@ -11,11 +11,11 @@ import emphases
 def collate(batch):
     """Batch collation"""
     # Unpack
-    alignments, audios, mels, scores, stems = zip(*batch)
+    alignments, word_bounds, audios, mels, scores, stems = zip(*batch)
 
     # Get word lengths
     word_lengths = torch.tensor(
-        [score.shape[-1] for score in scores],
+        [bounds.shape[-1] for bounds in word_bounds],
         dtype=torch.long)
     max_word_length = word_lengths.max().item()
 
@@ -26,16 +26,19 @@ def collate(batch):
     max_frame_length = frame_lengths.max().item()
 
     # Allocate padded tensors
+    padded_bounds = torch.zeros((len(word_bounds), 2, max_word_length))
     padded_audio = torch.zeros(
         (len(audios), 1, max_frame_length * emphases.HOPSIZE))
     padded_scores = torch.zeros((len(scores), 1, max_word_length))
-    padded_mels = torch.zeros(
-        (len(mels), emphases.NUM_MELS, max_frame_length))
+    padded_mels = torch.zeros((len(mels), emphases.NUM_MELS, max_frame_length))
 
     # Place batch in padded tensors
     iterator = enumerate(
-        zip(audios, mels, scores, frame_lengths, word_lengths))
-    for i, (audio, mel, score, frame_length, word_length) in iterator:
+        zip(word_bounds, audios, mels, scores, frame_lengths, word_lengths))
+    for i, (bounds, audio, mel, score, frame_length, word_length) in iterator:
+
+        # Pad word bounds
+        padded_bounds[i, :, :word_length] = bounds[:, word_length]
 
         # Pad audio
         end_sample = frame_length * emphases.HOPSIZE
@@ -61,9 +64,11 @@ def collate(batch):
         mask[:, :, :length] = 1.
 
     return (
-        alignments,
-        padded_audio,
         padded_mels,
         padded_scores,
+        padded_bounds,
+        word_lengths,
         mask,
+        alignments,
+        padded_audio,
         stems)

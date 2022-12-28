@@ -48,10 +48,6 @@ def parse_args():
         type=int,
         nargs='+',
         help='The gpus to run training on')
-    parser.add_argument(
-        '--task_type',
-        default='word_wise',
-        help='training task type: [word_based, frame_based]')
     return parser.parse_args()
 
 

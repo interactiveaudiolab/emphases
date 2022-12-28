@@ -39,15 +39,15 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
             f'Evaluating {emphases.CONFIG} on {dataset}')
 
         # Iterate over test set
-        for alignment, _, _, mels, targets, _, stem in iterator:
+        for _, targets, _, _, _, alignments, audio, stem in iterator:
 
             # Reset file metrics
             file_metrics.reset()
 
             # Get predicted scores
             scores = emphases.from_alignment_and_audio(
-                alignment,
-                mels,
+                alignments[0],
+                audio,
                 emphases.SAMPLE_RATE,
                 checkpoint=checkpoint,
                 batch_size=emphases.EVALUATION_BATCH_SIZE,

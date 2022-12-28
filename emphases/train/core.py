@@ -6,6 +6,7 @@ import torch
 
 import emphases
 
+
 ###############################################################################
 # Training interface
 ###############################################################################
@@ -72,7 +73,8 @@ def train(
     #######################
 
     torch.manual_seed(emphases.RANDOM_SEED)
-    train_loader, valid_loader = emphases.data.loaders(dataset, 'train', 'valid', gpu)
+    train_loader = emphases.data.loaders(dataset, 'train', gpu)
+    valid_loader = emphases.data.loaders(dataset, 'valid', gpu)
 
     #################
     # Create models #
@@ -89,11 +91,7 @@ def train(
     # Create optimizer #
     ####################
 
-    optimizer = torch.optim.Adam(
-        model.parameters(),
-        lr=2e-4,
-        betas=[.80, .99],
-        eps=1e-9)
+    optimizer = torch.optim.Adam(model.parameters())
 
     ##############################
     # Maybe load from checkpoint #
@@ -157,22 +155,23 @@ def train(
 
             # Unpack batch
             (
-                _,           # alignment
-                word_bounds,
-                _,           # audio
                 features,
                 targets,
-                lengths,
+                word_bounds,
+                word_lengths,
+                mask,
+                _,           # alignment
+                _,           # audio
                 _            # stem
             ) = (item.to(device) if torch.is_tensor(item) else item for item in batch)
 
             with torch.cuda.amp.autocast():
 
                 # Forward pass
-                scores = model(word_bounds, features)
+                scores = model(features, word_bounds, word_lengths)
 
                 # Compute loss
-                train_loss = loss(scores, targets, lengths)
+                train_loss = loss(scores, targets, mask)
 
             ######################
             # Optimize model #
@@ -260,17 +259,18 @@ def evaluate(directory, step, model, gpu, condition, loader):
 
             # Unpack batch
             (
-                _,           # alignment
-                word_bounds,
-                _,           # audio
                 features,
                 targets,
+                word_bounds,
+                word_lengths,
                 mask,
+                _,           # alignment
+                _,           # audio
                 _            # stems
             ) = (item.to(device) if torch.is_tensor(item) else item for item in batch)
 
             # Forward pass
-            scores = model(features, word_bounds)
+            scores = model(features, word_bounds, word_lengths)
 
             # Update metrics
             metrics.update(scores, targets, mask)
