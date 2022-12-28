@@ -1,83 +1,97 @@
-import torch
-import emphases
 import functools
 
+import torch
+
+import emphases
+
 
 ###############################################################################
-# Model
+# Model selection
 ###############################################################################
 
 
-class BaselineModel(torch.nn.Sequential):
+def Model():
+    """Create a model"""
+    if emphases.METHOD == 'framewise':
+        return Framewise()
+    elif emphases.METHOD == 'wordwise':
+        return Wordwise()
+    else:
+        raise ValueError(f'Model {emphases.METHOD} is not defined')
+
+
+###############################################################################
+# Model definitions
+###############################################################################
+
+
+class Wordwise(torch.nn.Module):
 
     def __init__(
         self,
-        input_channels=emphases.NUM_MELS, #TODO have this filled in dynamically
+        input_channels=emphases.NUM_MELS,
         output_channels=1,
         hidden_channels=128,
-        kernel_size=5,
-        device='cpu'):
+        kernel_size=5):
+        super().__init__()
 
-        self.device = device
-        self.MAX_NUM_OF_WORDS = emphases.MAX_NUM_OF_WORDS
-        self.MAX_WORD_DURATION = emphases.MAX_WORD_DURATION
-
-        conv_fn = functools.partial(
+        # Setup frame encoder
+        conv1d = functools.partial(
             torch.nn.Conv1d,
             kernel_size=kernel_size,
             padding='same')
+        self.frame_encoder = torch.nn.Sequential(
+            conv1d(input_channels, hidden_channels),
+            torch.nn.ReLU(),
+            conv1d(hidden_channels, hidden_channels),
+            torch.nn.ReLU(),
+            conv1d(hidden_channels, hidden_channels))
 
-        conv2d_fn = functools.partial(
+        # Setup word decoder
+        conv2d = functools.partial(
             torch.nn.Conv2d,
             kernel_size=kernel_size,
             padding='same')
-
-        super().__init__()
-        self.layers = torch.nn.Sequential(
-            conv_fn(input_channels, hidden_channels),
+        self.word_decoder = torch.nn.Sequential(
+            conv2d(hidden_channels, hidden_channels),
             torch.nn.ReLU(),
-            conv_fn(hidden_channels, hidden_channels),
-            torch.nn.ReLU(),
-            conv_fn(hidden_channels, hidden_channels))
-
-        self.layers2 = torch.nn.Sequential(
-            conv2d_fn(hidden_channels, hidden_channels),
-            torch.nn.ReLU(),
-            conv2d_fn(hidden_channels, hidden_channels),
+            conv2d(hidden_channels, hidden_channels),
             torch.nn.ReLU(),
             torch.nn.Linear(emphases.MAX_WORD_DURATION, 1),
             torch.nn.ReLU(),
-            conv2d_fn(hidden_channels, output_channels)
-            )
+            conv2d(hidden_channels, output_channels))
 
     def forward(self, features, word_bounds):
         # generate input slices for every item in batch,
         # then form a padded tensor from all the slice tensors, and further pass down the network
 
-        padded_mel_spectrogram, word_bounds = features
-        intermid_output = self.layers(padded_mel_spectrogram)
+        # Embed frames
+        frame_embedding = self.frame_encoder(features)
 
-        feat_lens = []
-        feats = []
-
+        # Slice embeddings into words
         # TODO - separate MAX_NUM_OF_WORDS, MAX_WORD_DURATION in forward pass
-
-        for idx, (input_features, wb) in enumerate(zip(intermid_output, word_bounds)):
+        feats, feat_lens = [], []
+        for idx, (input_features, wb) in enumerate(zip(frame_embedding, word_bounds)):
             feat, feat_length = self.get_slices_spectro_channels(input_features, wb)
             feats.append(feat)
             feat_lens.append(feat_length)
 
+        # Place in one tensor
         # BATCH * HIDDEN_CHANNEL * MAX_NUM_OF_WORDS * MAX_WORD_DURATION
-        padded_features_2 = torch.zeros((emphases.BATCH_SIZE, intermid_output.shape[1],
-                                        emphases.MAX_NUM_OF_WORDS, emphases.MAX_WORD_DURATION))
-
+        padded_features_2 = torch.zeros(
+            (
+                emphases.BATCH_SIZE,
+                frame_embedding.shape[1],
+                emphases.MAX_NUM_OF_WORDS,
+                emphases.MAX_WORD_DURATION
+            ),
+            device=features.device)
         for idx, (f_len, f_item) in enumerate(zip(feat_lens, feats)):
             padded_features_2[idx, :, :f_item.shape[1], :f_item.shape[-1]] = f_item[:]
 
-        padded_features_2 = padded_features_2.to(self.device)
-
-        return self.layers2(padded_features_2)
+        # Infer emphasis scores from word embeddings
         # BATCH * 1 * MAX_NUM_OF_WORDS * 1
+        return self.word_decoder(padded_features_2)
 
     def get_slices_spectro_channels(self, input_features_channels, wb):
         """
@@ -88,8 +102,7 @@ class BaselineModel(torch.nn.Sequential):
         duration_slices = []
 
         for bound in wb:
-            # dur = (bound[1] - bound[0])*emphases.HOPSIZE # for audio inputs
-            dur = (bound[1] - bound[0]) # for mel spectro inputs
+            dur = (bound[1] - bound[0])
             duration_slices.append(dur)
 
         extra_noise = False
@@ -125,7 +138,8 @@ class BaselineModel(torch.nn.Sequential):
 
         return padded_features, padded_features.shape[-1]
 
-class FramewiseModel(torch.nn.Sequential):
+
+class Framewise(torch.nn.Sequential):
 
     def __init__(
         self,
@@ -133,12 +147,10 @@ class FramewiseModel(torch.nn.Sequential):
         output_channels=1,
         hidden_channels=128,
         kernel_size=5):
-
         conv_fn = functools.partial(
             torch.nn.Conv1d,
             kernel_size=kernel_size,
             padding='same')
-
         super().__init__(
             conv_fn(input_channels, hidden_channels),
             torch.nn.ReLU(),
@@ -148,24 +160,4 @@ class FramewiseModel(torch.nn.Sequential):
             torch.nn.ReLU(),
             conv_fn(hidden_channels, hidden_channels),
             torch.nn.ReLU(),
-            conv_fn(hidden_channels, output_channels)
-        )
-
-# class Model(torch.nn.Module):
-#     """Model definition"""
-
-#     # TODO - add hyperparameters as input args
-#     def __init__(self):
-#         super().__init__()
-
-#         # TODO - define model
-#         raise NotImplementedError
-
-#     ###########################################################################
-#     # Forward pass
-#     ###########################################################################
-
-#     def forward(self):
-#         """Perform model inference"""
-#         # TODO - define model arguments and implement forward pass
-#         raise NotImplementedError
+            conv_fn(hidden_channels, output_channels))

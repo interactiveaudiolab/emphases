@@ -159,14 +159,14 @@ def train(
         for batch in train_loader:
 
             (
-            audio,
-            features,
-            prominence,
-            interpolated_prominence,
-            word_bounds,
-            word_lengths,
-            frame_lengths,
-            interpolated_prom_lengths
+                audio,
+                features,
+                prominence,
+                interpolated_prominence,
+                word_bounds,
+                word_lengths,
+                frame_lengths,
+                interpolated_prom_lengths
             ) = (item.to(device) if torch.is_tensor(item) else item for item in batch)
 
             with torch.cuda.amp.autocast():

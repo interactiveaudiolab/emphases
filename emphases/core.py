@@ -209,7 +209,6 @@ def infer(alignment, audio, checkpoint=emphases.DEFAULT_CHECKPOINT):
         )
     ):
         # Maybe initialize model
-        # TODO - model overloading
         model = emphases.Model()
 
         # Load from disk

@@ -1,7 +1,5 @@
 from torch.utils.tensorboard import SummaryWriter
 
-import emphases
-
 
 ###############################################################################
 # Tensorboard logging
