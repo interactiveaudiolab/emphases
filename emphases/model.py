@@ -63,94 +63,54 @@ class Wordwise(torch.nn.Module):
         super().__init__()
 
         # Setup frame encoder
-        conv1d = functools.partial(
+        conv_fn = functools.partial(
             torch.nn.Conv1d,
             kernel_size=kernel_size,
             padding='same')
         self.frame_encoder = torch.nn.Sequential(
-            conv1d(input_channels, hidden_channels),
+            conv_fn(input_channels, hidden_channels),
             torch.nn.ReLU(),
-            conv1d(hidden_channels, hidden_channels),
+            conv_fn(hidden_channels, hidden_channels),
             torch.nn.ReLU(),
-            conv1d(hidden_channels, hidden_channels))
+            conv_fn(hidden_channels, hidden_channels),
+            torch.nn.ReLU(),
+            conv_fn(hidden_channels, hidden_channels))
 
         # Setup word decoder
-        conv2d = functools.partial(
-            torch.nn.Conv2d,
-            kernel_size=kernel_size,
-            padding='same')
         self.word_decoder = torch.nn.Sequential(
-            conv2d(hidden_channels, hidden_channels),
+            conv_fn(hidden_channels, hidden_channels),
             torch.nn.ReLU(),
-            conv2d(hidden_channels, hidden_channels),
+            conv_fn(hidden_channels, hidden_channels),
             torch.nn.ReLU(),
-            torch.nn.Linear(emphases.MAX_WORD_DURATION, 1),
+            conv_fn(hidden_channels, hidden_channels),
             torch.nn.ReLU(),
-            conv2d(hidden_channels, output_channels))
+            conv_fn(hidden_channels, output_channels))
 
     def forward(self, features, word_bounds, word_lengths):
+        device = frame_embedding.device
+
         # Embed frames
         frame_embedding = self.frame_encoder(features)
 
-        # Slice embeddings into words
-        # TODO - separate MAX_NUM_OF_WORDS, MAX_WORD_DURATION in forward pass
-        feats, feat_lens = [], []
-        for idx, (embedding, bounds, length) in enumerate(zip(frame_embedding, word_bounds, word_lengths)):
-            feat, feat_length = self.slice(embedding, bounds, length)
-            feats.append(feat)
-            feat_lens.append(feat_length)
+        # Get maximum number of words
+        max_word_length = word_lengths.max().item()
 
-        # Place in one tensor
-        # BATCH * HIDDEN_CHANNEL * MAX_NUM_OF_WORDS * MAX_WORD_DURATION
-        padded_features_2 = torch.zeros(
+        # Allocate memory for word embeddings
+        word_embeddings = torch.zeros(
             (
-                emphases.BATCH_SIZE,
+                frame_embedding.shape[0],
                 frame_embedding.shape[1],
-                emphases.MAX_NUM_OF_WORDS,
-                emphases.MAX_WORD_DURATION
+                max_word_length
             ),
-            device=features.device)
-        for idx, (f_len, f_item) in enumerate(zip(feat_lens, feats)):
-            padded_features_2[idx, :, :f_item.shape[1],
-                              :f_item.shape[-1]] = f_item[:]
+            device=device)
+
+        # Populate word embeddings
+        i = 0
+        iterator = enumerate(zip(frame_embedding, word_bounds, word_lengths))
+        for i, (embedding, bounds, length) in iterator:
+            for j in range(length):
+                word_embeddings[i, j] = \
+                    embedding[:, bounds[0, j]:bounds[1, j]].mean(dim=1)
 
         # Infer emphasis scores from word embeddings
-        # BATCH * 1 * MAX_NUM_OF_WORDS * 1
-        return self.word_decoder(padded_features_2)
-
-    def slice(self, features, word_bounds, length):
-        """
-        Generate framewise slices as per word bounds
-        return a padded tensor for given input_features
-
-        """
-        # TODO
-        # Get durations in frames
-        durations = word_bounds[1, :length] - word_bounds[0, :length]
-
-        extra_noise = False
-        if sum(duration_slices) != features.shape[-1]:
-            extra_noise = True
-            duration_slices.append(features.shape[-1] - sum(duration_slices))
-
-        padded_features = torch.zeros(
-            (len(features), emphases.MAX_NUM_OF_WORDS, emphases.MAX_WORD_DURATION))
-
-        for channel_idx, input_features in enumerate(features):
-
-            slices = torch.split(input_features, duration_slices)
-
-            if extra_noise:
-                slices = slices[:-1]
-
-            for idx, sl in enumerate(slices[:emphases.MAX_NUM_OF_WORDS]):
-
-                if len(sl) <= emphases.MAX_WORD_DURATION:
-                    padded_features[channel_idx, idx, :len(
-                        sl)] = sl[:emphases.MAX_WORD_DURATION]
-
-                else:
-                    padded_features[channel_idx, idx,
-                                    :emphases.MAX_WORD_DURATION] = sl[:emphases.MAX_WORD_DURATION]
-
-        return padded_features, padded_features.shape[-1]
+        return self.word_decoder(word_embeddings)

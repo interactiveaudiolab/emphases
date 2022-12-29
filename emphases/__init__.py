@@ -1,5 +1,4 @@
 # Development
-# - Wordwise model****
 # - Buckeye
 #   - alignment files***
 #   - score files**
