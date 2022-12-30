@@ -242,27 +242,39 @@ def from_alignment_and_audio(
 def infer(alignment, audio, checkpoint=emphases.DEFAULT_CHECKPOINT):
     """Perform model inference to annotate emphases of each word"""
     # Maybe cache model
-    if (
-        emphases.METHOD in ['framewise', 'wordwise'] and
-        (
+    if emphases.METHOD in ['framewise', 'wordwise']:
+        if (
             not hasattr(infer, 'model') or
             infer.checkpoint != checkpoint or
             infer.device_type != audio.device.type
-        )
-    ):
-        # Maybe initialize model
-        model = emphases.Model()
+        ):
+            # Maybe initialize model
+            model = emphases.Model()
 
-        # Load from disk
-        infer.model, *_ = emphases.checkpoint.load(checkpoint, model)
-        infer.checkpoint = checkpoint
-        infer.device_type = audio.device.type
+            # Load from disk
+            infer.model, *_ = emphases.checkpoint.load(checkpoint, model)
+            infer.checkpoint = checkpoint
+            infer.device_type = audio.device.type
 
-        # Move model to correct device (no-op if devices are the same)
-        infer.model = infer.model.to(audio.device)
+            # Move model to correct device (no-op if devices are the same)
+            infer.model = infer.model.to(audio.device)
 
-    # Infer
-    return infer.model(alignment, audio)
+        # Infer
+        return infer.model(alignment, audio)
+
+    elif emphases.METHOD == 'prominence':
+
+        # TODO - rest of args
+        return emphases.baselines.prominence.from_audio(
+            audio,
+            emphases.SAMPLE_RATE)
+
+    elif emphases.METHOD == 'variance':
+
+        # TODO - args
+        return emphases.baselines.variance.from_audio(
+            audio,
+            emphases.SAMPLE_RATE)
 
 
 def preprocess(

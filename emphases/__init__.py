@@ -1,7 +1,7 @@
 # Development
-# - Upload buckeye tarball****
 # - Buckeye score files***
 # - Baseline prominence method**
+# - Training batching from any word (+ numpy cache)*
 
 
 ###############################################################################
@@ -29,6 +29,7 @@ from .config.static import *
 from .core import *
 from . import baselines
 from . import checkpoint
+from . import convert
 from . import data
 from . import evaluate
 from . import load

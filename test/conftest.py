@@ -1,7 +1,13 @@
 from pathlib import Path
 
 import pytest
-import soundfile
+
+import emphases
+
+
+###############################################################################
+# Constants
+###############################################################################
 
 
 TEST_ASSETS_DIR = Path(__file__).parent / 'assets'
@@ -13,9 +19,9 @@ TEST_ASSETS_DIR = Path(__file__).parent / 'assets'
 
 
 @pytest.fixture(scope='session')
-def audio_and_sample_rate():
+def audio():
     """Retrieve the test audio"""
-    return soundfile.read(path('test.wav'))
+    return emphases.load.audio(path('test.wav'))
 
 @pytest.fixture(scope='session')
 def dataset():

@@ -1,6 +1,5 @@
 import json
 
-import torch
 import torchaudio
 
 import emphases

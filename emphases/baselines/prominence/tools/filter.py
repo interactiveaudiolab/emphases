@@ -1,25 +1,5 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-"""
-AUTHOR
-    - Antti Suni <antti.suni@helsinki.fi>
-    - Sébastien Le Maguer <lemagues@tcd.ie>
-
-DESCRIPTION
-    Butter filter utilities
-
-    This module contains butter filter help functions copied from http://scipy-cookbook.readthedocs.io/items/ButterworthBandpass.html
-
-LICENSE
-    See https://github.com/asuni/wavelet_prosody_toolkit/blob/master/LICENSE.txt
-"""
-
 from scipy.signal import butter, lfilter
 
-# Logging
-import logging
-logger = logging.getLogger(__name__)
 
 def butter_bandpass(lowcut, highcut, fs, order=5):
     """Generate the butter bandpass filter
@@ -50,7 +30,6 @@ def butter_bandpass(lowcut, highcut, fs, order=5):
         highcut = nyq*0.95
     high = highcut / nyq
     b, a = butter(order, [low, high], btype='band')
-
     return b, a
 
 
@@ -78,6 +57,4 @@ def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
     	An N-dimensional filtered array
     """
     b, a = butter_bandpass(lowcut, highcut, fs, order=order)
-    y = lfilter(b, a, data)
-
-    return y
+    return lfilter(b, a, data)

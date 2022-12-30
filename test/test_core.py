@@ -6,12 +6,13 @@ import emphases
 ###############################################################################
 
 
-def test_from_audio(text, audio_and_sample_rate):
+def test_from_audio(text, audio):
     """Test emphases.from_text_and_audio"""
-    audio, sample_rate = audio_and_sample_rate
-
     # Detect emphases
-    alignment, results = emphases.from_text_and_audio(text, audio, sample_rate)
+    alignment, results = emphases.from_text_and_audio(
+        text,
+        audio,
+        emphases.SAMPLE_RATE)
 
     # "sitting" and "different" should be emphasized
     for word, result in zip(alignment.words(), results):
