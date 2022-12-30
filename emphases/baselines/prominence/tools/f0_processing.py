@@ -2,12 +2,7 @@ import numpy as np
 from . import smooth_and_interp
 from . import pitch_tracker
 
-# Pyreaper
-try:
-    import pyreaper
-    USE_REAPER = True
-except ImportError:
-    USE_REAPER = False
+import emphases
 
 
 def rolling_window(a, window):
@@ -38,7 +33,7 @@ def _remove_outliers(log_pitch):
         _cut_boundary_vals(fixed, 3),
         'linear')
     interp = smooth_and_interp.interpolate_zeros(fixed, 'linear')
-    fixed[abs(interp-boundary_cut) > .1] = 0
+    fixed[abs(interp - boundary_cut) > .1] = 0
     interp = smooth_and_interp.interpolate_zeros(fixed, 'linear')
 
     # iterative outlier removal
@@ -81,81 +76,41 @@ def _remove_outliers(log_pitch):
     return fixed
 
 
-def _interpolate(f0, method='true_envelope'):
-    if method == 'linear':
-        return smooth_and_interp.interpolate_zeros(f0, 'linear')
-    elif method == 'pchip':
-        return smooth_and_interp.interpolate_zeros(f0, 'pchip')
-    elif method == 'true_envelope':
-        interp = smooth_and_interp.interpolate_zeros(f0)
-        _std = np.std(interp)
-        _min = np.min(interp)
-        low_limit = smooth_and_interp.smooth(interp, 200) - 1.5 * _std
-        low_limit[low_limit < _min] = _min
-        hi_limit = smooth_and_interp.smooth(interp, 100) + 2. * _std
-        voicing = np.array(f0)
-        constrained = np.array(f0)
-        constrained = np.maximum(f0, low_limit)
-        constrained = np.minimum(constrained, hi_limit)
-        interp = smooth_and_interp.peak_smooth(
-            constrained,
-            100,
-            20,
-            voicing=voicing)
-        # smooth voiced parts a bit too
-        interp = smooth_and_interp.peak_smooth(interp, 3, 2)
-        return interp
-    else:
-        raise("no such interpolation method: %s", method)
+def _interpolate(f0):
+    interp = smooth_and_interp.interpolate_zeros(f0)
+    _std = np.std(interp)
+    _min = np.min(interp)
+    low_limit = smooth_and_interp.smooth(interp, 200) - 1.5 * _std
+    low_limit[low_limit < _min] = _min
+    hi_limit = smooth_and_interp.smooth(interp, 100) + 2. * _std
+    voicing = np.array(f0)
+    constrained = np.array(f0)
+    constrained = np.maximum(f0, low_limit)
+    constrained = np.minimum(constrained, hi_limit)
+    interp = smooth_and_interp.peak_smooth(
+        constrained,
+        100,
+        20,
+        voicing=voicing)
+    # smooth voiced parts a bit too
+    return smooth_and_interp.peak_smooth(interp, 3, 2)
 
 
-def extract_f0(
-    waveform,
-    fs=16000,
-    f0_min=30,
-    f0_max=550,
-    harmonics=10.,
-    voicing=50.,
-    configuration='pitch_tracker'):
+def extract_f0(waveform, fs=16000, harmonics=10.):
     """Extract F0 from a waveform"""
-    # first determine f0 without limits, then use mean and std of the first estimate
-    # to limit search range.
-    if f0_min == 0 or f0_max == 0:
-        if USE_REAPER and configuration == 'REAPER':
-            _, _, _, f0, _ = pyreaper.reaper(waveform, fs, f0_min, f0_max)
-        else:
-            f0, _ = pitch_tracker.inst_freq_pitch(
-                waveform,
-                fs,
-                f0_min,
-                f0_max,
-                harmonics,
-                voicing,
-                False,
-                200)
-
-        mean_f0 = np.mean(f0[f0 > 0])
-        std_f0 = np.std(f0[f0 > 0])
-        f0_min = max((mean_f0 - 3 * std_f0, 40.))
-        f0_max = mean_f0 + 6 * std_f0
-
-    if USE_REAPER and configuration == 'REAPER':
-        _, _, _, f0, _ = pyreaper.reaper(waveform, fs, f0_min, f0_max)
-    else:
-        f0, _ = pitch_tracker.inst_freq_pitch(
-            waveform,
-            fs,
-            f0_min,
-            f0_max,
-            harmonics,
-            voicing,
-            False,
-            200)
-
+    f0, _ = pitch_tracker.inst_freq_pitch(
+        waveform,
+        fs,
+        emphases.baseslines.prominence.FMIN,
+        emphases.baseslines.prominence.FMAX,
+        harmonics,
+        emphases.baseslines.prominence.VOICED_THRESHOLD,
+        False,
+        200)
     return f0
 
 
-def process(f0, fix_outliers=True, interpolate=True):
+def process(f0):
     log_pitch = np.array(f0)
     log_scaled = True
     if np.mean(f0[f0 > 0]) > 20:
@@ -163,10 +118,9 @@ def process(f0, fix_outliers=True, interpolate=True):
         log_pitch[f0 > 0] = np.log(f0[f0 > 0])
         log_pitch[f0 <= 0] = 0
 
-    if fix_outliers:
-        log_pitch = _remove_outliers(log_pitch)
-    if interpolate:
-        log_pitch = _interpolate(log_pitch, 'true_envelope')
+    log_pitch = _remove_outliers(log_pitch)
+    log_pitch = _interpolate(log_pitch)
+
     if not log_scaled:
         return np.exp(log_pitch)
     else:

@@ -1,10 +1,11 @@
+import csv
 import shutil
 import ssl
 import tarfile
 import urllib
 
-import pandas as pd
 import pypar
+import torch
 import torchaudio
 
 import emphases
@@ -165,10 +166,41 @@ def buckeye():
 
     # Read buckeye annotations
     data_directory = emphases.DATA_DIR / 'buckeye'
-    annotations = pd.read_csv(data_directory  / 'annotations.csv')
+    with open(data_directory  / 'annotations.csv') as file:
+        reader = csv.DictReader(file)
+        annotations = [row for row in reader]
 
-    # TODO - extract per-word emphasis scores
-    pass
+    # Extract per-word emphasis scores
+    alignment_files = (cache_directory / 'alignment').glob('*.TextGrid')
+    for file in alignment_files:
+
+        # Load alignment
+        alignment = pypar.Alignment(file)
+
+        # Get words from annotation
+        words = [word for word in annotations if word['filename'] == file.stem]
+
+        # Get per-word emphasis scores
+        j = 0
+        scores = torch.zeros(len(alignment))
+        for i, word in enumerate(alignment):
+
+            # Keep silences as zero
+            if str(word) == pypar.SILENCE:
+                continue
+
+            # Make sure alignments are aligned
+            assert str(word).lower() == words[j]['word'].lower()
+
+            # Update scores
+            # pa.32 is the average of 32 human judgments of the perception of
+            # prominence based on acoustic features
+            scores[i] == words[j]['pa.32']
+
+            j += 1
+
+        # Save scores
+        torch.save(scores, file.parent / 'scores' / f'{file.stem}.pt')
 
 
 ###############################################################################

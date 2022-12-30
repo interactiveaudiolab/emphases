@@ -1,5 +1,7 @@
-from . import cwt_utils, smooth_and_interp, misc
+from . import cwt_utils, smooth_and_interp
 import numpy as np
+
+import emphases
 
 
 ###############################################################################
@@ -29,14 +31,13 @@ SILENCE_SYMBOLS = [
 ###############################################################################
 
 
-def _get_dur_stats(labels, linear=False):
+def _get_dur_stats(labels):
     durations = []
     for i in range(len(labels)):
-        (st,en, unit) = labels[i]
+        st, en, unit = labels[i]
         if unit.lower() not in SILENCE_SYMBOLS:
-            dur = en-st
-            if not linear:
-                dur = np.log(dur + 1.)
+            dur = en - st
+            dur = np.log(dur + 1.)
             durations.append(dur)
     durations = np.array(durations)
     return np.min(durations), np.max(durations), np.mean(durations)
@@ -54,7 +55,7 @@ def get_rate(params, hp=10, lp=150):
         params,
         mother_name='Morlet',
         num_scales=80,
-        scale_distance=0.1,
+        scale_distance=.1,
         apply_coi=True,
         period=2)
     wavelet_matrix = abs(wavelet_matrix)
@@ -70,20 +71,19 @@ def get_rate(params, hp=10, lp=150):
     return smooth_and_interp.smooth(rate, 30)
 
 
-def duration(labels, rate=200, linear=False, bump=False):
+def duration(labels, rate=200):
     """Construct duration signal from labels"""
     dur = np.zeros(len(labels))
     params = np.zeros(int(labels[-1][1] * rate))
     prev_end = 0
-    min_dur, *_ = _get_dur_stats(labels, linear)
+    min_dur, *_ = _get_dur_stats(labels)
 
     for i in range(0, len(labels)):
         st, en, unit = labels[i]
         st *= rate
         en *= rate
         dur[i] = en-st
-        if not linear:
-            dur[i] = np.log(dur[i] + 1.)
+        dur[i] = np.log(dur[i] + 1.)
 
         if unit.lower() in SILENCE_SYMBOLS:
             dur[i] = min_dur
@@ -95,14 +95,9 @@ def duration(labels, rate=200, linear=False, bump=False):
         # unit duration -> height of the duration contour in the middle of the unit
         params[int(st + (en - st) / 2.)] = dur[i]
 
-        # "bump" -> emphasize difference between adjacent unit durations
-        if i > 0 and bump:
-            params[int(st)] = \
-                (dur[i] + dur[i - 1]) / 2. - (abs(dur[i] - dur[i - 1]))
-
         # Handle gaps in labels similarly to silences
         if st > prev_end and i > 1:
-            params[int(prev_end + (st - prev_end) / 2.0)] = min_dur
+            params[int(prev_end + (st - prev_end) / 2.)] = min_dur
         prev_end = en
 
     # set endpoints to mean in order to avoid large "valleys"
@@ -117,20 +112,19 @@ def duration(labels, rate=200, linear=False, bump=False):
 
 
 def get_duration_signal(
-    tiers=[],
+    alignment,
     weights=[],
-    rate=1,
-    linear=True,
-    bump=False):
+    rate=1):
     """
     Construct duration contour from labels. If many tiers are selected,
     construct contours for each tier and return a weighted sum of those
     """
+    # TODO - update to accept pypar alignment
     durations = []
     for tier in tiers:
         durations.append(
-            misc.normalize_std(
-                duration(tier, rate=rate, linear=linear, bump=bump)))
+            emphases.baselines.prominence.normalize(
+                duration(tier, rate=rate)))
     durations = match_length(durations)
     sum_durations = np.zeros(len(durations[0]))
     if len(weights) != len(tiers):

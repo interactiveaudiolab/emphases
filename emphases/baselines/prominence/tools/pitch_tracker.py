@@ -1,5 +1,5 @@
 import numpy as np
-from . import misc, cwt_utils, f0_processing, smooth_and_interp
+from . import cwt_utils, f0_processing, smooth_and_interp
 
 import scipy.signal
 
@@ -63,7 +63,7 @@ def _track_pitch(
         g_window = gaussian(win_len, int(np.mean(smoothed) * (1. / (iter + 1.) ** 2)))
 
         for i in range(0, pic.shape[0]):
-            window=np.zeros(len(pic_smooth[i]))
+            window = np.zeros(len(pic_smooth[i]))
             st = int(np.max((0, int(smoothed[i] - win_len))))
             end = int(np.min((int(smoothed[i] + win_len * .5), win_len - st)))
             window[st:end] = g_window[win_len - end:]
@@ -98,8 +98,10 @@ def inst_freq_pitch(
     voicing_thresh = (voicing_thresh - 50.) / 100.
     acorr_weight /= 100.
     sample_rate = 4000.
+    # TODO
     tmp_wav_form = emphases.resample(wav_form, fs, sample_rate)
-    tmp_wav_form = misc.normalize_std(tmp_wav_form)
+
+    tmp_wav_form = emphases.baselines.prominence.normalize(tmp_wav_form)
 
     DEC = int(round(sample_rate / target_rate))
 

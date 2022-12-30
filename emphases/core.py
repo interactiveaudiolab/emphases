@@ -241,8 +241,10 @@ def from_alignment_and_audio(
 
 def infer(alignment, audio, checkpoint=emphases.DEFAULT_CHECKPOINT):
     """Perform model inference to annotate emphases of each word"""
-    # Maybe cache model
+    # Neural methods
     if emphases.METHOD in ['framewise', 'wordwise']:
+
+        # Maybe cache model
         if (
             not hasattr(infer, 'model') or
             infer.checkpoint != checkpoint or
@@ -262,17 +264,17 @@ def infer(alignment, audio, checkpoint=emphases.DEFAULT_CHECKPOINT):
         # Infer
         return infer.model(alignment, audio)
 
+    # Prominence method
     elif emphases.METHOD == 'prominence':
-
-        # TODO - rest of args
-        return emphases.baselines.prominence.from_audio(
+        return emphases.baselines.prominence.infer(
+            alignment,
             audio,
             emphases.SAMPLE_RATE)
 
+    # Pitch variance method
     elif emphases.METHOD == 'variance':
-
-        # TODO - args
-        return emphases.baselines.variance.from_audio(
+        return emphases.baselines.variance.infer(
+            alignment,
             audio,
             emphases.SAMPLE_RATE)
 

@@ -1,5 +1,4 @@
 # Development
-# - Buckeye score files***
 # - Baseline prominence method**
 # - Training batching from any word (+ numpy cache)*
 

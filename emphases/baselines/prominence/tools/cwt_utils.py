@@ -73,7 +73,13 @@ def _zero_outside_coi(wavelet_matrix, freqs, rate=200):
     return wavelet_matrix
 
 
-def _scale_for_reconstruction(wavelet_matrix,scales, dj, dt,mother="mexican_hat",period=3):
+def _scale_for_reconstruction(
+    wavelet_matrix,
+    scales,
+    dj,
+    dt,
+    mother='mexican_hat',
+    period=3):
     """ ?
 
     Parameters
@@ -117,7 +123,7 @@ def _scale_for_reconstruction(wavelet_matrix,scales, dj, dt,mother="mexican_hat"
     return scaled
 
 
-def _freq2scale(freq, mother, period = 3.):
+def _freq2scale(freq, mother, period=3.):
     """
     convert frequency to wavelet scale width
 
@@ -135,12 +141,12 @@ def _freq2scale(freq, mother, period = 3.):
     if mother.lower() == 'morlet':
         return  (1. / freq) * (period + sqrt(2. + period ** 2)) / (4 * pi)
     else:
-        return (1. / freq) / (4. * pi / (2. * period + 1.))
+        raise ValueError()
 
 
 def cwt_analysis(
     params,
-    mother_name="mexican_hat",
+    mother_name='mexican_hat',
     num_scales=12,
     first_scale=None,
     first_freq=None,
@@ -194,8 +200,6 @@ def cwt_analysis(
 
     if str.lower(mother_name) == 'morlet':
         mother = cwt.Morlet(period)
-    elif str.lower(mother_name) == 'paul':
-        mother = cwt.Paul(period)
 
     wavelet_matrix, scales, freqs, *_ = _padded_cwt(
         params,
