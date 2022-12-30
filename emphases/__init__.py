@@ -1,10 +1,7 @@
 # Development
-# - Buckeye
-#   - alignment files***
-#   - score files**
-#   - text files
-# - Prominence loading*
-# - Config files
+# - Upload buckeye tarball****
+# - Buckeye score files***
+# - Baseline prominence method**
 
 
 ###############################################################################

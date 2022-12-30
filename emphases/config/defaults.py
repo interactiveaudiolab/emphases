@@ -52,14 +52,12 @@ SAMPLE_RATE = 16000
 
 
 # Interpolation method for framewise training
-INTERPOLATION = "linear"
+INTERPOLATION = 'linear'
 
-MAX_NUM_OF_WORDS = 56 # set limit for number of words to be considered from in a given sample (truncating after this point for now)
-MAX_WORD_DURATION = 96 # duration limit for a word based frame
-
-# NUM_FFT is the length of the transformed axis of the output/ length of the windowed signal after padding with zeros
-# https://stackoverflow.com/questions/62584184/understanding-the-shape-of-spectrograms-and-n-mels
+# Number of linear frequency channels
 NUM_FFT =  1024
+
+# Number of mel channels
 NUM_MELS = 80
 
 # Seed for all random number generators

@@ -37,22 +37,21 @@ def buckeye():
     audio_files = directory.rglob('*.wav')
 
     # Get speakers
-    # TODO - is there really only one file per speaker?
-    speakers = [file.stem for file in audio_files]
+    stems = [file.stem for file in audio_files]
 
-    # Shuffle speakers
+    # Shuffle stems
     random.seed(emphases.RANDOM_SEED)
-    random.shuffle(speakers)
+    random.shuffle(stems)
 
     # Get split locations
-    left = int(emphases.SPLIT_SIZE_TRAIN * len(speakers))
-    right = left + int(emphases.SPLIT_SIZE_VALID * len(speakers))
+    left = int(emphases.SPLIT_SIZE_TRAIN * len(stems))
+    right = left + int(emphases.SPLIT_SIZE_VALID * len(stems))
 
     # Partition
     return {
-        "train": speakers[:left],
-        "valid": speakers[left:right],
-        "test": speakers[right:]}
+        "train": stems[:left],
+        "valid": stems[left:right],
+        "test": stems[right:]}
 
 
 def libritts():
