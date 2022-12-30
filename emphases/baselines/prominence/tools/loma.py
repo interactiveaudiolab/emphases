@@ -14,9 +14,9 @@ def simplify(loma):
     simplified = []
     for l in loma:
         # align loma to it's position in the middle of the line
-        pos =  l[int(len(l)/2.0)][0]
+        pos =  l[int(len(l) / 2.)][0]
         strength = l[-1][1]
-        simplified.append((pos,strength))
+        simplified.append((pos, strength))
     return simplified
 
 
@@ -33,7 +33,7 @@ def get_prominences(pos_loma, labels, rate=1):
     """
     max_word_loma = []
     loma = simplify(pos_loma)
-    for st, end, unit in labels:
+    for st, end, _ in labels:
         st *= rate
         end *= rate
         word_loma = []
@@ -44,7 +44,6 @@ def get_prominences(pos_loma, labels, rate=1):
             max_word_loma.append(sorted(word_loma, key=itemgetter(1))[-1])
         else:
             max_word_loma.append([st + (end - st) / 2., 0.])
-
     return max_word_loma
 
 
@@ -63,7 +62,7 @@ def get_boundaries(max_word_loma,boundary_loma, labels):
     boundary_loma = simplify(boundary_loma)
     max_boundary_loma = []
     st = 0
-    end=0
+    end = 0
     for i in range(1, len(max_word_loma)):
         w_boundary_loma = []
         for l in boundary_loma:
@@ -141,7 +140,7 @@ def get_loma(wavelet_matrix, scales, min_scale, max_scale):
     ----
     change this so that one level is done in one chunk, not one parent.
     """
-    min_peak = -10000.0 # minimum peak amplitude to consider. NOTE:this has no meaning unless scales normalized
+    min_peak = -10000. # minimum peak amplitude to consider. NOTE:this has no meaning unless scales normalized
     max_dist = 10 # how far in time to look for parent peaks. NOTE: frame rate and scale dependent
 
     # get peaks from the first scale

@@ -1,21 +1,6 @@
 import numpy as np
 
 
-def match_length(sig_list):
-    """Reduce length of all signals to a the minimum one.
-
-    Parameters
-    ----------
-    sig_list: list
-        List of signals which are 1D array of samples.
-
-    """
-    length = min(map(len, sig_list))
-    for i in range(0, len(sig_list)):
-        sig_list[i] = sig_list[i][:int(length)]
-    return sig_list
-
-
 def get_peaks(params, threshold=-10):
     """Find the peaks based on the given prosodic parameters.
 
@@ -37,7 +22,7 @@ def get_peaks(params, threshold=-10):
 
 
 def get_best_scale(scales, labels):
-    """Find the scale whose width is the closes to the average unit length represented in the labels
+    """Find the scale whose width is closest to the average label length
 
     Parameters
     ----------
@@ -49,7 +34,7 @@ def get_best_scale(scales, labels):
     Returns
     -------
     int
-        the index of the best scale
+        The index of the best scale
     """
     mean_length = 0
     for l in labels:
@@ -59,20 +44,20 @@ def get_best_scale(scales, labels):
     return np.argmin(np.abs(dist))
 
 
-def normalize_minmax(params, epsilon=0.1):
-    """Normalize parameters into a 0,1 scale
+def normalize_minmax(params, epsilon=.1):
+    """Normalize parameters into a [0, 1] scale
 
     Parameters
     ----------
     params: arraylike
-        The parameters to normalize.
+        The parameters to normalize
     epsilon: float
         The epsilon to deal with numerical stability
 
     Returns
     ------
     arraylike
-        the normalized parameters
+        Normalized parameters
     """
     return (params - min(params) + epsilon) / (max(params) - min(params))
 
@@ -85,15 +70,16 @@ def normalize_std(params, std=0.):
     params: arraylike
         The parameters to normalize.
     std: float
-        A given standard deviation. If 0, the standard deviation is computed on the params. (Default: 0)
+        A given standard deviation. If 0, the standard deviation is computed
+        on the params. (Default: 0)
 
     Returns
     ------
     arraylike
-        the normalized parameters
+        Normalized parameters
     """
     if std == 0.:
         std = np.nanstd(params)
-    if std < 0.00001:
+    if std < .00001:
         return np.zeros(len(params))
     return (params - np.nanmean(params)) / std

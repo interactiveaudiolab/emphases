@@ -1,8 +1,6 @@
-import glob
 import os
 import yaml
 from collections import defaultdict
-from joblib import Parallel, delayed
 
 import numpy as np
 
@@ -179,14 +177,20 @@ def analysis(alignment, audio, sample_rate, cfg):
 
     # Get scale at average length of selected tier
     scale_dist = cfg['wavelet']['scale_distance']
-    scales = (1. / freqs * 200) * 0.5
+    scales = 1. / freqs * 200 * .5
     unit_scale = misc.get_best_scale(scales, labels)
 
     # Define the scale information
-    pos_loma_start_scale = unit_scale + int(cfg['loma']['prom_start'] / scale_dist)  # three octaves down from average unit length
+    # Three octaves down from average unit length
+    pos_loma_start_scale = \
+        unit_scale + int(cfg['loma']['prom_start'] / scale_dist)
     pos_loma_end_scale = unit_scale + int(cfg['loma']['prom_end'] / scale_dist)
-    neg_loma_start_scale = unit_scale + int(cfg['loma']['boundary_start'] / scale_dist)  # two octaves down
-    neg_loma_end_scale = unit_scale + int(cfg['loma']['boundary_end'] / scale_dist)  # one octave up
+
+    # Two octaves down
+    neg_loma_start_scale = unit_scale + int(cfg['loma']['boundary_start'] / scale_dist)
+
+    # One octave up
+    neg_loma_end_scale = unit_scale + int(cfg['loma']['boundary_end'] / scale_dist)
 
     pos_loma = loma.get_loma(cwt, scales, pos_loma_start_scale, pos_loma_end_scale)
     neg_loma = loma.get_loma(-cwt, scales, neg_loma_start_scale, neg_loma_end_scale)
@@ -198,13 +202,9 @@ def analysis(alignment, audio, sample_rate, cfg):
     return prominences, boundaries
 
 
-###############################################################################
-# Main function
-###############################################################################
-
-
 def main(args):
     """Main entry function"""
+    # TODO
     configuration = defaultdict()
     config_base_path = "/home/pranav/prominence-estimation-exp/emphases/emphases/assets/configs/prominence"
     with open(config_base_path + "/default.yaml", 'r') as f:
@@ -213,26 +213,3 @@ def main(args):
     if args.config:
         with open(args.config, 'r') as f:
             configuration = apply_configuration(configuration, defaultdict(lambda: False, yaml.load(f, Loader=yaml.FullLoader)))
-
-    # Get the number of jobs
-    nb_jobs = args.nb_jobs
-
-    # Loading files
-    if os.path.isfile(args.input):
-        audio_files = [args.input]
-    else:
-        audio_files = glob.glob(args.input + '/*.wav')
-    if len(audio_files) == 1:
-        nb_jobs = 1
-
-    if nb_jobs > 1:
-        Parallel(n_jobs=nb_jobs)(
-            delayed(analysis)(
-                audio_file,
-                configuration,
-                args.annotation_directory,
-                args.output_directory)
-            for audio_file in audio_files)
-    else:
-        for audio_file in audio_files:
-            analysis(audio_file, configuration, args.annotation_directory)

@@ -1,4 +1,4 @@
-from . import smooth_and_interp, misc
+from . import cwt_utils, smooth_and_interp, misc
 import numpy as np
 
 
@@ -7,7 +7,7 @@ import numpy as np
 ###############################################################################
 
 
-SIL_SYMBOLS = [
+SILENCE_SYMBOLS = [
     '#',
     '!pau',
     'sp',
@@ -29,11 +29,11 @@ SIL_SYMBOLS = [
 ###############################################################################
 
 
-def _get_dur_stats(labels, linear=False, sil_symbols=[]):
+def _get_dur_stats(labels, linear=False):
     durations = []
     for i in range(len(labels)):
         (st,en, unit) = labels[i]
-        if unit.lower() not in sil_symbols:
+        if unit.lower() not in SILENCE_SYMBOLS:
             dur = en-st
             if not linear:
                 dur = np.log(dur + 1.)
@@ -47,14 +47,12 @@ def get_rate(params, hp=10, lp=150):
     estimation of speech rate as a center of gravity of wavelet spectrum
     similar to method described in "Boundary Detection using Continuous Wavelet Analysis" (2016)
     """
-    from . import cwt_utils
-
     params = smooth_and_interp.smooth(params, hp)
     params -= smooth_and_interp.smooth(params, lp)
 
     wavelet_matrix, *_  = cwt_utils.cwt_analysis(
         params,
-        mother_name="Morlet",
+        mother_name='Morlet',
         num_scales=80,
         scale_distance=0.1,
         apply_coi=True,
@@ -72,17 +70,12 @@ def get_rate(params, hp=10, lp=150):
     return smooth_and_interp.smooth(rate, 30)
 
 
-def duration(
-    labels,
-    rate=200,
-    linear=False,
-    bump=False,
-    sil_symbols=SIL_SYMBOLS):
+def duration(labels, rate=200, linear=False, bump=False):
     """Construct duration signal from labels"""
     dur = np.zeros(len(labels))
     params = np.zeros(int(labels[-1][1] * rate))
     prev_end = 0
-    min_dur, *_ = _get_dur_stats(labels, linear, sil_symbols)
+    min_dur, *_ = _get_dur_stats(labels, linear)
 
     for i in range(0, len(labels)):
         st, en, unit = labels[i]
@@ -92,7 +85,7 @@ def duration(
         if not linear:
             dur[i] = np.log(dur[i] + 1.)
 
-        if unit.lower() in sil_symbols:
+        if unit.lower() in SILENCE_SYMBOLS:
             dur[i] = min_dur
 
         # skip very short units, likely labelling errors
@@ -126,7 +119,6 @@ def duration(
 def get_duration_signal(
     tiers=[],
     weights=[],
-    sil_symbols=SIL_SYMBOLS,
     rate=1,
     linear=True,
     bump=False):
@@ -135,19 +127,28 @@ def get_duration_signal(
     construct contours for each tier and return a weighted sum of those
     """
     durations = []
-    for t in tiers:
+    for tier in tiers:
         durations.append(
             misc.normalize_std(
-                duration(
-                    t,
-                    rate=rate,
-                    sil_symbols=sil_symbols,
-                    linear=linear,
-                    bump=bump)))
-    durations = misc.match_length(durations)
+                duration(tier, rate=rate, linear=linear, bump=bump)))
+    durations = match_length(durations)
     sum_durations = np.zeros(len(durations[0]))
     if len(weights) != len(tiers):
         weights = np.ones(len(tiers))
     for i in range(len(durations)):
         sum_durations += durations[i] * weights[i]
     return sum_durations
+
+
+def match_length(sig_list):
+    """Reduce length of all signals to a the minimum one.
+
+    Parameters
+    ----------
+    sig_list: list
+        List of signals which are 1D array of samples.
+    """
+    length = min(map(len, sig_list))
+    for i in range(0, len(sig_list)):
+        sig_list[i] = sig_list[i][:int(length)]
+    return sig_list

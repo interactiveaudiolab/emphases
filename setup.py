@@ -14,13 +14,11 @@ setup(
     url='https://github.com/interactiveaudiolab/emphases',
     install_requires=[
         'matplotlib',
-        'praat-textgrids',
         'pycwt',
         'pyfoal',
         'pypar',
         'pyyaml',
         'scipy',
-        'soundfile',
         'tensorboard',
         'torch',
         'torchaudio',

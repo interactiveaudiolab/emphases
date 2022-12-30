@@ -20,16 +20,16 @@ def extract_energy(
 
     # hilbert is sometimes prohibitively slow, should pad to next power of two
     if method == 'hilbert':
-        energy=abs(scipy.signal.hilbert(lp_waveform))
+        energy = abs(scipy.signal.hilbert(lp_waveform))
 
-    elif method == "true_envelope":
+    elif method == 'true_envelope':
 
         # window should be about one pitch period, ~ 5 ms
         win = .005 *fs
         energy = smooth_and_interp.peak_smooth(abs(lp_waveform), 200, win)
 
-    elif method == "rms":
-        energy = np.sqrt(lp_waveform**2)
+    elif method == 'rms':
+        energy = np.sqrt(lp_waveform ** 2)
 
     # TODO
     return misc.resample(energy, fs, target_rate)

@@ -7,7 +7,7 @@ def read_textgrid(filename, sample_rate=200):
     labs = {}
 
     for tier in tg.get_tier_names():
-        if (tg.get_tier_by_name(tier)).tier_type()!='IntervalTier':
+        if (tg.get_tier_by_name(tier)).tier_type() != 'IntervalTier':
             continue
         tiers.append(tg.get_tier_by_name(tier))
 
@@ -15,14 +15,14 @@ def read_textgrid(filename, sample_rate=200):
         for a in tiers[-1].annotations:
 
             # this was for some past experiment
-            if a.text in ["p1","p2","p3","p4","p5","p6","p7"]:
-                lab[-1][-1]=lab[-1][-1]+"_"+a.text
+            if a.text in ['p1','p2','p3','p4','p5','p6','p7']:
+                lab[-1][-1] = lab[-1][-1] + '_' + a.text
             else:
-                lab.append([a.start_time*sample_rate,a.end_time*sample_rate,a.text])
+                lab.append([a.start_time * sample_rate, a.end_time * sample_rate, a.text])
         labs[tier.lower()] = lab
     for i in range(len(labs['prosody'])):
-        if labs['prosody'][i][2][-2:] not in ["p1","p2","p3","p4","p5","p6","p7"]:
-            labs['prosody'][i][2]+="_p0"
+        if labs['prosody'][i][2][-2:] not in ['p1','p2','p3','p4','p5','p6','p7']:
+            labs['prosody'][i][2] += '_p0'
 
     return labs
 
@@ -31,9 +31,9 @@ def htk_to_ms(htk_time):
     """
     Convert time in HTK (100 ns) units to 5 ms
     """
-    if type(htk_time)==type("string"):
+    if type(htk_time) == type('string'):
         htk_time = float(htk_time)
-    return htk_time / 50000.0
+    return htk_time / 50000.
 
 
 def read_htk_label(fname, htk_time=True):
@@ -55,8 +55,8 @@ def read_htk_label(fname, htk_time=True):
 
     segments = []
     words = []
-    prev_end = 0.0
-    prev_start = 0.0
+    prev_end = 0.
+    prev_start = 0.
     prev_word = '!SIL'
     word = ''
     for line in label:
@@ -81,15 +81,15 @@ def read_htk_label(fname, htk_time=True):
             start = htk_to_ms(int(start))
         else:
             # 5ms frame
-            end = float(end)*200
-            start = float(start)*200
+            end = float(end) * 200
+            start = float(start) * 200
 
         if start == end:
             continue
 
         prev_end = start
 
-        segments.append([int(start), int(end), segment]) #
+        segments.append([int(start), int(end), segment])
 
         """
         if word or segments[-1][2] in ["SIL", "pause", '#']:

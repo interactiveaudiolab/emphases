@@ -14,7 +14,7 @@ def _get_f0(spec, energy, min_hz, max_hz, thresh, sil_thresh):
     """
     cand = int(min_hz) + np.argmax(spec[int(min_hz):int(max_hz)])
     if spec[cand] > thresh and energy > sil_thresh:
-        if cand > 2 * min_hz and spec[int(round(cand / 2.))] > spec[cand] * 0.5:
+        if cand > 2 * min_hz and spec[int(round(cand / 2.))] > spec[cand] * .5:
             return int(round(cand / 2.))
         else:
             return cand
@@ -25,8 +25,8 @@ def _track_pitch(
     pic,
     min_hz=50,
     max_hz=450,
-    thresh=0.1,
-    energy_thresh=1.0):
+    thresh=.1,
+    energy_thresh=1.):
     """
     extract pitch contour from time-frequency image
     bin with maximum energy / frame is chosen as a first f0 estimate,
@@ -36,19 +36,25 @@ def _track_pitch(
 
     # calc energy threshold for voicing
     log_energy = np.log(np.sum(pic, axis=1))
-    energy_thresh=np.min(smooth_and_interp.smooth(log_energy,20)) + energy_thresh
-    pic_smooth = pic*scipy.ndimage.gaussian_filter(pic, [2,5])
+    energy_thresh = \
+        np.min(smooth_and_interp.smooth(log_energy, 20)) + energy_thresh
+    pic_smooth = pic * scipy.ndimage.gaussian_filter(pic, [2, 5])
 
     # find frequency bins with max_energy
     for i in range(0, pic_smooth.shape[0]):
-        pitch[i] = _get_f0(pic_smooth[i], log_energy[i],min_hz, max_hz, thresh, energy_thresh)
+        pitch[i] = _get_f0(
+            pic_smooth[i],
+            log_energy[i],
+            min_hz,
+            max_hz,
+            thresh,
+            energy_thresh)
 
     # second pass with soft constraints
     n_iters = 3
     from scipy.signal import gaussian
 
     for iter in range(0, n_iters):
-
         smoothed = f0_processing.process(pitch)
         smoothed = smooth_and_interp.smooth(smoothed, int(200. / (iter + 1.)))
 
@@ -59,7 +65,7 @@ def _track_pitch(
         for i in range(0, pic.shape[0]):
             window=np.zeros(len(pic_smooth[i]))
             st = int(np.max((0, int(smoothed[i] - win_len))))
-            end = int(np.min((int(smoothed[i] + win_len * 0.5), win_len - st)))
+            end = int(np.min((int(smoothed[i] + win_len * .5), win_len - st)))
             window[st:end] = g_window[win_len - end:]
             pitch[i] = _get_f0(
                 pic_smooth[i] * window, log_energy[i],
@@ -77,9 +83,17 @@ def _assign_to_bins(pic, freqs, mags):
             pic[j, int(freqs[i, j])] += (mags[i, j])
 
 
-def inst_freq_pitch(wav_form, fs, min_hz=50, max_hz=400, acorr_weight=10., voicing_thresh=50., target_rate=200):
+def inst_freq_pitch(
+    wav_form,
+    fs,
+    min_hz=50,
+    max_hz=400,
+    acorr_weight=10.,
+    voicing_thresh=50.,
+    target_rate=200):
     """
-    extract f0 track from speech wav file using instanenous frequency calculated from continuous wavelet transform
+    Extract f0 track from speech wav file using instanenous frequency
+    calculated from continuous wavelet transform
     """
     voicing_thresh = (voicing_thresh - 50.) / 100.
     acorr_weight /= 100.
@@ -87,20 +101,21 @@ def inst_freq_pitch(wav_form, fs, min_hz=50, max_hz=400, acorr_weight=10., voici
     tmp_wav_form = emphases.resample(wav_form, fs, sample_rate)
     tmp_wav_form = misc.normalize_std(tmp_wav_form)
 
-    DEC = int(round(sample_rate/target_rate))
+    DEC = int(round(sample_rate / target_rate))
 
-    pic = np.zeros(shape=(int(len(tmp_wav_form)/float(DEC)), int(sample_rate/4.0)))
+    pic = np.zeros(
+        shape=(int(len(tmp_wav_form) / float(DEC)), int(sample_rate / 4.)))
 
     # use continuous wavelet transform to get instantenous frequencies
-    # integrate analyses with morlet mother wavelets with periods = 3,5,7 for good time and frequency resolution
+    # integrate analyses with morlet mother wavelets with period = 5 for
+    # good time and frequency resolution
     # setup wavelet
     s0 = 2. / sample_rate
-    dj = 0.05 # 20 scales per octave
+    dj = .05 # 20 scales per octave
     J = 120  # six octaves
     dt = 1. / sample_rate
     periods = [5]
     for p in periods:
-
         wavelet_matrix, *_ = cwt_utils.cwt_analysis(
             tmp_wav_form,
             mother_name='morlet',
@@ -128,7 +143,7 @@ def inst_freq_pitch(wav_form, fs, min_hz=50, max_hz=400, acorr_weight=10., voici
     pic = scipy.ndimage.filters.gaussian_filter(pic, [1, 1])
     length = np.min((max_hz * 3, pic.shape[1])).astype(int)
 
-    for i in range(0, pic.shape[0]): # frame
+    for i in range(0, pic.shape[0]):
         acorr1 = np.correlate(pic[i, :length], pic[i, :length], mode='same')
         pic[i, :int(length / 2.)] *= acorr1[int(len(acorr1) / 2.):]
 

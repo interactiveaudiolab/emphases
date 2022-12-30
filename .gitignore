@@ -16,11 +16,3 @@ __pycache__/
 .vscode/
 *.egg-info/
 */.ipynb_checkpoints/*
-
-questions.py
-small_batch_600_steps_eval_logs.log
-
-*.prom
-*.TextGrid
-*.wav
-*.log

@@ -1,4 +1,4 @@
-from numpy import array,sqrt, pad, mean, pi
+from numpy import array, sqrt, pad, mean, pi
 
 import pycwt as cwt
 
@@ -6,24 +6,6 @@ import pycwt as cwt
 ###########################################################################################
 # Private routines
 ###########################################################################################
-
-
-def _unpad(matrix, num):
-    """Private function to unpad axis 1 of a matrix
-
-    Parameters
-    ----------
-    matrix: ndarray
-        a NDarray
-    num: int
-       the unpadding size
-
-    Returns
-    -------
-    ndarray
-    	the unpadded matrix
-    """
-    return matrix[:, num:len(matrix[0]) - num]
 
 
 def _padded_cwt(params, dt, dj, s0, J, mother, padding_len):
@@ -69,7 +51,8 @@ def _padded_cwt(params, dt, dj, s0, J, mother, padding_len):
         s0,
         J,
         mother)
-    wavelet_matrix = _unpad(wavelet_matrix, padding_len)
+    wavelet_matrix = \
+        wavelet_matrix[:, padding_len:len(wavelet_matrix[0]) - padding_len]
     return wavelet_matrix, scales, freqs, coi, fft, fftfreqs
 
 

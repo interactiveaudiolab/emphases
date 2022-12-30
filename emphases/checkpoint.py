@@ -48,7 +48,6 @@ def save(model, optimizer, step, file):
     # Save
     checkpoint = {
         'step': step,
-        'model': model.state_dict(),
         'model': model_state_dict,
         'optimizer': optimizer.state_dict()}
     torch.save(checkpoint, file)

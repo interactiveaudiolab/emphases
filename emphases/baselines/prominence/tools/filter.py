@@ -24,10 +24,10 @@ def butter_bandpass(lowcut, highcut, fs, order=5):
     a: arraylike
     	Denominator polynomial of the IIR filter
     """
-    nyq = 0.5 * fs
+    nyq = .5 * fs
     low = lowcut / nyq
-    if highcut >=nyq*0.95:
-        highcut = nyq*0.95
+    if highcut >= nyq * .95:
+        highcut = nyq * .95
     high = highcut / nyq
     b, a = butter(order, [low, high], btype='band')
     return b, a
