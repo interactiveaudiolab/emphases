@@ -1,15 +1,18 @@
+import fractions
+
 import numpy as np
+from scipy.signal import resample_poly
 
 import emphases
 
-from emphases.baselines.prominence.tools import (
+from emphases.baselines.prominence import (
+    cwt_utils,
+    duration_processing,
     energy_processing,
     f0_processing,
-    duration_processing,
-    misc,
-    smooth_and_interp,
-    cwt_utils,
-    loma)
+    loma,
+    pitch_tracker,
+    smooth_and_interp)
 
 
 ###############################################################################
@@ -33,7 +36,7 @@ def infer(alignment, audio, sample_rate):
     energy = smooth_and_interp.smooth(energy, 10)
 
     # Compute pitch
-    pitch = f0_processing.extract_f0(audio, sample_rate)
+    pitch = pitch_tracker.inst_freq_pitch(audio, sample_rate)
     pitch = f0_processing.process(pitch)
 
     # Extract duration
@@ -68,11 +71,15 @@ def infer(alignment, audio, sample_rate):
     # Distance between adjacent scales (.25 means 4 scales per octave)
     scale_dist = .25  # octaves
 
-    # Get scale at average length of selected tier
-    # TODO
-    words = tiers['words']
+    # Get average word length
+    total, count = 0., 0
+    for word in alignment:
+        total += word.duration()
+        count += 1
+
+    # Get scale that minimizes distance with average word length
     scales = 1. / freqs * 200 * .5
-    unit_scale = misc.get_best_scale(scales, words)
+    unit_scale = np.argmin(np.abs(scales - total / count))
 
     # Define the line of maximum amplitude scale information
     pos_loma_start_scale = unit_scale + int(
@@ -112,3 +119,9 @@ def infer(alignment, audio, sample_rate):
 def normalize(features):
     """Normalize features"""
     return (features - np.nanmean(features)) / (np.nanstd(features) + 1e-7)
+
+
+def resample(signal, original_sample_rate, target_sample_rate):
+    """Resample signal"""
+    ratio = fractions.Fraction(target_sample_rate, original_sample_rate)
+    return resample_poly(signal, ratio.numerator, ratio.denominator)

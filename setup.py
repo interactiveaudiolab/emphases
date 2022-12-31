@@ -8,7 +8,7 @@ with open('README.md', encoding='utf8') as file:
 setup(
     name='emphases',
     description='Representations of prosody for detecting emphases',
-    version='0.0.1',
+    version='0.0.0',
     author='Interactive Audio Lab',
     author_email='interactiveaudiolab@gmail.com',
     url='https://github.com/interactiveaudiolab/emphases',

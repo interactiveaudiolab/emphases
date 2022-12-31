@@ -96,20 +96,6 @@ def _interpolate(f0):
     return smooth_and_interp.peak_smooth(interp, 3, 2)
 
 
-def extract_f0(waveform, fs=16000, harmonics=10.):
-    """Extract F0 from a waveform"""
-    f0, _ = pitch_tracker.inst_freq_pitch(
-        waveform,
-        fs,
-        emphases.baseslines.prominence.FMIN,
-        emphases.baseslines.prominence.FMAX,
-        harmonics,
-        emphases.baseslines.prominence.VOICED_THRESHOLD,
-        False,
-        200)
-    return f0
-
-
 def process(f0):
     log_pitch = np.array(f0)
     log_scaled = True

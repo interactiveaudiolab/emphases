@@ -1,8 +1,6 @@
 import numpy as np
 from operator import itemgetter
 
-from emphases.baselines.prominence.tools import misc
-
 
 def simplify(loma):
     """?
@@ -40,14 +38,14 @@ def get_prominences(pos_loma, labels, rate=1):
         for l in loma:
             if l[0] >= st and l[0] <= end:
                 word_loma.append(l)
-        if len(word_loma)> 0:
+        if len(word_loma) > 0:
             max_word_loma.append(sorted(word_loma, key=itemgetter(1))[-1])
         else:
             max_word_loma.append([st + (end - st) / 2., 0.])
     return max_word_loma
 
 
-def get_boundaries(max_word_loma,boundary_loma, labels):
+def get_boundaries(max_word_loma, boundary_loma, labels):
     """get strongest lines of minimum amplitude between adjacent words' max lines
 
     Parameters
@@ -115,7 +113,6 @@ def _get_parent(child_index, parent_diff, parent_indices):
     if len(parent_indices) > 0:
         return parent_indices[-1]
 
-    return None
 
 def get_loma(wavelet_matrix, scales, min_scale, max_scale):
     """Get the Line Of Maximum Amplitude (loma)
@@ -144,7 +141,7 @@ def get_loma(wavelet_matrix, scales, min_scale, max_scale):
     max_dist = 10 # how far in time to look for parent peaks. NOTE: frame rate and scale dependent
 
     # get peaks from the first scale
-    peaks, indices = misc.get_peaks(wavelet_matrix[min_scale], min_peak)
+    peaks, indices = get_peaks(wavelet_matrix[min_scale], min_peak)
 
     loma = dict()
     root = dict()
@@ -158,7 +155,7 @@ def get_loma(wavelet_matrix, scales, min_scale, max_scale):
         max_dist = np.sqrt(scales[i]) * 4
 
         # find peaks in the parent scale
-        p_peaks, p_indices = misc.get_peaks(wavelet_matrix[i], min_peak)
+        p_peaks, p_indices = get_peaks(wavelet_matrix[i], min_peak)
         parents = dict(zip(p_indices, p_peaks))
 
         # find a parent for each child peak
@@ -192,3 +189,23 @@ def get_loma(wavelet_matrix, scales, min_scale, max_scale):
             sorted_loma.append(loma[k])
 
     return sorted_loma
+
+
+def get_peaks(params, threshold=-10):
+    """Find the peaks based on the given prosodic parameters.
+
+    Parameters
+    ----------
+    params: ?
+        Prosodic parameters
+    threshold: int
+        description
+
+    Returns
+    -------
+    peaks: arraylike
+        array of peak values and peak indices
+    """
+    indices = (np.diff(np.sign(np.diff(params))) < 0).nonzero()[0] + 1
+    peaks = params[indices]
+    return np.array([peaks[peaks > threshold], indices[peaks > threshold]])

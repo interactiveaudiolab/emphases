@@ -86,21 +86,14 @@ def _assign_to_bins(pic, freqs, mags):
 def inst_freq_pitch(
     wav_form,
     fs,
-    min_hz=50,
-    max_hz=400,
-    acorr_weight=10.,
-    voicing_thresh=50.,
+    min_hz=emphases.baseslines.prominence.FMIN,
+    max_hz=emphases.baseslines.prominence.FMAX,
+    voicing_thresh=emphases.baseslines.prominence.VOICED_THRESHOLD,
     target_rate=200):
-    """
-    Extract f0 track from speech wav file using instanenous frequency
-    calculated from continuous wavelet transform
-    """
+    """Extract speech f0 using the continuous wavelet transform"""
     voicing_thresh = (voicing_thresh - 50.) / 100.
-    acorr_weight /= 100.
     sample_rate = 4000.
-    # TODO
-    tmp_wav_form = emphases.resample(wav_form, fs, sample_rate)
-
+    tmp_wav_form = emphases.baselines.prominence.resample(wav_form, fs, sample_rate)
     tmp_wav_form = emphases.baselines.prominence.normalize(tmp_wav_form)
 
     DEC = int(round(sample_rate / target_rate))
