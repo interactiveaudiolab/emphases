@@ -39,6 +39,12 @@ SOURCE_DIR = Path(__file__).parent.parent.parent / 'data' / 'sources'
 ###############################################################################
 
 
+# The maximum representable frequency
+FMAX = 400.
+
+# The minumum representable frequency
+FMIN = 50.
+
 # The number of samples between frames
 HOPSIZE = 160
 
@@ -88,6 +94,38 @@ LOG_INTERVAL = 1000  # steps
 
 # Method to use for evaluation
 METHOD = 'framewise'
+
+
+###############################################################################
+# Prominence baseline parameters
+###############################################################################
+
+
+# Boundary bounds
+LOMA_BOUNDARY_START = -2  # octaves
+LOMA_BOUNDARY_END = 1  # octaves
+
+# Prominence bounds
+LOMA_BOUNDARY_START = -3  # octaves
+LOMA_BOUNDARY_END = 0  # octaves
+
+# Weight applied to the duration
+PROMINENCE_DURATION_WEIGHT = .5
+
+# Maximum frequency in energy calculation
+PROMINENCE_ENERGY_MAX = 5000.
+
+# Minimum frequency in energy calculation
+PROMINENCE_ENERGY_MIN = 200.
+
+# Weight applied to the energy
+PROMINENCE_ENERGY_WEIGHT = 1.
+
+# Weight applied to the pitch
+PROMINENCE_PITCH_WEIGHT = 1.
+
+# Voiced/unvoiced threshold from 0 (all voiced) to 100 (all unvoiced)
+VOICED_THRESHOLD = 50
 
 
 ###############################################################################

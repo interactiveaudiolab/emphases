@@ -133,6 +133,7 @@ def buckeye():
         (cache_directory / feature).mkdir(exist_ok=True, parents=True)
 
     # Copy alignments and filter out unused tokens
+    data_directory = emphases.DATA_DIR / 'buckeye'
     alignment_files = (data_directory / 'alignment').glob('*.TextGrid')
     for file in alignment_files:
 

@@ -1,5 +1,4 @@
 import numpy as np
-from . import filter
 
 import emphases
 
@@ -7,11 +6,11 @@ import emphases
 def extract_energy(
     waveform,
     sample_rate=16000,
-    min_freq=emphases.baselines.prominence.ENERGY_MIN,
-    max_freq=emphases.baselines.prominence.ENERGY_MAX,
+    min_freq=emphases.PROMINENCE_ENERGY_MIN,
+    max_freq=emphases.PROMINENCE_ENERGY_MAX,
     frame_rate=200):
     # Get butterworth bandpass filter parameters
-    lp_waveform =  filter.butter_bandpass_filter(
+    lp_waveform =  emphases.baselines.prominence.filter.butter_bandpass_filter(
         waveform,
         min_freq,
         max_freq,

@@ -1,4 +1,3 @@
-from . import cwt_utils, smooth_and_interp
 import numpy as np
 
 import emphases
@@ -48,10 +47,10 @@ def get_rate(params, hp=10, lp=150):
     estimation of speech rate as a center of gravity of wavelet spectrum
     similar to method described in "Boundary Detection using Continuous Wavelet Analysis" (2016)
     """
-    params = smooth_and_interp.smooth(params, hp)
-    params -= smooth_and_interp.smooth(params, lp)
+    params = emphases.baselines.prominence.smooth_and_interp.smooth(params, hp)
+    params -= emphases.baselines.prominence.smooth_and_interp.smooth(params, lp)
 
-    wavelet_matrix, *_  = cwt_utils.cwt_analysis(
+    wavelet_matrix, *_ = emphases.baselines.prominence.cwt_utils.cwt_analysis(
         params,
         mother_name='Morlet',
         num_scales=80,
@@ -68,7 +67,7 @@ def get_rate(params, hp=10, lp=150):
         rate[i] = np.nonzero(
             wavelet_matrix[:, i].cumsum() >= frame_en * .5)[0].min()
 
-    return smooth_and_interp.smooth(rate, 30)
+    return emphases.baselines.prominence.smooth_and_interp.smooth(rate, 30)
 
 
 def duration(labels, rate=200):
@@ -105,10 +104,8 @@ def duration(labels, rate=200):
     params[-1] = np.mean(dur)
 
     # make continous duration contour and smooth a bit
-    params = smooth_and_interp.interpolate_zeros(params, 'pchip')
-    params = smooth_and_interp.smooth(params, 20)
-
-    return params
+    params = emphases.baselines.prominence.smooth_and_interp.interpolate_zeros(params, 'pchip')
+    return emphases.baselines.prominence.smooth_and_interp.smooth(params, 20)
 
 
 def get_duration_signal(
@@ -119,7 +116,12 @@ def get_duration_signal(
     Construct duration contour from labels. If many tiers are selected,
     construct contours for each tier and return a weighted sum of those
     """
-    # TODO - update to accept pypar alignment
+    word_tier = [(word.start(), word.end(), str(word)) for word in alignment]
+    phoneme_tier = [
+        (phoneme.start(), phoneme.end(), str(phoneme))
+    for phoneme in alignment.phonemes()]
+    tiers = [word_tier, phoneme_tier]
+
     durations = []
     for tier in tiers:
         durations.append(

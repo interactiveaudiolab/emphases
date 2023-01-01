@@ -68,7 +68,7 @@ def _zero_outside_coi(wavelet_matrix, freqs, rate=200):
     """
     for i in range(0, wavelet_matrix.shape[0]):
         coi = int(1. / freqs[i] * rate)
-        wavelet_matrix[i, 0:coi] = 0.
+        wavelet_matrix[i, :coi] = 0.
         wavelet_matrix[i, -coi:] = 0.
     return wavelet_matrix
 
@@ -100,7 +100,7 @@ def _scale_for_reconstruction(
     scaled = array(wavelet_matrix)
 
     # mexican Hat
-    c = dj / (3.541 * 0.867)
+    c = dj / (3.541 * .867)
 
     if mother == 'morlet':
         cc = 1.83
@@ -110,9 +110,9 @@ def _scale_for_reconstruction(
         if period == 4:
             cc = 1.1
         elif period == 5:
-            cc = 0.9484
+            cc = .9484
         elif period == 6:
-            cc = 0.7784
+            cc = .7784
         c = dj / (cc * pi ** (-.25))
 
     for i in range(0, len(scales)):
@@ -123,33 +123,11 @@ def _scale_for_reconstruction(
     return scaled
 
 
-def _freq2scale(freq, mother, period=3.):
-    """
-    convert frequency to wavelet scale width
-
-    Parameters
-    ----------
-    freq: float
-          frequency value in Hz
-
-    mother: string
-            name of the mother wavelet ("mexican_hat", "morlet")
-    """
-    freq = float(freq)
-    if mother.lower() == 'mexican_hat':
-        return (1. / freq) / (2. * pi / sqrt(2 + .5))
-    if mother.lower() == 'morlet':
-        return  (1. / freq) * (period + sqrt(2. + period ** 2)) / (4 * pi)
-    else:
-        raise ValueError()
-
-
 def cwt_analysis(
     params,
     mother_name='mexican_hat',
     num_scales=12,
     first_scale=None,
-    first_freq=None,
     scale_distance=1.,
     apply_coi=True,
     period=5,
@@ -166,8 +144,6 @@ def cwt_analysis(
         The number of scales [default: 12].
     first_scale: int, optional
         The width of the shortest scale
-    first_freq: int, optional
-        The highest frequency in Hz
     scale_distance: float, optional
         The distance between scales [default: 1.0].
     apply_coi: boolean, optional
@@ -189,9 +165,6 @@ def cwt_analysis(
 
     if not first_scale:
         first_scale = dt # first scale, here frame length
-
-    if first_freq:
-        first_scale = _freq2scale(first_freq, mother_name, period)
 
     dj = scale_distance  # distance between scales in octaves
     J = num_scales #  number of scales

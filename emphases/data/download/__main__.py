@@ -14,7 +14,6 @@ def parse_args():
     parser.add_argument(
         '--datasets',
         nargs='+',
-        required=True,
         default=emphases.DATASETS,
         help='The datasets to download')
     return parser.parse_args()

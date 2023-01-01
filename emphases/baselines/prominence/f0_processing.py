@@ -1,6 +1,4 @@
 import numpy as np
-from . import smooth_and_interp
-from . import pitch_tracker
 
 import emphases
 
@@ -29,12 +27,12 @@ def _remove_outliers(log_pitch):
     fixed = np.array(log_pitch)
 
     # Remove outlier f0 values from voicing boundaries
-    boundary_cut = smooth_and_interp.interpolate_zeros(
+    boundary_cut = emphases.baselines.prominence.smooth_and_interp.interpolate_zeros(
         _cut_boundary_vals(fixed, 3),
         'linear')
-    interp = smooth_and_interp.interpolate_zeros(fixed, 'linear')
+    interp = emphases.baselines.prominence.smooth_and_interp.interpolate_zeros(fixed, 'linear')
     fixed[abs(interp - boundary_cut) > .1] = 0
-    interp = smooth_and_interp.interpolate_zeros(fixed, 'linear')
+    interp = emphases.baselines.prominence.smooth_and_interp.interpolate_zeros(fixed, 'linear')
 
     # iterative outlier removal
     # 1. compare current contour estimate to a smoothed contour and remove deviates larger than threshold
@@ -63,7 +61,7 @@ def _remove_outliers(log_pitch):
         _std * min_threshold,
         num_iter + 1)
     for i in range(0, num_iter):
-        smooth_contour = smooth_and_interp.smooth(interp, win_len[i])
+        smooth_contour = emphases.baselines.prominence.smooth_and_interp.smooth(interp, win_len[i])
         low_limit = smooth_contour - outlier_threshold[i]
         # bit more careful upwards, not to cut emphases
         hi_limit = smooth_contour + outlier_threshold[i] * 1.5
@@ -71,29 +69,29 @@ def _remove_outliers(log_pitch):
         # octave jump down fix, more harm than good?
         fixed[interp > hi_limit] = 0
         fixed[interp < low_limit] = 0
-        interp = smooth_and_interp.interpolate_zeros(fixed, 'linear')
+        interp = emphases.baselines.prominence.smooth_and_interp.interpolate_zeros(fixed, 'linear')
 
     return fixed
 
 
 def _interpolate(f0):
-    interp = smooth_and_interp.interpolate_zeros(f0)
+    interp = emphases.baselines.prominence.smooth_and_interp.interpolate_zeros(f0)
     _std = np.std(interp)
     _min = np.min(interp)
-    low_limit = smooth_and_interp.smooth(interp, 200) - 1.5 * _std
+    low_limit = emphases.baselines.prominence.smooth_and_interp.smooth(interp, 200) - 1.5 * _std
     low_limit[low_limit < _min] = _min
-    hi_limit = smooth_and_interp.smooth(interp, 100) + 2. * _std
+    hi_limit = emphases.baselines.prominence.smooth_and_interp.smooth(interp, 100) + 2. * _std
     voicing = np.array(f0)
     constrained = np.array(f0)
     constrained = np.maximum(f0, low_limit)
     constrained = np.minimum(constrained, hi_limit)
-    interp = smooth_and_interp.peak_smooth(
+    interp = emphases.baselines.prominence.smooth_and_interp.peak_smooth(
         constrained,
         100,
         20,
         voicing=voicing)
     # smooth voiced parts a bit too
-    return smooth_and_interp.peak_smooth(interp, 3, 2)
+    return emphases.baselines.prominence.smooth_and_interp.peak_smooth(interp, 3, 2)
 
 
 def process(f0):

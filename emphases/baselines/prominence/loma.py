@@ -18,7 +18,7 @@ def simplify(loma):
     return simplified
 
 
-def get_prominences(pos_loma, labels, rate=1):
+def get_prominences(pos_loma, alignment, rate=1):
     """?
     Parameters
     ----------
@@ -26,12 +26,10 @@ def get_prominences(pos_loma, labels, rate=1):
         Positive loma values
     labels: list of tuple (float, float, string)
         List of labels which are lists of 3 elements [start, end, description]
-    rate: int
-        ?
     """
     max_word_loma = []
     loma = simplify(pos_loma)
-    for st, end, _ in labels:
+    for st, end in [(word.start(), word.end()) for word in alignment]:
         st *= rate
         end *= rate
         word_loma = []
@@ -45,18 +43,8 @@ def get_prominences(pos_loma, labels, rate=1):
     return max_word_loma
 
 
-def get_boundaries(max_word_loma, boundary_loma, labels):
-    """get strongest lines of minimum amplitude between adjacent words' max lines
-
-    Parameters
-    ----------
-    max_word_loma: type
-        description
-    boundary_loma: type
-        description
-    labels: type
-        description
-    """
+def get_boundaries(max_word_loma, boundary_loma, alignment):
+    """get strongest lines of minimum amplitude between adjacent words' max lines"""
     boundary_loma = simplify(boundary_loma)
     max_boundary_loma = []
     st = 0
@@ -77,7 +65,7 @@ def get_boundaries(max_word_loma, boundary_loma, labels):
             max_boundary_loma.append([st + (end - st) / 2, 0])
 
     # final boundary is not estimated
-    max_boundary_loma.append((labels[-1][1], 1))
+    max_boundary_loma.append((alignment.end(), 1))
 
     return max_boundary_loma
 

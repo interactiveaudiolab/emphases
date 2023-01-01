@@ -1,5 +1,4 @@
 import numpy as np
-from . import cwt_utils, f0_processing, smooth_and_interp
 
 import scipy.signal
 
@@ -37,7 +36,7 @@ def _track_pitch(
     # calc energy threshold for voicing
     log_energy = np.log(np.sum(pic, axis=1))
     energy_thresh = \
-        np.min(smooth_and_interp.smooth(log_energy, 20)) + energy_thresh
+        np.min(emphases.baselines.prominence.smooth_and_interp.smooth(log_energy, 20)) + energy_thresh
     pic_smooth = pic * scipy.ndimage.gaussian_filter(pic, [2, 5])
 
     # find frequency bins with max_energy
@@ -55,8 +54,8 @@ def _track_pitch(
     from scipy.signal import gaussian
 
     for iter in range(0, n_iters):
-        smoothed = f0_processing.process(pitch)
-        smoothed = smooth_and_interp.smooth(smoothed, int(200. / (iter + 1.)))
+        smoothed = emphases.baselines.prominence.f0_processing.process(pitch)
+        smoothed = emphases.baselines.prominence.smooth_and_interp.smooth(smoothed, int(200. / (iter + 1.)))
 
         # gradually thightening gaussian window centered on current estimate to softly constrain next iteration
         win_len = 800
@@ -80,15 +79,15 @@ def _track_pitch(
 def _assign_to_bins(pic, freqs, mags):
     for i in range(1, freqs.shape[0] - 1):
         for j in range(0, freqs.shape[1]):
-            pic[j, int(freqs[i, j])] += (mags[i, j])
+            pic[j, int(freqs[i, j])] += mags[i, j]
 
 
 def inst_freq_pitch(
     wav_form,
     fs,
-    min_hz=emphases.baseslines.prominence.FMIN,
-    max_hz=emphases.baseslines.prominence.FMAX,
-    voicing_thresh=emphases.baseslines.prominence.VOICED_THRESHOLD,
+    min_hz=emphases.FMIN,
+    max_hz=emphases.FMAX,
+    voicing_thresh=emphases.VOICED_THRESHOLD,
     target_rate=200):
     """Extract speech f0 using the continuous wavelet transform"""
     voicing_thresh = (voicing_thresh - 50.) / 100.
@@ -111,7 +110,7 @@ def inst_freq_pitch(
     dt = 1. / sample_rate
     periods = [5]
     for p in periods:
-        wavelet_matrix, *_ = cwt_utils.cwt_analysis(
+        wavelet_matrix, *_ = emphases.baselines.prominence.cwt_utils.cwt_analysis(
             tmp_wav_form,
             mother_name='morlet',
             first_scale=s0,
@@ -142,6 +141,4 @@ def inst_freq_pitch(
         acorr1 = np.correlate(pic[i, :length], pic[i, :length], mode='same')
         pic[i, :int(length / 2.)] *= acorr1[int(len(acorr1) / 2.):]
 
-    pitch = _track_pitch(pic, min_hz, max_hz, voicing_thresh)
-
-    return pitch, pic
+    return _track_pitch(pic, min_hz, max_hz, voicing_thresh)
