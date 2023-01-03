@@ -1,8 +1,3 @@
-# Development
-# - Baseline prominence method**
-# - Training batching from any word (+ numpy cache)*
-
-
 ###############################################################################
 # Configuration
 ###############################################################################

@@ -41,6 +41,7 @@ def from_file_to_file(audio_file, output_file):
     mels = from_file(audio_file)
 
     # Save to disk
+    output_file.parent.mkdir(exist_ok=True, parents=True)
     torch.save(mels, output_file)
 
 
@@ -60,10 +61,11 @@ class MelSpectrogram(torch.nn.Module):
     def __init__(self):
         super().__init__()
         window = torch.hann_window(emphases.NUM_FFT, dtype=torch.float)
+        # TODO - replace with torchaudio
         mel_basis = librosa.filters.mel(
-            emphases.SAMPLE_RATE,
-            emphases.NUM_FFT,
-            emphases.NUM_MELS
+            sr=emphases.SAMPLE_RATE,
+            n_fft=emphases.NUM_FFT,
+            n_mels=emphases.NUM_MELS
         ).astype(np.float32)
         mel_basis = torch.from_numpy(mel_basis)
         self.register_buffer("mel_basis", mel_basis)

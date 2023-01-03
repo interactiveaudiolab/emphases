@@ -13,6 +13,7 @@ setup(
     author_email='interactiveaudiolab@gmail.com',
     url='https://github.com/interactiveaudiolab/emphases',
     install_requires=[
+        'librosa',
         'matplotlib',
         'pycwt',
         'pyfoal',

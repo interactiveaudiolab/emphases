@@ -20,8 +20,22 @@ import emphases
 BUCKEYE_FILTER_LIST = [
     '{B_TRANS}',
     '{E_TRANS}',
+    '<CUTOFF-i=?>',
+    '<CUTOFF-ta=taking?>',
+    '<CUTOFF-th=that>',
+    '<IVER>',
+    '<LAUGH>',
     '<SIL>',
-    '<VOCNOISE>'
+    '<VOCNOISE>',
+    '<and>',
+    '<i>',
+    '<out>',
+    '<that>',
+    '<think>',
+    '<so>',
+    '<some>',
+    '<um>',
+    '<xx>',
 ]
 
 # Speakers selected by sorting the train-clean-100 speakers by longest total
