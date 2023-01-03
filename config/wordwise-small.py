@@ -12,7 +12,7 @@ CHECKPOINT_INTERVAL = 200  # steps
 # Number of steps between logging to Tensorboard
 LOG_INTERVAL = 50  # steps
 
-# Method to use for evaluation
+# Method to use for inference
 METHOD = 'wordwise'
 
 # Number of training steps

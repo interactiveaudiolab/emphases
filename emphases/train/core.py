@@ -73,17 +73,17 @@ def train(
     #######################
 
     torch.manual_seed(emphases.RANDOM_SEED)
-    train_loader = emphases.data.loaders(dataset, 'train', gpu)
-    valid_loader = emphases.data.loaders(dataset, 'valid', gpu)
+    train_loader = emphases.data.loader(dataset, 'train', gpu)
+    valid_loader = emphases.data.loader(dataset, 'valid', gpu)
 
     #################
     # Create models #
     #################
 
     if emphases.METHOD == 'wordwise':
-        model = emphases.model.BaselineModel(device=device).to(device)
+        model = emphases.model.Baseline(device=device).to(device)
     elif emphases.METHOD == 'framewise':
-        model = emphases.model.FramewiseModel().to(device)
+        model = emphases.model.Framewise().to(device)
     else:
         raise ValueError(f'Method {emphases.METHOD} is not defined')
 
@@ -163,7 +163,14 @@ def train(
                 _,           # alignment
                 _,           # audio
                 _            # stem
-            ) = (item.to(device) if torch.is_tensor(item) else item for item in batch)
+            ) = batch
+
+            # Copy to GPU
+            features = features.to(device)
+            targets = targets.to(device)
+            word_bounds = word_bounds.to(device)
+            word_lengths = word_lengths.to(device)
+            mask = mask.to(device)
 
             with torch.cuda.amp.autocast():
 
@@ -267,7 +274,14 @@ def evaluate(directory, step, model, gpu, condition, loader):
                 _,           # alignment
                 _,           # audio
                 _            # stems
-            ) = (item.to(device) if torch.is_tensor(item) else item for item in batch)
+            ) = batch
+
+            # Copy to GPU
+            features = features.to(device)
+            targets = targets.to(device)
+            word_bounds = word_bounds.to(device)
+            word_lengths = word_lengths.to(device)
+            mask = mask.to(device)
 
             # Forward pass
             scores = model(features, word_bounds, word_lengths)
@@ -324,6 +338,4 @@ def ddp_context(rank, world_size):
 
 def loss(scores, targets, mask):
     """Compute masked loss"""
-    return torch.nn.functional.mse_loss(
-        scores.where(mask),
-        targets.where(mask))
+    return torch.nn.functional.mse_loss(scores * mask, targets * mask)

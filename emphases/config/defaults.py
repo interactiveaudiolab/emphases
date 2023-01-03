@@ -92,7 +92,7 @@ EVALUATION_INTERVAL = 2500  # steps
 # Number of steps between logging to Tensorboard
 LOG_INTERVAL = 1000  # steps
 
-# Method to use for evaluation
+# Method to use for inference
 METHOD = 'framewise'
 
 

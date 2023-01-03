@@ -22,3 +22,12 @@ def datasets(datasets):
 
         # Preprocess mels
         emphases.preprocess.mels.from_files_to_files(audio_files, mel_files)
+
+
+def from_audio(audio, sample_rate=emphases.SAMPLE_RATE, gpu=None):
+    """Preprocess one audio file"""
+    # Move to device (no-op if devices are the same)
+    audio = audio.to('cpu' if gpu is None else f'cuda:{gpu}')
+
+    # Preprocess mels
+    return emphases.preprocess.mels.from_audio(audio, sample_rate)

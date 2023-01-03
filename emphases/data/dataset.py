@@ -19,7 +19,8 @@ class Dataset(torch.utils.data.Dataset):
         self.stems = emphases.load.partition(name)[partition]
 
         # Store spectrogram lengths for bucketing
-        audio_files = list([self.cache / f'{stem}.wav' for stem in self.stems])
+        audio_files = list([
+            self.cache / 'audio' / f'{stem}.wav' for stem in self.stems])
         self.spectrogram_lengths = [
             os.path.getsize(audio_file) // (2 * emphases.HOPSIZE)
             for audio_file in audio_files]

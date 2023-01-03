@@ -32,11 +32,11 @@ def sampler(dataset, partition):
 
     # Deterministic random sampler for validation
     elif partition == 'valid':
-        return Sampler()
+        return Sampler(dataset)
 
     # Sample test data sequentially
     elif partition == 'test':
-        return Sampler(dataset, False)
+        return Sampler(dataset, False, 1)
 
     else:
         raise ValueError(f'Partition {partition} is not defined')
@@ -75,12 +75,13 @@ class DistributedSampler(torch.utils.data.distributed.DistributedSampler):
 
 class Sampler(torch.utils.data.Sampler):
 
-    def __init__(self, dataset, shuffle=True):
+    def __init__(self, dataset, shuffle=True, batch_size=emphases.BATCH_SIZE):
         super().__init__(dataset)
         self.buckets, self.samples_per_bucket = create_buckets(
             dataset.spectrogram_lengths)
         self.total_size = sum(self.samples_per_bucket)
         self.shuffle = shuffle
+        self.batch_size = batch_size
 
     def __iter__(self):
         self.batches = make_batches(
@@ -92,7 +93,7 @@ class Sampler(torch.utils.data.Sampler):
 
     def __len__(self):
         """Retrieve the number of batches in an epoch"""
-        return self.total_size // emphases.BATCH_SIZE
+        return self.total_size // self.batch_size
 
     def set_epoch(self, epoch):
         self.epoch = epoch

@@ -15,7 +15,7 @@ INTERPOLATION = 'nearest'
 # Number of steps between logging to Tensorboard
 LOG_INTERVAL = 50  # steps
 
-# Method to use for evaluation
+# Method to use for inference
 METHOD = 'framewise'
 
 # Number of training steps
