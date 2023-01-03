@@ -180,6 +180,7 @@ def buckeye():
 
         # Get words from annotation
         words = [word for word in annotations if word['filename'] == file.stem]
+        words = sorted(words, key=lambda x: float(x['wordmin']))
 
         # Get per-word emphasis scores
         j = 0
@@ -192,6 +193,8 @@ def buckeye():
 
             # Make sure alignments are aligned
             assert str(word).lower() == words[j]['word'].lower()
+            assert (word.start() - float(words[j]['wordmin'])) < 1e-4
+            assert (word.end() - float(words[j]['wordmax'])) < 1e-4
 
             # Update scores
             # pa.32 is the average of 32 human judgments of the perception of
@@ -201,7 +204,7 @@ def buckeye():
             j += 1
 
         # Save scores
-        torch.save(scores, file.parent / 'scores' / f'{file.stem}.pt')
+        torch.save(scores, cache_directory / 'scores' / f'{file.stem}.pt')
 
 
 ###############################################################################
