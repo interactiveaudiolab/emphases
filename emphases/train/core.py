@@ -149,7 +149,7 @@ def train(
 
         # Seed sampler
         epoch = step // len(train_loader.dataset)
-        train_loader.batch_sampler.set_epoch(epoch)
+        train_loader.sampler.set_epoch(epoch)
 
         for batch in train_loader:
 

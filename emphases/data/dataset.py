@@ -1,5 +1,6 @@
 import os
 
+import numpy as np
 import pypar
 import torch
 
@@ -18,10 +19,10 @@ class Dataset(torch.utils.data.Dataset):
         self.cache = emphases.CACHE_DIR / name
         self.stems = emphases.load.partition(name)[partition]
 
-        # Store spectrogram lengths for bucketing
+        # Store lengths for bucketing
         audio_files = list([
             self.cache / 'audio' / f'{stem}.wav' for stem in self.stems])
-        self.spectrogram_lengths = [
+        self.lengths = [
             os.path.getsize(audio_file) // (2 * emphases.HOPSIZE)
             for audio_file in audio_files]
 
@@ -65,3 +66,14 @@ class Dataset(torch.utils.data.Dataset):
     def __len__(self):
         """Length of the dataset"""
         return len(self.stems)
+
+    def buckets(self):
+        """Partition indices into buckets based on length for sampling"""
+        # Get the size of a bucket
+        size = len(self) // emphases.BUCKETS
+
+        # Get indices in order of length
+        indices = np.argsort(self.lengths)
+
+        # Split into buckets based on length
+        return [indices[i:i + size] for i in range(0, len(self), size)]

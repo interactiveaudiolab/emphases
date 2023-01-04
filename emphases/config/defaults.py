@@ -133,6 +133,9 @@ VOICED_THRESHOLD = 50
 ###############################################################################
 
 
+# Number of buckets of data lengths used by the sampler
+BUCKETS = 2
+
 # Number of steps between saving checkpoints
 CHECKPOINT_INTERVAL = 25000  # steps
 
