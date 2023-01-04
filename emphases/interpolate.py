@@ -10,13 +10,12 @@ import emphases
 
 def interpolate(frame_times, word_times, scores):
     """Interpolate emphasis scores to the frame rate"""
-    method = emphases.INTERPOLATION_METHOD
+    method = emphases.INTERPOLATION
     if method == 'linear':
         return linear(frame_times, word_times, scores)
     elif method == 'nearest':
         return nearest(frame_times, word_times, scores)
-    else:
-        raise ValueError(f'Interpolation method {method} is not defined')
+    raise ValueError(f'Interpolation method {method} is not defined')
 
 
 def linear(frame_times, word_times, scores):

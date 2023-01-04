@@ -11,7 +11,11 @@ python -m emphases.data.download
 python -m emphases.data.preprocess
 python -m emphases.partition
 
-# Run experiments
+# Train and evaluate experiments
 python -m emphases.train --config config/framewise-linear-small.py --gpus $1
 python -m emphases.train --config config/framewise-nearest-small.py --gpus $1
 python -m emphases.train --config config/wordwise-small.py --gpus $1
+
+# Evaluate baselines
+python -m emphases.evaluate --config config/prominence.py
+python -m emphases.evaluate --config config/variance.py

@@ -35,7 +35,7 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
 
         # Setup test dataset
         iterator = emphases.iterator(
-            emphases.data.loader([dataset], 'test'),
+            emphases.data.loader(dataset, 'test'),
             f'Evaluating {emphases.CONFIG} on {dataset}')
 
         # Iterate over test set
@@ -50,7 +50,7 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
                 audio,
                 emphases.SAMPLE_RATE,
                 checkpoint=checkpoint,
-                batch_size=emphases.EVALUATION_BATCH_SIZE,
+                batch_size=emphases.MAX_FRAMES_PER_BATCH,
                 pad=True,
                 gpu=gpu)
 

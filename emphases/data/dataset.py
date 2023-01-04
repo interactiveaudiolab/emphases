@@ -37,14 +37,13 @@ class Dataset(torch.utils.data.Dataset):
         # Compute word bounds and lengths
         bounds = alignment.word_bounds(emphases.SAMPLE_RATE, emphases.HOPSIZE)
         word_bounds = torch.cat(
-            torch.tensor(bound for bound in bounds)[None],
-            dim=1)
+            [torch.tensor(bound)[None] for bound in bounds]).T
 
         # Load audio
         audio = emphases.load.audio(self.cache / 'audio' / f'{stem}.wav')
 
         # Load mels
-        mels = torch.tensor(self.cache / 'mels' / f'{stem}.pt')
+        mels = torch.load(self.cache / 'mels' / f'{stem}.pt')
 
         # Load per-word ground truth emphasis scores
         scores = torch.load(self.cache / 'scores' / f'{stem}.pt')
@@ -59,7 +58,7 @@ class Dataset(torch.utils.data.Dataset):
             frame_centers = .5 + torch.arange(mels.shape[-1])
 
             # Interpolate
-            scores = emphases.interpolate(scores, word_centers, frame_centers)
+            scores = emphases.interpolate(word_centers, frame_centers, scores[None])
 
         return mels, scores, word_bounds, alignment, audio, stem
 

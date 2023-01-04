@@ -51,6 +51,9 @@ HOPSIZE = 160
 # The audio samling rate
 SAMPLE_RATE = 16000
 
+# The size of the audio analysis window
+WINDOW_SIZE = 1024
+
 
 ###############################################################################
 # Data parameters
@@ -134,7 +137,7 @@ VOICED_THRESHOLD = 50
 
 
 # Number of buckets of data lengths used by the sampler
-BUCKETS = 2
+BUCKETS = 1
 
 # Number of steps between saving checkpoints
 CHECKPOINT_INTERVAL = 25000  # steps

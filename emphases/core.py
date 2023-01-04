@@ -335,7 +335,7 @@ def preprocess(
             alignment[start].start())
         end_sample = emphases.convert.frames_to_samples(
             alignment[end - 1].end())
-        batch_audio = audio[:, start_sample, end_sample]
+        batch_audio = audio[:, start_sample:end_sample]
 
         # Preprocess audio
         batch_features = emphases.preprocess.from_audio(batch_audio, gpu=gpu)
