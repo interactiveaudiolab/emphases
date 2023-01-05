@@ -331,14 +331,14 @@ def preprocess(
         batch_alignment = alignment[start:end]
 
         # Slice audio
-        start_sample = emphases.convert.frames_to_samples(
-            alignment[start].start())
-        end_sample = emphases.convert.frames_to_samples(
-            alignment[end - 1].end())
+        start_sample = int(emphases.convert.seconds_to_samples(
+            alignment[start].start()))
+        end_sample = int(emphases.convert.seconds_to_samples(
+            alignment[end - 1].end()))
         batch_audio = audio[:, start_sample:end_sample]
 
         # Preprocess audio
-        batch_features = emphases.preprocess.from_audio(batch_audio, gpu=gpu)
+        batch_features = emphases.data.preprocess.from_audio(batch_audio, gpu=gpu)
 
         # Run inference
         yield batch_alignment, batch_features

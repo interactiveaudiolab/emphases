@@ -20,4 +20,4 @@ def parse_args():
 
 
 if __name__ == '__main__':
-    emphases.preprocess.datasets(**vars(parse_args()))
+    emphases.data.preprocess.datasets(**vars(parse_args()))
