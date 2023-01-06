@@ -81,7 +81,7 @@ def train(
     #################
 
     if emphases.METHOD == 'wordwise':
-        model = emphases.model.Baseline(device=device).to(device)
+        model = emphases.model.Wordwise().to(device)
     elif emphases.METHOD == 'framewise':
         model = emphases.model.Framewise().to(device)
     else:

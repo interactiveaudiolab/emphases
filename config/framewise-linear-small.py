@@ -1,8 +1,5 @@
 MODULE = 'emphases'
 
-# TEMPORARY
-NUM_WORKERS = 0
-
 # Configuration name
 CONFIG = 'framewise-linear-small'
 

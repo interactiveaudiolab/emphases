@@ -87,7 +87,7 @@ SPLIT_SIZE_VALID = .1
 DATASETS = ['buckeye', 'libritts']
 
 # Maximum number of frames to perform inference on at once
-MAX_FRAMES_PER_BATCH = 1024
+MAX_FRAMES_PER_BATCH = 2048
 
 # Number of steps between evaluation
 EVALUATION_INTERVAL = 2500  # steps

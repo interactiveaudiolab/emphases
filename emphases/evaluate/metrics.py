@@ -44,9 +44,11 @@ class CosineSimilarity:
         return {'similarity': (self.total / self.count).item()}
 
     def update(self, scores, targets, mask):
-        scores, targets = scores[mask > 0], targets[mask > 0]
-        self.total += torch.nn.functional.cosine_similarity(scores[None], targets[None])
-        self.count += mask.sum()
+        scores[mask == 0] = 0.
+        targets[mask == 0] = 0.
+        self.total += torch.nn.functional.cosine_similarity(
+            scores.squeeze(1), targets.squeeze(1)).sum()
+        self.count += scores.shape[0]
 
     def reset(self):
         self.count = 0

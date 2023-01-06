@@ -32,7 +32,11 @@ def linear(frame_times, word_times, scores):
     indices = torch.clamp(indices, 0, slope.shape[-1] - 1)
 
     # Compute index into parameters
-    line_idx = torch.linspace(0, indices.shape[0], 1, device=indices.device).to(torch.long)
+    line_idx = torch.linspace(
+        0,
+        indices.shape[0],
+        1,
+        device=indices.device).to(torch.long)
     line_idx = line_idx.expand(indices.shape)
 
     # Interpolate
@@ -43,11 +47,10 @@ def linear(frame_times, word_times, scores):
 
 def nearest(frame_times, word_times, scores):
     """Nearest neighbors interpolation"""
-    # Linearly interpolate indices to the frame rate
-    times = linear(
-        frame_times,
-        word_times,
-        torch.linspace(0, len(word_times), len(frame_times))[None])[0]
+    # Compute indices at which we evaluate points
+    indices = torch.sum(
+        torch.ge(frame_times[:, :, None], word_times[:, None, :]), -1) - 1
+    indices = torch.clamp(indices, 0, word_times.shape[-1] - 1)
 
     # Get nearest score
-    return scores[:, torch.round(frame_times).to(torch.long)]
+    return torch.index_select(scores, 1, indices[0])

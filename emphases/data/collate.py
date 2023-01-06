@@ -38,7 +38,9 @@ def collate(batch):
     # Allocate padded tensors
     padded_mels = torch.zeros((len(mels), emphases.NUM_MELS, max_frame_length))
     padded_scores = torch.zeros((len(scores), 1, max_output_length))
-    padded_bounds = torch.zeros((len(word_bounds), 2, max_word_length))
+    padded_bounds = torch.zeros(
+        (len(word_bounds), 2, max_word_length),
+        dtype=torch.long)
     padded_audio = torch.zeros(
         (len(audios), 1, max_frame_length * emphases.HOPSIZE))
     mask = torch.zeros((len(scores), 1, max_output_length))
@@ -72,7 +74,7 @@ def collate(batch):
         padded_audio[i, :, :end_sample] = audio[:, :end_sample]
 
         # Create mask
-        mask[:, :, :output_length] = 1.
+        mask[i, :, :output_length] = 1.
 
     return (
         padded_mels,

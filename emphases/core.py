@@ -343,13 +343,17 @@ def preprocess(
             [torch.tensor(bound)[None] for bound in bounds]).T
 
         # Compute length in words
-        batch_word_lengths = len(batch_alignment)
+        batch_word_lengths = torch.tensor(
+            len(batch_alignment),
+            dtype=torch.long)
 
-        # Slice audio
-        start_sample = int(emphases.convert.seconds_to_samples(
-            alignment[start].start()))
-        end_sample = int(emphases.convert.seconds_to_samples(
-            alignment[end - 1].end()))
+        # Slice audio at frame boundaries
+        start_sample = int(emphases.convert.frames_to_samples(
+            int(emphases.convert.seconds_to_frames(
+                alignment[start].start()))))
+        end_sample = int(emphases.convert.frames_to_samples(
+            int(emphases.convert.seconds_to_frames(
+                alignment[end - 1].end()))))
         batch_audio = audio[:, start_sample:end_sample]
 
         # Preprocess audio

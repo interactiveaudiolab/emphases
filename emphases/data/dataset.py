@@ -46,11 +46,10 @@ class Dataset(torch.utils.data.Dataset):
         audio = emphases.load.audio(self.cache / 'audio' / f'{stem}.wav')
 
         # Load mels
-        # TODO - these appear to be the wrong size relative to the audio
         mels = torch.load(self.cache / 'mels' / f'{stem}.pt')
 
         # Load per-word ground truth emphasis scores
-        scores = torch.load(self.cache / 'scores' / f'{stem}.pt')
+        scores = torch.load(self.cache / 'scores' / f'{stem}.pt')[None]
 
         # Maybe interpolate scores for framewise model
         if emphases.METHOD == 'framewise':
@@ -66,7 +65,7 @@ class Dataset(torch.utils.data.Dataset):
             scores = emphases.interpolate(
                 frame_centers[None],
                 word_centers[None],
-                scores[None])
+                scores)
 
         return mels, scores, word_bounds, alignment, audio, stem
 

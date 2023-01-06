@@ -45,8 +45,6 @@ class Wordwise(torch.nn.Module):
             conv_fn(hidden_channels, output_channels))
 
     def forward(self, features, word_bounds, word_lengths):
-        device = frame_embedding.device
-
         # Embed frames
         frame_embedding = self.frame_encoder(features)
 
@@ -60,15 +58,15 @@ class Wordwise(torch.nn.Module):
                 frame_embedding.shape[1],
                 max_word_length
             ),
-            device=device)
+            device=features.device)
 
         # Populate word embeddings
         i = 0
         iterator = enumerate(zip(frame_embedding, word_bounds, word_lengths))
         for i, (embedding, bounds, length) in iterator:
             for j in range(length):
-                word_embeddings[i, j] = \
-                    embedding[:, bounds[0, j]:bounds[1, j]].mean(dim=1)
+                start, end = bounds[0, j], bounds[1, j]
+                word_embeddings[i, :, j] = embedding[:, start:end].mean(dim=1)
 
         # Infer emphasis scores from word embeddings
         return self.word_decoder(word_embeddings)

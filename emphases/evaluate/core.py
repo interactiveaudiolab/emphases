@@ -12,6 +12,8 @@ import emphases
 
 def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
     """Perform evaluation"""
+    device = torch.device('cpu' if gpu is None else f'cuda:{gpu}')
+
     # Containers for results
     overall, granular = {}, {}
 
@@ -52,16 +54,16 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
                 checkpoint=checkpoint,
                 batch_size=emphases.MAX_FRAMES_PER_BATCH,
                 pad=True,
-                gpu=gpu)
+                gpu=gpu)[None]
 
             # Update metrics
             lengths = torch.tensor(
                 len(scores),
                 dtype=torch.long,
-                device=scores.device)
-            file_metrics.update(scores, targets, lengths)
-            dataset_metrics.update(scores, targets, lengths)
-            aggregate_metrics.update(scores, targets, lengths)
+                device=device)
+            file_metrics.update(scores, targets.to(device), lengths)
+            dataset_metrics.update(scores, targets.to(device), lengths)
+            aggregate_metrics.update(scores, targets.to(device), lengths)
 
             # Copy results
             granular[f'{dataset}/{stem[0]}'] = file_metrics()
