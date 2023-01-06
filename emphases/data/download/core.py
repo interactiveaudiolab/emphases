@@ -213,7 +213,7 @@ def buckeye():
             # Update scores
             # pa.32 is the average of 32 human judgments of the perception of
             # prominence based on acoustic features
-            scores[i] == words[j]['pa.32']
+            scores[i] = float(words[j]['pa.32'])
 
             j += 1
 
