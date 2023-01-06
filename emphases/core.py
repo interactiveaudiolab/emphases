@@ -340,11 +340,11 @@ def preprocess(
             emphases.HOPSIZE,
             silences=True)
         batch_word_bounds = torch.cat(
-            [torch.tensor(bound)[None] for bound in bounds]).T
+            [torch.tensor(bound)[None] for bound in bounds]).T[None]
 
         # Compute length in words
         batch_word_lengths = torch.tensor(
-            len(batch_alignment),
+            [len(batch_alignment)],
             dtype=torch.long)
 
         # Slice audio at frame boundaries
