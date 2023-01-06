@@ -80,6 +80,7 @@ class MelSpectrogram(torch.nn.Module):
         stft = torch.stft(
             audio,
             n_fft=emphases.NUM_FFT,
+            hop_length=emphases.HOPSIZE,
             window=self.window,
             center=False,
             return_complex=False)

@@ -4,7 +4,7 @@ MODULE = 'emphases'
 NUM_WORKERS = 0
 
 # Configuration name
-CONFIG = 'framewise-nearest-small'
+CONFIG = 'framewise-linear-small'
 
 # Batch size (per gpu)
 BATCH_SIZE = 2
@@ -13,7 +13,7 @@ BATCH_SIZE = 2
 CHECKPOINT_INTERVAL = 200  # steps
 
 # Interpolation method for framewise training
-INTERPOLATION = 'nearest'
+INTERPOLATION = 'linear'
 
 # Number of steps between logging to Tensorboard
 LOG_INTERVAL = 50  # steps

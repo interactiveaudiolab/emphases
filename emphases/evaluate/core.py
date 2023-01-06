@@ -47,7 +47,7 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
             # Get predicted scores
             scores = emphases.from_alignment_and_audio(
                 alignments[0],
-                audio,
+                audio[0],
                 emphases.SAMPLE_RATE,
                 checkpoint=checkpoint,
                 batch_size=emphases.MAX_FRAMES_PER_BATCH,

@@ -223,15 +223,14 @@ def from_alignment_and_audio(
         batch_size,
         pad,
         gpu)
-    for align, features in iterator:
+    for features, word_bounds, word_lengths in iterator:
 
         # Infer
-        scores.append(infer(align, features, checkpoint).detach())
+        scores.append(
+            infer(features, word_bounds, word_lengths, checkpoint).detach()[0])
 
     # Concatenate results
-    scores = torch.cat(scores, 1)
-
-    return scores
+    return torch.cat(scores, 1)
 
 
 ###############################################################################
@@ -239,7 +238,11 @@ def from_alignment_and_audio(
 ###############################################################################
 
 
-def infer(alignment, audio, checkpoint=emphases.DEFAULT_CHECKPOINT):
+def infer(
+    features,
+    word_bounds,
+    word_lengths,
+    checkpoint=emphases.DEFAULT_CHECKPOINT):
     """Perform model inference to annotate emphases of each word"""
     # Neural methods
     if emphases.METHOD in ['framewise', 'wordwise']:
@@ -248,7 +251,7 @@ def infer(alignment, audio, checkpoint=emphases.DEFAULT_CHECKPOINT):
         if (
             not hasattr(infer, 'model') or
             infer.checkpoint != checkpoint or
-            infer.device_type != audio.device.type
+            infer.device_type != features.device.type
         ):
             # Maybe initialize model
             model = emphases.Model()
@@ -256,13 +259,13 @@ def infer(alignment, audio, checkpoint=emphases.DEFAULT_CHECKPOINT):
             # Load from disk
             infer.model, *_ = emphases.checkpoint.load(checkpoint, model)
             infer.checkpoint = checkpoint
-            infer.device_type = audio.device.type
+            infer.device_type = features.device.type
 
             # Move model to correct device (no-op if devices are the same)
-            infer.model = infer.model.to(audio.device)
+            infer.model = infer.model.to(features.device)
 
         # Infer
-        return infer.model(alignment, audio)
+        return infer.model(features, word_bounds, word_lengths)
 
     # Prominence method
     elif emphases.METHOD == 'prominence':
@@ -312,23 +315,35 @@ def preprocess(
 
         # Accumulate enough frames for this batch
         frames = 0
-        end = start
+        end = start + 1
         while end < len(alignment):
 
             # Get duration of this word in frames
-            duration = emphases.convert.seconds_to_frames(
-                alignment[end].duration())
-
-            # Stop if we've accumulated enough frames
-            if frames + duration > batch_size:
-                break
+            duration = int(emphases.convert.seconds_to_frames(
+                alignment[end - 1].duration()))
 
             # Update frames
             frames += duration
+
+            # Stop if we've accumulated enough frames
+            if frames > batch_size:
+                break
+
             end += 1
 
         # Slice alignment
         batch_alignment = alignment[start:end]
+
+        # Compute word bounds
+        bounds = batch_alignment.word_bounds(
+            emphases.SAMPLE_RATE,
+            emphases.HOPSIZE,
+            silences=True)
+        batch_word_bounds = torch.cat(
+            [torch.tensor(bound)[None] for bound in bounds]).T
+
+        # Compute length in words
+        batch_word_lengths = len(batch_alignment)
 
         # Slice audio
         start_sample = int(emphases.convert.seconds_to_samples(
@@ -341,7 +356,7 @@ def preprocess(
         batch_features = emphases.data.preprocess.from_audio(batch_audio, gpu=gpu)
 
         # Run inference
-        yield batch_alignment, batch_features
+        yield batch_features, batch_word_bounds, batch_word_lengths
 
         # Update start word
         start = end

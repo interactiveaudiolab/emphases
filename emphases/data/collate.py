@@ -36,11 +36,11 @@ def collate(batch):
         raise ValueError(f'Inference method {emphases.METHOD} is not defined')
 
     # Allocate padded tensors
+    padded_mels = torch.zeros((len(mels), emphases.NUM_MELS, max_frame_length))
+    padded_scores = torch.zeros((len(scores), 1, max_output_length))
     padded_bounds = torch.zeros((len(word_bounds), 2, max_word_length))
     padded_audio = torch.zeros(
         (len(audios), 1, max_frame_length * emphases.HOPSIZE))
-    padded_scores = torch.zeros((len(scores), 1, max_output_length))
-    padded_mels = torch.zeros((len(mels), emphases.NUM_MELS, max_frame_length))
     mask = torch.zeros((len(scores), 1, max_output_length))
 
     # Place batch in padded tensors
@@ -58,18 +58,18 @@ def collate(batch):
         (bounds, audio, mel, score, frame_length, word_length, output_length)
     ) in iterator:
 
+        # Pad mels
+        padded_mels[i, :, :frame_length] = mel
+
+        # Pad scores
+        padded_scores[i, :, :output_length] = score[:, :output_length]
+
         # Pad word bounds
         padded_bounds[i, :, :word_length] = bounds[:, :word_length]
 
         # Pad audio
         end_sample = frame_length * emphases.HOPSIZE
         padded_audio[i, :, :end_sample] = audio[:, :end_sample]
-
-        # Pad scores
-        padded_scores[i, :, :word_length] = score[:, :output_length]
-
-        # Pad mels
-        padded_mels[i, :, :frame_length] = mel
 
         # Create mask
         mask[:, :, :output_length] = 1.

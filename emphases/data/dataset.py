@@ -34,8 +34,11 @@ class Dataset(torch.utils.data.Dataset):
         alignment = pypar.Alignment(
             self.cache / 'alignment' / f'{stem}.TextGrid')
 
-        # Compute word bounds and lengths
-        bounds = alignment.word_bounds(emphases.SAMPLE_RATE, emphases.HOPSIZE)
+        # Compute word bounds
+        bounds = alignment.word_bounds(
+            emphases.SAMPLE_RATE,
+            emphases.HOPSIZE,
+            silences=True)
         word_bounds = torch.cat(
             [torch.tensor(bound)[None] for bound in bounds]).T
 
@@ -43,6 +46,7 @@ class Dataset(torch.utils.data.Dataset):
         audio = emphases.load.audio(self.cache / 'audio' / f'{stem}.wav')
 
         # Load mels
+        # TODO - these appear to be the wrong size relative to the audio
         mels = torch.load(self.cache / 'mels' / f'{stem}.pt')
 
         # Load per-word ground truth emphasis scores
@@ -52,13 +56,17 @@ class Dataset(torch.utils.data.Dataset):
         if emphases.METHOD == 'framewise':
 
             # Get center time of each word in frames
-            word_centers = (word_bounds[1] - word_bounds[0]) / 2.
+            word_centers = \
+                word_bounds[0] + (word_bounds[1] - word_bounds[0]) / 2.
 
             # Get frame centers
             frame_centers = .5 + torch.arange(mels.shape[-1])
 
             # Interpolate
-            scores = emphases.interpolate(word_centers, frame_centers, scores[None])
+            scores = emphases.interpolate(
+                frame_centers[None],
+                word_centers[None],
+                scores[None])
 
         return mels, scores, word_bounds, alignment, audio, stem
 
