@@ -81,7 +81,7 @@ def duration(labels, rate=200):
         st, en, unit = labels[i]
         st *= rate
         en *= rate
-        dur[i] = en-st
+        dur[i] = en - st
         dur[i] = np.log(dur[i] + 1.)
 
         if unit.lower() in SILENCE_SYMBOLS:
@@ -92,7 +92,8 @@ def duration(labels, rate=200):
             continue
 
         # unit duration -> height of the duration contour in the middle of the unit
-        params[int(st + (en - st) / 2.)] = dur[i]
+        index = min(len(params) - 1, int(st + (en - st) / 2.))
+        params[index] = dur[i]
 
         # Handle gaps in labels similarly to silences
         if st > prev_end and i > 1:

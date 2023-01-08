@@ -212,25 +212,42 @@ def from_alignment_and_audio(
     Returns:
         scores: The float-valued emphasis scores for each word
     """
-    scores = []
+    # Neural method
+    if emphases.METHOD in ['framewise', 'wordwise']:
 
-    # Preprocess audio
-    iterator = preprocess(
-        alignment,
-        audio,
-        sample_rate,
-        hopsize,
-        batch_size,
-        pad,
-        gpu)
-    for features, word_bounds, word_lengths in iterator:
+        scores = []
 
-        # Infer
-        scores.append(
-            infer(features, word_bounds, word_lengths, checkpoint).detach()[0])
+        # Preprocess audio
+        iterator = preprocess(
+            alignment,
+            audio,
+            sample_rate,
+            hopsize,
+            batch_size,
+            pad,
+            gpu)
+        for features, word_bounds, word_lengths in iterator:
 
-    # Concatenate results
-    return torch.cat(scores, 1)
+            # Infer
+            scores.append(
+                infer(features, word_bounds, word_lengths, checkpoint).detach()[0])
+
+        # Concatenate results
+        return torch.cat(scores, 1)
+
+    # Prominence method
+    elif emphases.METHOD == 'prominence':
+        return emphases.baselines.prominence.infer(
+            alignment,
+            audio,
+            sample_rate)
+
+    # Pitch variance method
+    elif emphases.METHOD == 'variance':
+        return emphases.baselines.variance.infer(
+            alignment,
+            audio,
+            sample_rate)
 
 
 ###############################################################################
@@ -244,42 +261,25 @@ def infer(
     word_lengths,
     checkpoint=emphases.DEFAULT_CHECKPOINT):
     """Perform model inference to annotate emphases of each word"""
-    # Neural methods
-    if emphases.METHOD in ['framewise', 'wordwise']:
+    # Maybe cache model
+    if (
+        not hasattr(infer, 'model') or
+        infer.checkpoint != checkpoint or
+        infer.device_type != features.device.type
+    ):
+        # Maybe initialize model
+        model = emphases.Model()
 
-        # Maybe cache model
-        if (
-            not hasattr(infer, 'model') or
-            infer.checkpoint != checkpoint or
-            infer.device_type != features.device.type
-        ):
-            # Maybe initialize model
-            model = emphases.Model()
+        # Load from disk
+        infer.model, *_ = emphases.checkpoint.load(checkpoint, model)
+        infer.checkpoint = checkpoint
+        infer.device_type = features.device.type
 
-            # Load from disk
-            infer.model, *_ = emphases.checkpoint.load(checkpoint, model)
-            infer.checkpoint = checkpoint
-            infer.device_type = features.device.type
+        # Move model to correct device (no-op if devices are the same)
+        infer.model = infer.model.to(features.device)
 
-            # Move model to correct device (no-op if devices are the same)
-            infer.model = infer.model.to(features.device)
-
-        # Infer
-        return infer.model(features, word_bounds, word_lengths)
-
-    # Prominence method
-    elif emphases.METHOD == 'prominence':
-        return emphases.baselines.prominence.infer(
-            alignment,
-            audio,
-            emphases.SAMPLE_RATE)
-
-    # Pitch variance method
-    elif emphases.METHOD == 'variance':
-        return emphases.baselines.variance.infer(
-            alignment,
-            audio,
-            emphases.SAMPLE_RATE)
+    # Infer
+    return infer.model(features, word_bounds, word_lengths)
 
 
 def preprocess(

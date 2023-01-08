@@ -79,7 +79,10 @@ def _track_pitch(
 def _assign_to_bins(pic, freqs, mags):
     for i in range(1, freqs.shape[0] - 1):
         for j in range(0, freqs.shape[1]):
-            pic[j, int(freqs[i, j])] += mags[i, j]
+            try:
+                pic[j, int(freqs[i, j])] += mags[i, j]
+            except:
+                pass
 
 
 def inst_freq_pitch(
@@ -91,7 +94,7 @@ def inst_freq_pitch(
     target_rate=200):
     """Extract speech f0 using the continuous wavelet transform"""
     voicing_thresh = (voicing_thresh - 50.) / 100.
-    sample_rate = 4000.
+    sample_rate = 4000
     tmp_wav_form = emphases.baselines.prominence.resample(wav_form, fs, sample_rate)
     tmp_wav_form = emphases.baselines.prominence.normalize(tmp_wav_form)
 

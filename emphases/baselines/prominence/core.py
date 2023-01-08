@@ -1,6 +1,7 @@
 import fractions
 
 import numpy as np
+import torch
 from scipy.signal import resample_poly
 
 import emphases
@@ -14,7 +15,7 @@ import emphases
 def infer(alignment, audio, sample_rate):
     """Compute per-word prominence from alignment and audio"""
     # Convert to numpy
-    audio = audio.numpy()
+    audio = audio.numpy()[0]
 
     # Compute energy
     energy = emphases.baselines.prominence.energy_processing.extract_energy(
@@ -63,44 +64,25 @@ def infer(alignment, audio, sample_rate):
     # Distance between adjacent scales (.25 means 4 scales per octave)
     scale_dist = .25  # octaves
 
-    # Get average word length
-    total, count = 0., 0
-    for word in alignment:
-        total += word.duration()
-        count += 1
-
     # Get scale that minimizes distance with average word length
+    average_duration = alignment.end() / len(alignment)
     scales = 1. / freqs * 200 * .5
-    unit_scale = np.argmin(np.abs(scales - total / count))
-
-    # Define the line of maximum amplitude scale information
-    pos_loma_start_scale = unit_scale + int(
-        emphases.LOMA_PROMINENCE_START / scale_dist)
-    pos_loma_end_scale = unit_scale + int(
-        emphases.LOMA_PROMINENCE_END / scale_dist)
-    neg_loma_start_scale = unit_scale + int(
-        emphases.LOMA_BOUNDARY_START / scale_dist)
-    neg_loma_end_scale = unit_scale + int(
-        emphases.LOMA_BOUNDARY_END / scale_dist)
+    scale = np.argmin(np.abs(scales - average_duration))
 
     # Get line of maximum amplitude
-    pos_loma = emphases.baselines.prominence.loma.get_loma(
+    loma_start = scale + int(emphases.LOMA_START / scale_dist)
+    loma_end = scale + int(emphases.LOMA_END / scale_dist)
+    loma = emphases.baselines.prominence.loma.get_loma(
         cwt,
         scales,
-        pos_loma_start_scale,
-        pos_loma_end_scale)
-    neg_loma = emphases.baselines.prominence.loma.get_loma(
-        -cwt,
-        scales,
-        neg_loma_start_scale,
-        neg_loma_end_scale)
-    max_loma = emphases.baselines.prominence.loma.get_prominences(pos_loma, alignment)
+        loma_start,
+        loma_end)
 
-    # Get prominence and boundary
-    prominences = np.array(max_loma)
-    boundaries = np.array(emphases.baselines.prominence.loma.get_boundaries(max_loma, neg_loma, alignment))
-
-    return prominences, boundaries
+    # Get prominence
+    return torch.tensor(
+        emphases.baselines.prominence.loma.get_prominences(
+            loma,
+            alignment))
 
 
 ###############################################################################
