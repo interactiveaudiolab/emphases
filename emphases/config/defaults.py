@@ -104,9 +104,11 @@ METHOD = 'framewise'
 ###############################################################################
 
 
-# Prominence bounds
-LOMA_START = -3  # octaves
-LOMA_END = 0  # octaves
+# Line of maximum amplitude bounds
+LOMA_BOUNDARY_START = -2  # octaves
+LOMA_BOUNDARY_END = 1  # octaves
+LOMA_PROMINENCE_START = -3  # octaves
+LOMA_PROMINENCE_END = 0  # octaves
 
 # Weight applied to the duration
 PROMINENCE_DURATION_WEIGHT = .5
