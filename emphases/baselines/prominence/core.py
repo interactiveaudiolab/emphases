@@ -102,17 +102,22 @@ def infer(alignment, audio, sample_rate):
     max_loma = np.array(emphases.baselines.prominence.loma.get_prominences(
         pos_loma,
         alignment))
+    
+    # Prominence dimensions - [time, value]
     prominences = np.array(max_loma)
 
     # Decode boundaries
+    # Boundries dimensions - [time, value]
     boundaries = np.array(emphases.baselines.prominence.loma.get_boundaries(
         max_loma,
         neg_loma,
         alignment))
 
-    import pdb; pdb.set_trace()
+    # import pdb; pdb.set_trace()
 
-    return prominences, boundaries
+    # return prominences[:, 1], boundaries[:, 1]
+
+    return prominences[:, 1][None]
 
 
 ###############################################################################
