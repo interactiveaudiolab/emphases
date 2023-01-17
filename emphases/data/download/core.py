@@ -4,6 +4,7 @@ import ssl
 import tarfile
 import urllib
 
+import pyfoal
 import pypar
 import torch
 import torchaudio
@@ -74,60 +75,9 @@ def datasets(datasets):
             raise ValueError(f'Dataset {dataset} is not defined')
 
 
-def libritts():
-    """Download libritts dataset"""
-    # Setup source directory
-    source_directory = emphases.SOURCE_DIR / 'libritts'
-    source_directory.mkdir(exist_ok=True, parents=True)
-
-    # Download
-    url = 'https://us.openslr.org/resources/60/train-clean-100.tar.gz'
-    file = source_directory / 'libritts-train-clean-100.tar.gz'
-    download_file(url, file)
-
-    # Unzip
-    with tarfile.open(file, 'r:gz') as tfile:
-        tfile.extractall(emphases.DATA_DIR)
-
-    # Rename folder
-    directory = emphases.DATA_DIR / 'libritts'
-    shutil.move(emphases.DATA_DIR / 'LibriTTS', directory)
-
-    # Get list of audio files for each speaker
-    audio_files = {
-        speaker: sorted(
-            (directory / 'train-clean-100' / str(speaker)).rglob('*.wav'))
-        for speaker in LIBRITTS_SPEAKERS}
-
-    # Write audio to cache
-    output_directory = emphases.CACHE_DIR / 'libritts'
-    output_directory.mkdir(exist_ok=True, parents=True)
-    iterator = emphases.iterator(
-        audio_files.items(),
-        'Formatting libritts',
-        total=len(audio_files))
-    for speaker, files in iterator:
-
-        # Organize by speaker
-        speaker_directory = output_directory / f'{speaker:06d}'
-        speaker_directory.mkdir(exist_ok=True, parents=True)
-
-        for i, audio_file in enumerate(files):
-
-            # Load and resample
-            audio = emphases.load.audio(audio_file)
-
-            # Save to disk
-            stem = f'{i:06d}'
-            torchaudio.save(
-                speaker_directory / f'{stem}.wav',
-                audio,
-                emphases.SAMPLE_RATE)
-
-            # Copy text file
-            shutil.copy2(
-                audio_file.with_suffix('.normalized.txt'),
-                speaker_directory / f'{stem}.txt')
+###############################################################################
+# Individual dataset downloaders
+###############################################################################
 
 
 def buckeye():
@@ -219,6 +169,79 @@ def buckeye():
 
         # Save scores
         torch.save(scores, cache_directory / 'scores' / f'{file.stem}.pt')
+
+
+def libritts():
+    """Download libritts dataset"""
+    # # Setup source directory
+    # source_directory = emphases.SOURCE_DIR / 'libritts'
+    # source_directory.mkdir(exist_ok=True, parents=True)
+
+    # # Download
+    # url = 'https://us.openslr.org/resources/60/train-clean-100.tar.gz'
+    # file = source_directory / 'libritts-train-clean-100.tar.gz'
+    # download_file(url, file)
+
+    # # Unzip
+    # with tarfile.open(file, 'r:gz') as tfile:
+    #     tfile.extractall(emphases.DATA_DIR)
+
+    # # Rename folder
+    directory = emphases.DATA_DIR / 'libritts'
+    # shutil.rmtree(directory, ignore_errors=True)
+    # shutil.move(emphases.DATA_DIR / 'LibriTTS', directory)
+
+    # Get list of audio files for each speaker
+    audio_files = {
+        speaker: sorted(
+            (directory / 'train-clean-100' / str(speaker)).rglob('*.wav'))
+        for speaker in LIBRITTS_SPEAKERS}
+
+    # Setup cache directory
+    cache_directory = emphases.CACHE_DIR / 'libritts'
+    cache_directory.mkdir(exist_ok=True, parents=True)
+
+    # Create subdirectories
+    features = ['alignment', 'audio', 'scores']
+    for feature in features:
+        (cache_directory / feature).mkdir(exist_ok=True, parents=True)
+
+    # Iterate over speakers
+    iterator = emphases.iterator(
+        audio_files.items(),
+        'Formatting libritts',
+        total=len(audio_files))
+    for speaker, audio_files in iterator:
+
+        # Get output alignment files
+        alignment_files = []
+
+        # Iterate over files
+        for i, audio_file in enumerate(audio_files):
+
+            # Load and resample audio
+            audio = emphases.load.audio(audio_file)
+
+            # Save audio
+            stem = f'{speaker:06d}-{i:06d}'
+            torchaudio.save(
+                cache_directory / 'audio' / f'{stem}.wav',
+                audio,
+                emphases.SAMPLE_RATE)
+
+            # Save alignment file path
+            alignment_files.append(
+                cache_directory / 'alignment' / f'{stem}.TextGrid')
+
+        # Get corresponding text files
+        text_files = [
+            file.with_suffix('.normalized.txt') for file in audio_files]
+
+        # Align text and audio
+        pyfoal.from_files_to_files(
+            text_files,
+            audio_files,
+            alignment_files)
 
 
 ###############################################################################
