@@ -19,6 +19,7 @@ setup(
         'pyfoal',
         'pypar',
         'pyyaml',
+        'reseval',
         'scipy',
         'tensorboard',
         'torch',
