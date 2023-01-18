@@ -23,6 +23,7 @@ Official code for the paper _Datasets and Scaling Laws for Neural Emphasis Predi
     * [Command-line interface](#command-line-interface)
 - [Training](#training)
     * [Download](#download)
+    * [Annotate](#annotate)
     * [Preprocess](#preprocess)
     * [Partition](#partition)
     * [Train](#train)
@@ -38,8 +39,9 @@ Official code for the paper _Datasets and Scaling Laws for Neural Emphasis Predi
 
 `pip install -e .`
 
-You must also install HTK to use the pyfoal aligner. See
-[here](https://github.com/maxrmorrison/pyfoal).
+You must also install
+[Reproducible Subjective Evaluation (ReSEval)](https://github.com/reseval/reseval)
+to perform emphasis annotation.
 
 
 ## Inference
@@ -212,6 +214,21 @@ options:
 `python -m emphases.download`.
 
 Downloads and uncompresses datasets.
+
+
+### Annotate data
+
+`python -m emphases.annotate --datasets <datasets>`
+
+Launches a local web application to perform emphasis annotation, according to
+the ReSEval configuration file `emphases/assets/configs/annotate.yaml`.
+Requires ReSEval to be installed.
+
+`python -m emphases.annotate --datasets <datasets> --remote --production`
+
+Launches a crowdsourced emphasis annotation task, according to the ReSEval
+configuration file `emphases/assets/configs/annotate.yaml`. Requires ReSEval
+to be installed.
 
 
 ### Partition data
