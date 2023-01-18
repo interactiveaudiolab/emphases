@@ -249,7 +249,6 @@ def from_alignment_and_audio(
             audio,
             sample_rate,
             gpu)
-    
     #Duration variance method
     elif emphases.METHOD == 'duration_variance':
         return emphases.baselines.duration_variance.infer(

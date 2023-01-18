@@ -135,6 +135,9 @@ VOICED_THRESHOLD = 50
 # Variance baseline parameters
 ###############################################################################
 
+# Variance mode: 'pitch' or 'duration'
+VARIANCE_MODE = 'pitch'
+
 # Variance resampling mode (from phonemes to words): 'max' or 'avg'
 VARIANCE_RESAMPLE = 'max'
 
