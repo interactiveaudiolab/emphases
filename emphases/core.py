@@ -247,7 +247,8 @@ def from_alignment_and_audio(
         return emphases.baselines.variance.infer(
             alignment,
             audio,
-            sample_rate)
+            sample_rate,
+            gpu)
 
 
 ###############################################################################
