@@ -1,7 +1,9 @@
 MODULE = 'emphases'
 
 # Configuration name
-CONFIG = 'prominence'
+CONFIG = 'variance'
 
 # Method to use for inference
-METHOD = 'prominence'
+METHOD = 'variance'
+
+VARIANCE_MODE = 'duration'
