@@ -128,6 +128,19 @@ PROMINENCE_PITCH_WEIGHT = 1.
 # Voiced/unvoiced threshold from 0 (all voiced) to 100 (all unvoiced)
 VOICED_THRESHOLD = 50
 
+###############################################################################
+# Variance baseline parameters
+###############################################################################
+
+# Variance mode: 'pitch' or 'duration'
+VARIANCE_MODE = 'pitch'
+
+# Variance resampling mode (from phonemes to words): 'max' or 'avg'
+VARIANCE_RESAMPLE = 'max'
+
+# Used for interp_unvoiced_at for penn
+PENN_VOICED_THRESHOLD = .17
+
 
 ###############################################################################
 # Training parameters
