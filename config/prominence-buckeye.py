@@ -1,7 +1,7 @@
 MODULE = 'emphases'
 
 # Configuration name
-CONFIG = 'prominence'
+CONFIG = 'prominence-buckeye'
 
 # Method to use for inference
 METHOD = 'prominence'

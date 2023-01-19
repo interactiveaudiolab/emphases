@@ -39,9 +39,11 @@ def infer(alignment, audio, sample_rate):
     duration = \
         emphases.baselines.prominence.duration_processing.get_duration_signal(
         alignment,
-        weights=[.5, .5])
+        weights=[.5, .5],
+        rate=200)
 
     # Slice features
+    # FIXME: min_length
     min_length = np.min([len(pitch), len(energy), len(duration)])
     pitch = pitch[:min_length]
     energy = energy[:min_length]
@@ -72,7 +74,7 @@ def infer(alignment, audio, sample_rate):
     scales *= 200
 
     # Get scale that minimizes distance with average word length
-    average_duration = alignment.end() / len(alignment)
+    average_duration = (alignment.end() / len(alignment))*200
     scales = 1. / freqs * 200 * .5
     scale = np.argmin(np.abs(scales - average_duration))
 
@@ -101,8 +103,10 @@ def infer(alignment, audio, sample_rate):
     # Decode prominence
     max_loma = np.array(emphases.baselines.prominence.loma.get_prominences(
         pos_loma,
-        alignment))
-    
+        alignment,
+        rate=200))
+        
+    import pdb; pdb.set_trace()
     # Prominence dimensions - [time, value]
     prominences = np.array(max_loma)
 
@@ -112,8 +116,6 @@ def infer(alignment, audio, sample_rate):
         max_loma,
         neg_loma,
         alignment))
-
-    # import pdb; pdb.set_trace()
 
     # return prominences[:, 1], boundaries[:, 1]
 
