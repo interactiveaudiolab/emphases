@@ -4,6 +4,7 @@ import torch
 
 import emphases
 
+import numpy as np
 
 ###############################################################################
 # Evaluate
@@ -55,6 +56,9 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
                 batch_size=emphases.MAX_FRAMES_PER_BATCH,
                 pad=True,
                 gpu=gpu)[None]
+            
+            if isinstance(scores, np.ndarray):
+                scores = torch.from_numpy(scores)
 
             # Update metrics
             lengths = torch.tensor(

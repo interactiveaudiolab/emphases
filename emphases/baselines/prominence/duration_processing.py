@@ -30,10 +30,12 @@ SILENCE_SYMBOLS = [
 ###############################################################################
 
 
-def _get_dur_stats(labels):
+def _get_dur_stats(labels, rate=200):
     durations = []
     for i in range(len(labels)):
         st, en, unit = labels[i]
+        st *= rate
+        en *= rate
         if unit.lower() not in SILENCE_SYMBOLS:
             dur = en - st
             dur = np.log(dur + 1.)
@@ -75,8 +77,7 @@ def duration(labels, rate=200):
     dur = np.zeros(len(labels))
     params = np.zeros(int(labels[-1][1] * rate))
     prev_end = 0
-    min_dur, *_ = _get_dur_stats(labels)
-
+    min_dur, *_ = _get_dur_stats(labels, rate=200)
     for i in range(0, len(labels)):
         st, en, unit = labels[i]
         st *= rate
@@ -121,9 +122,10 @@ def get_duration_signal(
     phoneme_tier = [
         (phoneme.start(), phoneme.end(), str(phoneme))
     for phoneme in alignment.phonemes()]
-    tiers = [word_tier, phoneme_tier]
+    tiers = [phoneme_tier, word_tier]
 
     durations = []
+
     for tier in tiers:
         durations.append(
             emphases.baselines.prominence.normalize(
