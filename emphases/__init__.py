@@ -25,6 +25,7 @@ from .config.static import *
 
 
 from .core import *
+from . import annotate
 from . import baselines
 from . import checkpoint
 from . import convert
