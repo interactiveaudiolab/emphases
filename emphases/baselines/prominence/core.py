@@ -106,7 +106,6 @@ def infer(alignment, audio, sample_rate):
         alignment,
         rate=200))
         
-    import pdb; pdb.set_trace()
     # Prominence dimensions - [time, value]
     prominences = np.array(max_loma)
 
