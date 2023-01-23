@@ -250,14 +250,20 @@ def from_alignment_and_audio(
             sample_rate,
             gpu)
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> Split variance into pitch and duration
     
     #Duration variance method
     elif emphases.METHOD == 'duration_variance':
         return emphases.baselines.duration_variance.infer(
             alignment
         )
+<<<<<<< HEAD
 =======
 >>>>>>> Start of variance baseline
+=======
+>>>>>>> Split variance into pitch and duration
 
 
 ###############################################################################
