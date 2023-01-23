@@ -8,7 +8,7 @@ import emphases
 ###############################################################################
 
 
-def loader(dataset, partition, gpu=None):
+def loader(dataset, partition=None, gpu=None):
     """Retrieve a data loader"""
     # Get dataset
     dataset = emphases.data.Dataset(dataset, partition)
@@ -21,7 +21,8 @@ def loader(dataset, partition, gpu=None):
 
         # Maybe split batch over GPUs
         if torch.distributed.is_initialized():
-            batch_size = emphases.BATCH_SIZE // torch.distributed.get_world_size()
+            batch_size = \
+                emphases.BATCH_SIZE // torch.distributed.get_world_size()
         else:
             batch_size = emphases.BATCH_SIZE
 

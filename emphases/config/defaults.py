@@ -60,6 +60,9 @@ WINDOW_SIZE = 1024
 ###############################################################################
 
 
+# List of all datasets
+DATASETS = ['buckeye', 'libritts']
+
 # Interpolation method for framewise training
 INTERPOLATION = 'linear'
 
@@ -82,9 +85,6 @@ SPLIT_SIZE_VALID = .1
 # Evaluation parameters
 ###############################################################################
 
-
-# List of all datasets
-DATASETS = ['buckeye', 'libritts']
 
 # Maximum number of frames to perform inference on at once
 MAX_FRAMES_PER_BATCH = 2048
