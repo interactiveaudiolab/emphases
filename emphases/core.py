@@ -243,12 +243,18 @@ def from_alignment_and_audio(
             sample_rate)
 
     # Pitch variance method
-    elif emphases.METHOD == 'variance':
-        return emphases.baselines.variance.infer(
+    elif emphases.METHOD == 'pitch_variance':
+        return emphases.baselines.pitch_variance.infer(
             alignment,
             audio,
             sample_rate,
             gpu)
+    
+    #Duration variance method
+    elif emphases.METHOD == 'duration_variance':
+        return emphases.baselines.duration_variance.infer(
+            alignment
+        )
 
 
 ###############################################################################
