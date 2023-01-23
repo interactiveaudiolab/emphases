@@ -45,6 +45,5 @@ def infer(alignment, audio, sample_rate, gpu=None):
     
     variance_diff = word_variances - (sample_range_high - sample_range_low)
     #Put results between 0 and 1
-    variance_diff = (variance_diff - variance_diff.min())
-    variance_diff = variance_diff / variance_diff.max()
+    variance_diff = (variance_diff - variance_diff.min()) / variance_diff.max()
     return torch.reshape(variance_diff, (1, -1))
