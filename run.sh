@@ -18,4 +18,5 @@ python -m emphases.train --config config/wordwise-small.py --gpus $1
 
 # Evaluate baselines
 python -m emphases.evaluate --config config/prominence.py
-python -m emphases.evaluate --config config/variance.py
+python -m emphases.evaluate --config config/pitch_variance.py
+python -m emphases.evaluate --config config/duration_variance.py

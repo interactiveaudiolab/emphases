@@ -1,9 +1,7 @@
 MODULE = 'emphases'
 
 # Configuration name
-CONFIG = 'variance'
+CONFIG = 'duration_variance'
 
 # Method to use for inference
-METHOD = 'variance'
-
-VARIANCE_MODE = 'pitch'
+METHOD = 'duration_variance'
