@@ -15,6 +15,7 @@ setup(
     install_requires=[
         'librosa',
         'matplotlib',
+        'penn',
         'pycwt',
         'pyfoal',
         'pypar',

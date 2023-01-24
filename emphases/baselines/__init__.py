@@ -1,2 +1,3 @@
 from . import prominence
-from . import variance
+from . import duration_variance
+from . import pitch_variance
