@@ -14,7 +14,7 @@ class Wordwise(torch.nn.Module):
 
     def __init__(
             self,
-            input_channels=emphases.NUM_MELS,
+            input_channels=emphases.NUM_FEATURES,
             output_channels=1,
             hidden_channels=128,
             kernel_size=5):

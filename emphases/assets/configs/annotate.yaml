@@ -23,13 +23,13 @@ crowdsource:
   platform: mturk
 
   # The survey title shown to potential participants
-  title: A short listening test
+  title: Emphasis annotation
 
   # The survey description shown to potential participants
-  description: Listen to an audio file and select the words that are emphasized
+  description: Listen to a speech audio file and select the emphasized words
 
   # Keywords that participants can use to find your survey
-  keywords: Keywords
+  keywords: annotate, audio, emphasis, headphones, speech
 
   # Filter participants
   filter:
@@ -39,10 +39,10 @@ crowdsource:
 
     # Only allow participants who have previously completed at least this
     # number of tasks
-    approved_tasks: 0
+    approved_tasks: 250
 
     # Only allow participants who have a sufficiently high acceptance rating
-    approval_rating: 0
+    approval_rating: 98
 
   # How much you pay participants (in US dollars)
   # E.g., 2.00 is two dollars; 0.50 is fifty cents
@@ -68,10 +68,10 @@ crowdsource:
     autoapprove: 172800
 
 # The number of participants
-participants: 2
+participants: 100
 
 # The number of evaluations each participant performs
-samples_per_participant: 2
+samples_per_participant: 20
 
 # A seed to use for deterministic random sampling
 random_seed: 0
@@ -96,22 +96,7 @@ welcome_text: "
 # perform evaluation. If a multiple choice question has correct_answer
 # defined, the participant must select that answer to be able to continue
 # to the evaluation.
-prescreen_questions:
-
-  # Test question
-  - name: DummyQuestion
-
-    # The type of question. One of [free-response, multiple-choice].
-    type: multiple-choice
-
-    # Question text
-    text: Would you like to take a subjective evaluation?
-
-    # Possible answers
-    answers: ['Yes', 'No']
-
-    # Indicate a correct answer
-    correct_answer: 'Yes'
+prescreen_questions: []
 
 # Include an audio listening test
 listening_test:
@@ -123,7 +108,7 @@ listening_test:
     how many tones you heard."
 
   # Number of questions to include on the listening test
-  num_questions: 1
+  num_questions: 2
 
   # Number of allowed retries before the participant fails the test
   retries: 2
