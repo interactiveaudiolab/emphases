@@ -75,6 +75,9 @@ NUM_MELS = 80
 # Whether to use pitch features
 PITCH_FEATURE = False
 
+# Whether to use pitch features
+PERIODICITY_FEATURE = False
+
 # Seed for all random number generators
 RANDOM_SEED = 1234
 

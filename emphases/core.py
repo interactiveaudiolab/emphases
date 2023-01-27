@@ -364,6 +364,7 @@ def preprocess(
         batch_audio = audio[:, start_sample:end_sample]
 
         # Preprocess audio
+        import pdb; pdb.set_trace()
         batch_features = emphases.data.preprocess.from_audio(batch_audio, gpu=gpu)
 
         # Run inference

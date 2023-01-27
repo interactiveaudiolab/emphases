@@ -46,7 +46,17 @@ class Dataset(torch.utils.data.Dataset):
         audio = emphases.load.audio(self.cache / 'audio' / f'{stem}.wav')
 
         # Load mels
-        mels = torch.load(self.cache / 'mels' / f'{stem}.pt')
+        features = torch.load(self.cache / 'mels' / f'{stem}.pt')
+        
+        if emphases.PITCH_FEATURE:
+            # Load pitch
+            pitch = torch.load(self.cache / 'pitch' / f'{stem}-pitch.pt')
+            features = torch.cat((features, torch.log2(pitch)[None, :]), dim=1)
+
+        if emphases.PERIODICITY_FEATURE:
+            # Load periodicity
+            periodicity = torch.load(self.cache / 'pitch' / f'{stem}-periodicity.pt')
+            features = torch.cat((features, periodicity[None, :]), dim=1)
 
         # Load per-word ground truth emphasis scores
         scores = torch.load(self.cache / 'scores' / f'{stem}.pt')[None]
@@ -59,7 +69,7 @@ class Dataset(torch.utils.data.Dataset):
                 word_bounds[0] + (word_bounds[1] - word_bounds[0]) / 2.
 
             # Get frame centers
-            frame_centers = .5 + torch.arange(mels.shape[-1])
+            frame_centers = .5 + torch.arange(features.shape[-1])
 
             # Interpolate
             scores = emphases.interpolate(
@@ -67,7 +77,7 @@ class Dataset(torch.utils.data.Dataset):
                 word_centers[None],
                 scores)
 
-        return mels, scores, word_bounds, alignment, audio, stem
+        return features, scores, word_bounds, alignment, audio, stem
 
     def __len__(self):
         """Length of the dataset"""
