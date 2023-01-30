@@ -72,6 +72,9 @@ NUM_FFT =  1024
 # Number of mel channels
 NUM_MELS = 80
 
+# Whether to use pitch features
+PITCH_FEATURE = False
+
 # Seed for all random number generators
 RANDOM_SEED = 1234
 

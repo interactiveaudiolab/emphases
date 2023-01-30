@@ -30,3 +30,12 @@ PARTITION_DIR = emphases.ASSETS_DIR / 'partitions'
 
 # The hopsize in seconds
 HOPSIZE_SECONDS = emphases.HOPSIZE / emphases.SAMPLE_RATE
+
+
+###############################################################################
+# Model parameters
+###############################################################################
+
+
+# Number of input features to the model
+NUM_FEATURES = emphases.NUM_MELS + int(emphases.PITCH_FEATURE)
