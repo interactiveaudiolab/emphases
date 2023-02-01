@@ -1,7 +1,7 @@
 MODULE = 'emphases'
 
 # Configuration name
-CONFIG = 'framewise-linear-mel-pitch-small'
+CONFIG = 'framewise-linear-mel-loud-pitch-period-small'
 
 # Batch size (per gpu)
 BATCH_SIZE = 2
@@ -29,3 +29,6 @@ PITCH_FEATURE = True
 
 # Whether to use pitch features
 PERIODICITY_FEATURE = False
+
+# Whether to use loudness features
+LOUDNESS_FEATURE = True

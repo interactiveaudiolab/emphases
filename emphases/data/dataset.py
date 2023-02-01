@@ -48,28 +48,43 @@ class Dataset(torch.utils.data.Dataset):
         # Load mels
         features = torch.load(self.cache / 'mels' / f'{stem}.pt')
         
+        # Load pitch
         if emphases.PITCH_FEATURE:
-            # Load pitch
             pitch = torch.load(self.cache / 'pitch' / f'{stem}-pitch.pt')
             features = torch.cat((features, torch.log2(pitch)[None, :]), dim=1)
 
+        # Load periodicity
         if emphases.PERIODICITY_FEATURE:
-            # Load periodicity
             periodicity = torch.load(self.cache / 'pitch' / f'{stem}-periodicity.pt')
             features = torch.cat((features, periodicity[None, :]), dim=1)
+
+        # Load loudness
+        if emphases.LOUDNESS_FEATURE:
+            loudness = torch.load(self.cache / 'loudness' / f'{stem}.pt')
+            features = torch.cat((features, loudness[None, :]), dim=1)
+
+        # Get center time of each word in frames
+        word_centers = \
+            word_bounds[0] + (word_bounds[1] - word_bounds[0]) / 2.
+
+        # Get frame centers
+        frame_centers = .5 + torch.arange(features.shape[-1])
+
+        # Load prominence
+        if emphases.PROMINENCE_FEATURE:
+            prominence = torch.load(self.cache / 'prominence' / f'{stem}.pt')
+            # Interpolate the prominence values
+            prominence = emphases.interpolate(
+                frame_centers[None],
+                word_centers[None],
+                prominence)
+            features = torch.cat((features, prominence[None, :]), dim=1)
 
         # Load per-word ground truth emphasis scores
         scores = torch.load(self.cache / 'scores' / f'{stem}.pt')[None]
 
         # Maybe interpolate scores for framewise model
         if emphases.METHOD == 'framewise':
-
-            # Get center time of each word in frames
-            word_centers = \
-                word_bounds[0] + (word_bounds[1] - word_bounds[0]) / 2.
-
-            # Get frame centers
-            frame_centers = .5 + torch.arange(features.shape[-1])
 
             # Interpolate
             scores = emphases.interpolate(
