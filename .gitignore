@@ -8,6 +8,7 @@ eval/*
 !eval/.gitkeep
 runs/*
 !runs/.gitkeep
+utils/*
 
 __pycache__/
 .DS_Store

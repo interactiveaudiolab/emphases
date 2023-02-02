@@ -75,6 +75,15 @@ NUM_MELS = 80
 # Whether to use pitch features
 PITCH_FEATURE = False
 
+# Whether to use pitch features
+PERIODICITY_FEATURE = False
+
+# Whether to use loudness features
+LOUDNESS_FEATURE = False
+
+# Whether to use prominence features
+PROMINENCE_FEATURE = False
+
 # Seed for all random number generators
 RANDOM_SEED = 1234
 
@@ -90,7 +99,7 @@ SPLIT_SIZE_VALID = .1
 
 
 # Maximum number of frames to perform inference on at once
-MAX_FRAMES_PER_BATCH = 2048
+MAX_FRAMES_PER_BATCH = 2560
 
 # Number of steps between evaluation
 EVALUATION_INTERVAL = 2500  # steps
