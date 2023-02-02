@@ -364,7 +364,7 @@ def preprocess(
         batch_audio = audio[:, start_sample:end_sample]
 
         # Preprocess audio
-        batch_features = emphases.data.preprocess.from_audio(batch_audio, gpu=gpu)
+        batch_features = emphases.data.preprocess.from_audio(batch_audio, batch_alignment, gpu=gpu)
 
         # Run inference
         yield batch_features, batch_word_bounds, batch_word_lengths

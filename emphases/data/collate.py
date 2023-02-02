@@ -11,7 +11,7 @@ import emphases
 def collate(batch):
     """Batch collation"""
     # Unpack
-    mels, scores, word_bounds, alignments, audios, stems = zip(*batch)
+    features, scores, word_bounds, alignments, audios, stems = zip(*batch)
 
     # Get word lengths
     word_lengths = torch.tensor(
@@ -21,7 +21,7 @@ def collate(batch):
 
     # Get frame lengths
     frame_lengths = torch.tensor(
-        [mel.shape[-1] for mel in mels],
+        [feat.shape[-1] for feat in features],
         dtype=torch.long)
     max_frame_length = frame_lengths.max().item()
 
@@ -36,7 +36,7 @@ def collate(batch):
         raise ValueError(f'Inference method {emphases.METHOD} is not defined')
 
     # Allocate padded tensors
-    padded_mels = torch.zeros((len(mels), emphases.NUM_MELS, max_frame_length))
+    padded_features = torch.zeros((len(features), emphases.NUM_FEATURES, max_frame_length))
     padded_scores = torch.zeros((len(scores), 1, max_output_length))
     padded_bounds = torch.zeros(
         (len(word_bounds), 2, max_word_length),
@@ -50,18 +50,18 @@ def collate(batch):
         zip(
             word_bounds,
             audios,
-            mels,
+            features,
             scores,
             frame_lengths,
             word_lengths,
             output_lengths))
     for (
         i,
-        (bounds, audio, mel, score, frame_length, word_length, output_length)
+        (bounds, audio, feat, score, frame_length, word_length, output_length)
     ) in iterator:
 
-        # Pad mels
-        padded_mels[i, :, :frame_length] = mel
+        # Pad features
+        padded_features[i, :, :frame_length] = feat
 
         # Pad scores
         padded_scores[i, :, :output_length] = score[:, :output_length]
@@ -77,7 +77,7 @@ def collate(batch):
         mask[i, :, :output_length] = 1.
 
     return (
-        padded_mels,
+        padded_features,
         padded_scores,
         padded_bounds,
         word_lengths,

@@ -16,6 +16,11 @@ python -m emphases.train --config config/framewise-linear-small.py --gpus $1
 python -m emphases.train --config config/framewise-nearest-small.py --gpus $1
 python -m emphases.train --config config/wordwise-small.py --gpus $1
 
+# Experimental feature variations
+python -m emphases.train --config config/framewise-linear-mel-pitch-period-small.py --gpus $1
+python -m emphases.train --config config/framewise-linear-mel-loud-pitch-period-small.py --gpus $1
+python -m emphases.train --config config/framewise-linear-mel-prom-loud-pitch-period-small.py --gpus $1
+
 # Evaluate baselines
 python -m emphases.evaluate --config config/prominence.py
 python -m emphases.evaluate --config config/pitch_variance.py
