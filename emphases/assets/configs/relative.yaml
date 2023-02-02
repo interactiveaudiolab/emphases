@@ -115,7 +115,7 @@ listening_test:
 
 # Instructions presented to the participant during evaluation
 survey_instructions: "
-  ## **Instructions** \nListen to the audio file. Then, select any words that were emphasized by the speaker."
+  ## **Instructions** \nListen to the audio file twice. Select all of the words that are more emphasized than the previous word."
 
 # Questions presented to the participant after evaluation
 followup_questions:
