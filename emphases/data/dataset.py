@@ -3,6 +3,7 @@ import os
 import numpy as np
 import pypar
 import torch
+import torchaudio
 
 import emphases
 
@@ -14,17 +15,34 @@ import emphases
 
 class Dataset(torch.utils.data.Dataset):
 
-    def __init__(self, name, partition):
+    def __init__(self, name, partition, train_limit=None):
         # Get list of stems
         self.cache = emphases.CACHE_DIR / name
-        self.stems = emphases.load.partition(name)[partition]
+        all_stems = emphases.load.partition(name)[partition]
 
         # Store lengths for bucketing
         audio_files = list([
-            self.cache / 'audio' / f'{stem}.wav' for stem in self.stems])
-        self.lengths = [
-            os.path.getsize(audio_file) // (2 * emphases.HOPSIZE)
+            self.cache / 'audio' / f'{stem}.wav' for stem in all_stems])
+        all_lengths = [
+            emphases.convert.samples_to_frames(torchaudio.info(audio_file).num_frames)
             for audio_file in audio_files]
+        limit_frames = emphases.convert.seconds_to_frames(train_limit) if train_limit is not None else None
+        if (limit_frames is not None) and limit_frames < sum(all_lengths):
+            total_frames = 0
+            self.stems = []
+            self.lengths = []
+            while total_frames < limit_frames:
+                stem_frames = all_lengths.pop(0)
+                if total_frames + stem_frames <= limit_frames:
+                    self.lengths.append(stem_frames)
+                    self.stems.append(all_stems.pop(0))
+                    total_frames += stem_frames
+                else:
+                    total_frames = limit_frames
+        else:
+            self.stems = all_stems
+            self.lengths = all_lengths
+        
 
     def __getitem__(self, index):
         """Retrieve the indexth item"""

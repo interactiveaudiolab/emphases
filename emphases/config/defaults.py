@@ -170,3 +170,6 @@ NUM_STEPS = 300000
 
 # Number of data loading worker threads
 NUM_WORKERS = 2
+
+# Number of seconds of data to limit training to
+TRAIN_DATA_LIMIT = None
