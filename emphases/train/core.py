@@ -84,6 +84,8 @@ def train(
         model = emphases.model.Wordwise().to(device)
     elif emphases.METHOD == 'framewise':
         model = emphases.model.Framewise().to(device)
+    elif emphases.METHOD == 'attention':
+        model = emphases.model.Encoder().to(device)
     else:
         raise ValueError(f'Method {emphases.METHOD} is not defined')
 
@@ -175,7 +177,7 @@ def train(
             with torch.cuda.amp.autocast():
 
                 # Forward pass
-                scores = model(features, word_bounds, word_lengths)
+                scores = model(features, word_bounds, word_lengths, mask)
 
                 # Compute loss
                 train_loss = loss(scores, targets, mask)
@@ -284,7 +286,7 @@ def evaluate(directory, step, model, gpu, condition, loader):
             mask = mask.to(device)
 
             # Forward pass
-            scores = model(features, word_bounds, word_lengths)
+            scores = model(features, word_bounds, word_lengths, mask)
 
             # Update metrics
             metrics.update(scores, targets, mask)

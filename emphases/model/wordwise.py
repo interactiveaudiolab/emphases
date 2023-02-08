@@ -44,7 +44,7 @@ class Wordwise(torch.nn.Module):
             torch.nn.ReLU(),
             conv_fn(hidden_channels, output_channels))
 
-    def forward(self, features, word_bounds, word_lengths):
+    def forward(self, features, word_bounds, word_lengths, _):
         # Embed frames
         frame_embedding = self.frame_encoder(features)
 
