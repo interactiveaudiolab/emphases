@@ -73,7 +73,7 @@ def train(
     #######################
 
     torch.manual_seed(emphases.RANDOM_SEED)
-    train_loader = emphases.data.loader(dataset, 'train', gpu)
+    train_loader = emphases.data.loader(dataset, 'train', gpu, train_limit=emphases.TRAIN_DATA_LIMIT)
     valid_loader = emphases.data.loader(dataset, 'valid', gpu)
 
     #################
