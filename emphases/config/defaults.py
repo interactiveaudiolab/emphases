@@ -141,6 +141,19 @@ VARIANCE_RESAMPLE = 'max'
 # Used for interp_unvoiced_at for penn
 PENN_VOICED_THRESHOLD = .17
 
+###############################################################################
+# Attention model parameters
+###############################################################################
+
+HIDDEN_CHANNELS = 128
+
+N_HEADS = 2
+
+N_LAYERS = 2
+
+ATTN_ENC_KERNEL_SIZE = 3
+
+FFN_KERNEL_SIZE = 3
 
 ###############################################################################
 # Training parameters

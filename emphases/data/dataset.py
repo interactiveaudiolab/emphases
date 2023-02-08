@@ -70,7 +70,7 @@ class Dataset(torch.utils.data.Dataset):
         scores = torch.load(self.cache / 'scores' / f'{stem}.pt')[None]
 
         # Maybe interpolate scores for framewise model
-        if emphases.METHOD == 'framewise':
+        if emphases.METHOD in ['framewise', 'attention']:
 
             # Get center time of each word in frames
             word_centers = \
