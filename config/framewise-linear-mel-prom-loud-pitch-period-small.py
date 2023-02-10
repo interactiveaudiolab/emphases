@@ -28,7 +28,7 @@ NUM_STEPS = 1000
 PITCH_FEATURE = True
 
 # Whether to use pitch features
-PERIODICITY_FEATURE = False
+PERIODICITY_FEATURE = True
 
 # Whether to use loudness features
 LOUDNESS_FEATURE = True
