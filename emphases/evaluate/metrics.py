@@ -12,10 +12,11 @@ class Metrics:
 
     def __init__(self):
         self.similarity = CosineSimilarity()
+        self.pearson_correlation = PearsonCorrelation()
         self.loss = Loss()
 
     def __call__(self):
-        return self.similarity() | self.loss()
+        return self.similarity() | self.pearson_correlation() | self.loss()
 
     def update(self, scores, targets, lengths):
         # Detach from graph
@@ -23,10 +24,12 @@ class Metrics:
 
         # Update loss
         self.similarity.update(scores, targets, lengths)
+        self.pearson_correlation.update(scores, targets, lengths)
         self.loss.update(scores, targets, lengths)
 
     def reset(self):
         self.similarity.reset()
+        self.pearson_correlation.reset()
         self.loss.reset()
 
 
@@ -54,6 +57,25 @@ class CosineSimilarity:
         self.count = 0
         self.total = 0.
 
+class PearsonCorrelation:
+
+    def __init__(self):
+        self.reset()
+
+    def __call__(self):
+        return {'pearson_correlation': (self.total / self.count).item()}
+
+    def update(self, scores, targets, mask):
+        scores[mask == 0] = 0.
+        targets[mask == 0] = 0.
+        self.total += torch.corrcoef(
+            torch.cat([scores, targets]).squeeze(1)
+        )[:, 0][-1]
+        self.count += scores.shape[0]
+
+    def reset(self):
+        self.count = 0
+        self.total = 0.
 
 class Loss():
 
