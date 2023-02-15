@@ -102,7 +102,7 @@ SPLIT_SIZE_VALID = .1
 MAX_FRAMES_PER_BATCH = 2560
 
 # Number of steps between evaluation
-EVALUATION_INTERVAL = 2500  # steps
+EVALUATION_INTERVAL = 100  # steps
 
 # Number of steps between logging to Tensorboard
 LOG_INTERVAL = 1000  # steps
@@ -110,6 +110,11 @@ LOG_INTERVAL = 1000  # steps
 # Method to use for inference
 METHOD = 'framewise'
 
+#Convert from frames to words on model evaluation (i.e. loss is evaluated wordwise)
+MODEL_TO_WORDS = True
+
+#Either 'conv' or 'transformer', type of encoding stack to use
+ENCODING_STACK = 'conv'
 
 ###############################################################################
 # Prominence baseline parameters
@@ -186,3 +191,6 @@ NUM_WORKERS = 2
 
 # Number of seconds of data to limit training to
 TRAIN_DATA_LIMIT = None
+
+# Resampling mode for framewise models (from frames to words): 'max' or 'avg'
+FRAMEWISE_RESAMPLE = None
