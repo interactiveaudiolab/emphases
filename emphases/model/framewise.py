@@ -10,28 +10,34 @@ import emphases
 ###############################################################################
 
 
-class Framewise(torch.nn.Sequential):
+class Framewise(torch.nn.Module):
 
     def __init__(
-        self,
-        input_channels=emphases.NUM_FEATURES,
-        output_channels=1,
-        hidden_channels=128,
-        kernel_size=5):
-        conv_fn = functools.partial(
-            torch.nn.Conv1d,
-            kernel_size=kernel_size,
-            padding='same')
-        super().__init__(
-            conv_fn(input_channels, hidden_channels),
-            torch.nn.ReLU(),
-            conv_fn(hidden_channels, hidden_channels),
-            torch.nn.ReLU(),
-            conv_fn(hidden_channels, hidden_channels),
-            torch.nn.ReLU(),
-            conv_fn(hidden_channels, hidden_channels),
-            torch.nn.ReLU(),
-            conv_fn(hidden_channels, output_channels))
+        self):
+        super().__init__()
 
-    def forward(self, features, *_):
-        return super().forward(features)
+        self.encoder = emphases.model.Component()
+
+
+    def forward(self, features, word_bounds, word_lengths, mask=None):
+        scores = self.encoder(features, word_bounds, word_lengths, mask)
+        if not emphases.MODEL_TO_WORDS:
+            return scores
+        word_centers = \
+            word_bounds[:, 0] + (word_bounds[:, 1] - word_bounds[:, 0]) // 2
+    
+        #Allocate tensors for wordwise scores and targets
+        word_scores = torch.zeros(word_centers.shape, device=scores.device)
+
+        for stem in range(word_centers.shape[0]): #Iterate over batch
+            for i, (start, end) in enumerate(word_bounds[stem].T):
+                word_outputs = scores.squeeze(1)[stem, start:end]
+                method = emphases.FRAMEWISE_RESAMPLE
+                if method == 'max':
+                    word_score = word_outputs.max()
+                elif method == 'avg':
+                    word_score = word_outputs.mean()
+                else:
+                    raise ValueError(f'Interpolation method {method} is not defined')
+                word_scores[stem, i] = word_score
+        return word_scores.unsqueeze(1)

@@ -84,8 +84,6 @@ def train(
         model = emphases.model.Wordwise().to(device)
     elif emphases.METHOD == 'framewise':
         model = emphases.model.Framewise().to(device)
-    elif emphases.METHOD == 'attention':
-        model = emphases.model.Encoder().to(device)
     else:
         raise ValueError(f'Method {emphases.METHOD} is not defined')
 
@@ -288,7 +286,7 @@ def evaluate(directory, step, model, gpu, condition, loader):
             # Forward pass
             scores = model(features, word_bounds, word_lengths, mask)
 
-            if emphases.METHOD in ['framewise', 'attention'] and emphases.FRAMEWISE_RESAMPLE is not None:
+            if emphases.METHOD == 'framewise' and not emphases.MODEL_TO_WORDS and emphases.FRAMEWISE_RESAMPLE is not None:
                 # Get center time of each word in frames (we know that the targets are accurate here since they're interpolated from here)
                 word_centers = \
                     word_bounds[:, 0] + (word_bounds[:, 1] - word_bounds[:, 0]) // 2

@@ -213,7 +213,7 @@ def from_alignment_and_audio(
         scores: The float-valued emphasis scores for each word
     """
     # Neural method
-    if emphases.METHOD in ['framewise', 'wordwise', 'attention']:
+    if emphases.METHOD in ['framewise', 'wordwise']:
 
         scores = []
 

@@ -59,8 +59,13 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
             
             if isinstance(scores, np.ndarray):
                 scores = torch.from_numpy(scores)
+
+            lengths = torch.tensor(
+                len(scores),
+                dtype=torch.long,
+                device=device)
             
-            if emphases.METHOD in ['framewise', 'attention'] and emphases.FRAMEWISE_RESAMPLE is not None:
+            if emphases.METHOD == 'framewise' and not emphases.MODEL_TO_WORDS and emphases.FRAMEWISE_RESAMPLE is not None:
                 # Get center time of each word in frames (we know that the targets are accurate here since they're interpolated from here)
                 word_centers = \
                     word_bounds[:, 0] + (word_bounds[:, 1] - word_bounds[:, 0]) // 2
@@ -91,16 +96,12 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
 
                 scores = word_scores
                 targets = word_targets
-                mask = word_masks
+                lengths = word_masks #Lengths is passed through to the cosine similarity and loss as a "mask" as only 1s, here we make it an actual mask
 
             # Update metrics
-            lengths = torch.tensor(
-                len(scores),
-                dtype=torch.long,
-                device=device)
-            file_metrics.update(scores, targets.to(device), mask)
-            dataset_metrics.update(scores, targets.to(device), mask)
-            aggregate_metrics.update(scores, targets.to(device), mask)
+            file_metrics.update(scores, targets.to(device), lengths)
+            dataset_metrics.update(scores, targets.to(device), lengths)
+            aggregate_metrics.update(scores, targets.to(device), lengths)
 
             # Copy results
             granular[f'{dataset}/{stem_name[0]}'] = file_metrics()

@@ -19,4 +19,4 @@ EVALUATION_INTERVAL = 50 # steps
 METHOD = 'wordwise'
 
 # Number of training steps
-NUM_STEPS = 1000
+NUM_STEPS = 10000

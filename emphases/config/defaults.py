@@ -156,7 +156,7 @@ VARIANCE_RESAMPLE = 'max'
 PENN_VOICED_THRESHOLD = .17
 
 ###############################################################################
-# Attention model parameters
+# Model component parameters
 ###############################################################################
 
 HIDDEN_CHANNELS = 128
@@ -167,7 +167,11 @@ N_LAYERS = 2
 
 ATTN_ENC_KERNEL_SIZE = 3
 
+CONV_KERNEL_SIZE = 5
+
 FFN_KERNEL_SIZE = 3
+
+NUM_CONVS = 4
 
 ###############################################################################
 # Training parameters
