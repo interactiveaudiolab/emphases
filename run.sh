@@ -22,6 +22,10 @@ python -m emphases.train --config config/framewise-linear-mel-loud-pitch-period-
 python -m emphases.train --config config/framewise-linear-mel-prom-loud-pitch-period-small.py --gpus $1
 python -m emphases.train --config config/wordwise-mel-prom-loud-pitch-period-small.py --gpus $1
 
+python -m emphases.train --config config/framewise-linear-bceLoss-mel-prom-loud-pitch-period-small.py --gpus $1
+python -m emphases.train --config config/framewise-nearest-bceLoss-mel-prom-loud-pitch-period-small.py --gpus $1
+python -m emphases.train --config config/wordwise-bceLoss-mel-prom-loud-pitch-period-small.py --gpus $1
+
 # Evaluate baselines
 python -m emphases.evaluate --config config/prominence.py
 python -m emphases.evaluate --config config/pitch_variance.py
