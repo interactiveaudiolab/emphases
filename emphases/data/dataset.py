@@ -109,6 +109,7 @@ class Dataset(torch.utils.data.Dataset):
                 frame_centers[None],
                 word_centers[None],
                 scores)
+            scores = torch.clamp(scores, min=0)
 
         return features, scores, word_bounds, alignment, audio, stem
 
