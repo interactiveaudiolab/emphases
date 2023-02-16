@@ -1,5 +1,5 @@
 # A name to give to this evaluation configuration
-name: wordselect-audio-example
+name: relative-emphasis-annotation
 
 # The type of test to run. One of [ab, abx, mos, mushra, wordselect].
 test: wordselect
@@ -71,7 +71,7 @@ crowdsource:
 participants: 100
 
 # The number of evaluations each participant performs
-samples_per_participant: 20
+samples_per_participant: 5
 
 # A seed to use for deterministic random sampling
 random_seed: 0
@@ -115,7 +115,7 @@ listening_test:
 
 # Instructions presented to the participant during evaluation
 survey_instructions: "
-  ## **Instructions** \nListen to the audio file twice. Select all of the words that are more emphasized than the previous word."
+  ## **Instructions** \nListen to the audio file a minimum of two times. Select all of the words that are more emphasized than the previous word."
 
 # Questions presented to the participant after evaluation
 followup_questions:
