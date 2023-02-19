@@ -58,9 +58,15 @@ class Encoder(torch.nn.Module):
             self.norm_layers_2.append(
                 LayerNorm(hidden_channels))
 
-    def forward(self, x, unused_bounds, unused_lengths, mask=None):
+    def forward(self, x, bounds, lengths, mask=None):
         if mask is not None:
-            mask_unsqueezed = mask.unsqueeze(2) * mask.unsqueeze(-1) 
+            if mask.shape[-1] != x.shape[-1]:
+                #We have a framewise x, wordwise mask
+                framewise_mask = torch.ones((x.shape[0], 1, x.shape[2]), device=x.device)
+                for i in range(x.shape[0]):
+                    framewise_mask[bounds.mT[i, lengths[i] - 1, i]:] = 0
+                mask = framewise_mask
+            mask_unsqueezed = mask.unsqueeze(2) * mask.unsqueeze(-1)
             x = x * mask
         else:
             mask_unsqueezed = None

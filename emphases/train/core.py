@@ -306,6 +306,8 @@ def evaluate(directory, step, model, gpu, condition, loader):
 
                     for i, (start, end) in enumerate(word_bounds[stem].T):
                         word_outputs = scores.squeeze(1)[stem, start:end]
+                        if word_outputs.shape[0] == 0:
+                            continue
                         method = emphases.FRAMEWISE_RESAMPLE
                         if method == 'max':
                             word_score = word_outputs.max()

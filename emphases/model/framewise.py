@@ -33,11 +33,14 @@ class Framewise(torch.nn.Module):
             for i, (start, end) in enumerate(word_bounds[stem].T):
                 word_outputs = scores.squeeze(1)[stem, start:end]
                 method = emphases.FRAMEWISE_RESAMPLE
-                if method == 'max':
-                    word_score = word_outputs.max()
-                elif method == 'avg':
-                    word_score = word_outputs.mean()
+                if word_outputs.shape[0] != 0:
+                    if method == 'max':
+                        word_score = word_outputs.max()
+                    elif method == 'avg':
+                        word_score = word_outputs.mean()
+                    else:
+                        raise ValueError(f'Interpolation method {method} is not defined')
                 else:
-                    raise ValueError(f'Interpolation method {method} is not defined')
+                    word_score = 0
                 word_scores[stem, i] = word_score
         return word_scores.unsqueeze(1)
