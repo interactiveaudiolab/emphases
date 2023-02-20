@@ -1,5 +1,6 @@
 from .framewise import Framewise
 from .wordwise import Wordwise
+from .components import Component
 
 import emphases
 

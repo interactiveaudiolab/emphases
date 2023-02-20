@@ -26,10 +26,10 @@ def collate(batch):
     max_frame_length = frame_lengths.max().item()
 
     # Network output lengths
-    if emphases.METHOD == 'framewise':
+    if emphases.METHOD == 'framewise' and not emphases.MODEL_TO_WORDS:
         output_lengths = frame_lengths
         max_output_length = max_frame_length
-    elif emphases.METHOD in ['prominence', 'pitch_variance', 'duration_variance', 'wordwise']:
+    elif emphases.METHOD in ['framewise', 'prominence', 'pitch_variance', 'duration_variance', 'wordwise']:
         output_lengths = word_lengths
         max_output_length = max_word_length
     else:

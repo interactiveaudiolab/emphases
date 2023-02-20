@@ -42,7 +42,7 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
             f'Evaluating {emphases.CONFIG} on {dataset}')
 
         # Iterate over test set
-        for _, targets, _, _, _, alignments, audio, stem in iterator:
+        for _, targets, word_bounds, _, _, alignments, audio, stem_name in iterator:
 
             # Reset file metrics
             file_metrics.reset()
@@ -60,17 +60,51 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
             if isinstance(scores, np.ndarray):
                 scores = torch.from_numpy(scores)
 
-            # Update metrics
             lengths = torch.tensor(
                 len(scores),
                 dtype=torch.long,
                 device=device)
+            
+            if emphases.METHOD == 'framewise' and not emphases.MODEL_TO_WORDS and emphases.FRAMEWISE_RESAMPLE is not None:
+                # Get center time of each word in frames (we know that the targets are accurate here since they're interpolated from here)
+                word_centers = \
+                    word_bounds[:, 0] + (word_bounds[:, 1] - word_bounds[:, 0]) // 2
+
+                #Allocate tensors for wordwise scores and targets
+                word_scores = torch.zeros(word_centers.shape, device=device)
+                word_targets = torch.zeros(word_centers.shape, device=device)
+                word_masks = torch.zeros(word_centers.shape, device=device)
+
+                for stem in range(targets.shape[1]): #Iterate over batch
+                    stem_word_centers = word_centers[stem]
+                    stem_word_targets = targets.squeeze(1)[stem, stem_word_centers]
+                    stem_word_mask = torch.where(stem_word_centers == 0, 0, 1)
+
+                    word_targets[stem] = stem_word_targets
+                    word_masks[stem] = stem_word_mask
+
+                    for i, (start, end) in enumerate(word_bounds[stem].T):
+                        word_outputs = scores.squeeze(1)[stem, start:end]
+                        method = emphases.FRAMEWISE_RESAMPLE
+                        if method == 'max':
+                            word_score = word_outputs.max()
+                        elif method == 'avg':
+                            word_score = word_outputs.mean()
+                        else:
+                            raise ValueError(f'Interpolation method {method} is not defined')
+                        word_scores[stem, i] = word_score
+
+                scores = word_scores
+                targets = word_targets
+                lengths = word_masks #Lengths is passed through to the cosine similarity and loss as a "mask" as only 1s, here we make it an actual mask
+
+            # Update metrics
             file_metrics.update(scores, targets.to(device), lengths)
             dataset_metrics.update(scores, targets.to(device), lengths)
             aggregate_metrics.update(scores, targets.to(device), lengths)
 
             # Copy results
-            granular[f'{dataset}/{stem[0]}'] = file_metrics()
+            granular[f'{dataset}/{stem_name[0]}'] = file_metrics()
         overall[dataset] = dataset_metrics()
     overall['aggregate'] = aggregate_metrics()
 

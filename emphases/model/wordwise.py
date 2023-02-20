@@ -14,39 +14,18 @@ class Wordwise(torch.nn.Module):
 
     def __init__(
             self,
-            input_channels=emphases.NUM_FEATURES,
-            output_channels=1,
-            hidden_channels=128,
-            kernel_size=5):
+            hidden_channels=emphases.HIDDEN_CHANNELS):
         super().__init__()
-
-        # Setup frame encoder
-        conv_fn = functools.partial(
-            torch.nn.Conv1d,
-            kernel_size=kernel_size,
-            padding='same')
-        self.frame_encoder = torch.nn.Sequential(
-            conv_fn(input_channels, hidden_channels),
-            torch.nn.ReLU(),
-            conv_fn(hidden_channels, hidden_channels),
-            torch.nn.ReLU(),
-            conv_fn(hidden_channels, hidden_channels),
-            torch.nn.ReLU(),
-            conv_fn(hidden_channels, hidden_channels))
+        
+        #Setup frame encoder (output_channels=hidden channels because stopping at latent space)
+        self.frame_encoder = emphases.model.Component(output_channels=hidden_channels)
 
         # Setup word decoder
-        self.word_decoder = torch.nn.Sequential(
-            conv_fn(hidden_channels, hidden_channels),
-            torch.nn.ReLU(),
-            conv_fn(hidden_channels, hidden_channels),
-            torch.nn.ReLU(),
-            conv_fn(hidden_channels, hidden_channels),
-            torch.nn.ReLU(),
-            conv_fn(hidden_channels, output_channels))
+        self.word_decoder = emphases.model.Component(input_channels=hidden_channels)
 
-    def forward(self, features, word_bounds, word_lengths):
+    def forward(self, features, word_bounds, word_lengths, *_):
         # Embed frames
-        frame_embedding = self.frame_encoder(features)
+        frame_embedding = self.frame_encoder(features, word_bounds, word_lengths)
 
         # Get maximum number of words
         max_word_length = word_lengths.max().item()
@@ -69,4 +48,4 @@ class Wordwise(torch.nn.Module):
                 word_embeddings[i, :, j] = embedding[:, start:end].mean(dim=1)
 
         # Infer emphasis scores from word embeddings
-        return self.word_decoder(word_embeddings)
+        return self.word_decoder(word_embeddings, word_bounds, word_lengths)
