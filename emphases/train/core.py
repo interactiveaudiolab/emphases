@@ -178,7 +178,10 @@ def train(
                 scores = model(features, word_bounds, word_lengths, mask)
 
                 # Compute loss
-                train_loss = loss(scores, targets, mask)
+                if emphases.USE_BCE_LOGITS_LOSS:
+                    train_loss = bceLogitsloss(scores, targets, mask)
+                else:
+                    train_loss = loss(scores, targets, mask)
 
             ######################
             # Optimize model #
@@ -374,3 +377,7 @@ def ddp_context(rank, world_size):
 def loss(scores, targets, mask):
     """Compute masked loss"""
     return torch.nn.functional.mse_loss(scores * mask, targets * mask)
+
+def bceLogitsloss(scores, targets, mask):
+    """Compute masked Binary Cross Entropy between target and input"""
+    return torch.nn.functional.binary_cross_entropy_with_logits(scores * mask, targets * mask)

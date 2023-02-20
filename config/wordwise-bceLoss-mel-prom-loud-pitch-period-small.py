@@ -1,8 +1,7 @@
 MODULE = 'emphases'
 
 # Configuration name
-CONFIG = 'framewise-linear-mel-loud-pitch-period-small'
-
+CONFIG = 'wordwise-bceLoss-mel-prom-loud-pitch-period-small'
 # Batch size (per gpu)
 BATCH_SIZE = 2
 
@@ -19,7 +18,7 @@ LOG_INTERVAL = 50  # steps
 EVALUATION_INTERVAL = 50 # steps
 
 # Method to use for inference
-METHOD = 'framewise'
+METHOD = 'wordwise'
 
 # Number of training steps
 NUM_STEPS = 1000
@@ -32,3 +31,6 @@ PERIODICITY_FEATURE = True
 
 # Whether to use loudness features
 LOUDNESS_FEATURE = True
+
+# Whether to use prominence features
+PROMINENCE_FEATURE = True
