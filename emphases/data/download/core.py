@@ -3,6 +3,8 @@ import shutil
 import ssl
 import tarfile
 import urllib
+import yaml
+import json
 
 import pyfoal
 import pypar
@@ -71,6 +73,8 @@ def datasets(datasets):
             libritts()
         elif dataset == 'buckeye':
             buckeye()
+        elif dataset == 'annotate':
+            annotate()
         else:
             raise ValueError(f'Dataset {dataset} is not defined')
 
@@ -78,6 +82,69 @@ def datasets(datasets):
 ###############################################################################
 # Individual dataset downloaders
 ###############################################################################
+
+def annotate():
+    """Download annotated dataset"""
+    # Extract annotations to data directory
+    with open(emphases.DEFAULT_ANNOTATION_CONFIG, "r") as stream:
+        try:
+            annotation_config = yaml.safe_load(stream)
+        except yaml.YAMLError as exc:
+            print(exc)
+
+    source_directory = emphases.ANNOTATION_DIR
+    data_directory = emphases.DATA_DIR / 'annotate' / annotation_config['name']
+    response_file = data_directory / 'tables' / 'responses.csv'
+    results_file = data_directory / 'results.json'
+    shutil.copytree(source_directory / 'input', data_directory / 'input', dirs_exist_ok=True)
+
+    # Setup cache directory
+    cache_directory = emphases.CACHE_DIR / 'annotate'
+    cache_directory.mkdir(exist_ok=True, parents=True)
+
+    # Create subdirectories
+    features = ['alignment', 'audio', 'scores']
+    for feature in features:
+        (cache_directory / feature).mkdir(exist_ok=True, parents=True)
+
+    # Get audio files
+    audio_files = sorted((data_directory / 'input').glob('*.wav'))
+
+    # Get output alignment files
+    alignment_files = []
+
+    # Iterate over files
+    for i, audio_file in enumerate(audio_files):
+
+        # Load and resample audio
+        audio = emphases.load.audio(audio_file)
+
+        # Save to disk
+        torchaudio.save(
+            cache_directory / 'audio' / audio_file.name,
+            audio,
+            emphases.SAMPLE_RATE)
+
+        # Save alignment file path
+        alignment_files.append(
+            cache_directory / 'alignment' / f'{audio_file.stem}.TextGrid')
+
+    # Get corresponding text files
+    text_files = [
+        file.parent / f"{file.stem}-words.txt" for file in audio_files]
+
+    # Align text and audio
+    pyfoal.from_files_to_files(
+        text_files,
+        audio_files,
+        alignment_files)
+
+    # Read annotations stem specific scores and save it in cache
+    annotation_data = json.loads(open(results_file, 'r').read())
+
+    for stem in annotation_data['scores']:
+        scores = annotation_data['scores'][stem]
+        torch.save(scores, cache_directory / 'scores' / f'{stem}.pt')
 
 
 def buckeye():

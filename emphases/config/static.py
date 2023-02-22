@@ -8,7 +8,7 @@ import emphases
 
 
 # Directory to save annotation artifacts
-ANNOTATION_DIR = emphases.EVAL_DIR / 'annotation'
+ANNOTATION_DIR = emphases.SOURCE_DIR / 'annotate'
 
 # Default configuration file for emphasis annotation
 DEFAULT_ANNOTATION_CONFIG = emphases.ASSETS_DIR / 'configs' / 'absolute.yaml'

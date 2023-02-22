@@ -26,6 +26,9 @@ python -m emphases.train --config config/framewise-linear-bceLoss-mel-prom-loud-
 python -m emphases.train --config config/framewise-nearest-bceLoss-mel-prom-loud-pitch-period-small.py --gpus $1
 python -m emphases.train --config config/wordwise-bceLoss-mel-prom-loud-pitch-period-small.py --gpus $1
 
+# Train on annotated dataset
+python -m emphases.train --config config/framewise-linear-annotated-mel-prom-loud-pitch-period-small.py --dataset annotate --gpus $1
+
 # Evaluate baselines
 python -m emphases.evaluate --config config/prominence.py
 python -m emphases.evaluate --config config/pitch_variance.py
