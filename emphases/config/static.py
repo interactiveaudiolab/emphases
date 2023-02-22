@@ -11,7 +11,7 @@ import emphases
 ANNOTATION_DIR = emphases.SOURCE_DIR / 'annotate'
 
 # Default configuration file for emphasis annotation
-DEFAULT_ANNOTATION_CONFIG = emphases.ASSETS_DIR / 'configs' / 'absolute.yaml'
+DEFAULT_ANNOTATION_CONFIG = emphases.ASSETS_DIR / 'configs' / 'annotate.yaml'
 
 # Default checkpoint for generation
 DEFAULT_CHECKPOINT = emphases.ASSETS_DIR / 'checkpoints'
