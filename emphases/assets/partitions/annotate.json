@@ -1,21 +1,11 @@
 {
     "train": [
-        "buckeye-s24-1",
-        "buckeye-s11-1",
-        "buckeye-s17-1",
-        "buckeye-s14-1",
-        "buckeye-s03-1",
-        "buckeye-s26-1",
-        "buckeye-s25-1",
-        "buckeye-s22-1",
-        "buckeye-s04-1",
-        "buckeye-s32-1"
+        "libritts-000040-000294",
+        "libritts-000040-000018",
+        "libritts-000040-000062"
     ],
-    "valid": [
-        "buckeye-s21-1"
-    ],
+    "valid": ["libritts-000196-000037"],
     "test": [
-        "buckeye-s02-1",
-        "buckeye-s16-1"
+        "libritts-000040-000030"
     ]
 }

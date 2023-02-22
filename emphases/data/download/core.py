@@ -47,17 +47,17 @@ BUCKEYE_FILTER_LIST = [
 LIBRITTS_SPEAKERS = [
     # Female
     40,
-    669,
-    4362,
-    5022,
-    8123,
+    # 669,
+    # 4362,
+    # 5022,
+    # 8123,
 
     # Male
     196,
-    460,
-    1355,
-    3664,
-    7067  # uses character voices
+    # 460,
+    # 1355,
+    # 3664,
+    # 7067  # uses character voices
 ]
 
 
@@ -107,8 +107,13 @@ def annotate():
     for feature in features:
         (cache_directory / feature).mkdir(exist_ok=True, parents=True)
 
-    # Get audio files
+    # Read annotation data
+    annotation_data = json.loads(open(results_file, 'r').read())
+    annotated_samples = [stem for stem in annotation_data['scores'].keys()]
+
+    # Get annotated audio files
     audio_files = sorted((data_directory / 'input').glob('*.wav'))
+    audio_files = [file for file in audio_files if file.stem in annotated_samples]
 
     # Get output alignment files
     alignment_files = []
@@ -139,12 +144,31 @@ def annotate():
         audio_files,
         alignment_files)
 
-    # Read annotations stem specific scores and save it in cache
-    annotation_data = json.loads(open(results_file, 'r').read())
+    # Extract per-word emphasis scores
+    for file in alignment_files:
 
-    for stem in annotation_data['scores']:
-        scores = annotation_data['scores'][stem]
-        torch.save(scores, cache_directory / 'scores' / f'{stem}.pt')
+        # Load alignment
+        alignment = pypar.Alignment(file)
+
+        # Get words from annotation
+        labels = annotation_data['scores'][file.stem]
+
+        # Get per-word emphasis scores
+        j = 0
+        scores = torch.zeros(len(alignment))
+        for i, word in enumerate(alignment):
+
+            # Keep silences as zero
+            if str(word) == pypar.SILENCE:
+                continue
+
+            # Update scores
+            scores[i] = float(labels[j])
+
+            j += 1
+
+        # Save scores
+        torch.save(scores, cache_directory / 'scores' / f'{file.stem}.pt')
 
 
 def buckeye():

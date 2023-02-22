@@ -14,8 +14,8 @@ def datasets(datasets):
         data_directory = emphases.DATA_DIR / dataset
         cache_directory = emphases.CACHE_DIR / dataset
 
-        # Get audio files
-        audio_files = sorted(data_directory.rglob('*.wav'))
+        # Get audio files, from cache
+        audio_files = sorted(cache_directory.rglob('*.wav'))
 
         # Get alignment files
         alignment_files = sorted(cache_directory.rglob('*.TextGrid'))
