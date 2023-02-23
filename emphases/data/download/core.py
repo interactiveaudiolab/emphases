@@ -47,17 +47,17 @@ BUCKEYE_FILTER_LIST = [
 LIBRITTS_SPEAKERS = [
     # Female
     40,
-    # 669,
-    # 4362,
-    # 5022,
-    # 8123,
+    669,
+    4362,
+    5022,
+    8123,
 
     # Male
     196,
-    # 460,
-    # 1355,
-    # 3664,
-    # 7067  # uses character voices
+    460,
+    1355,
+    3664,
+    7067  # uses character voices
 ]
 
 

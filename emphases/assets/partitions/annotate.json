@@ -1,11 +1,11 @@
 {
     "train": [
-        "libritts-000040-000294",
-        "libritts-000040-000018",
-        "libritts-000040-000062"
+        "libritts-000196-000144",
+        "libritts-005022-000033",
+        "libritts-005022-000327"
     ],
-    "valid": ["libritts-000196-000037"],
+    "valid": ["libritts-005022-000100"],
     "test": [
-        "libritts-000040-000030"
+        "libritts-001355-000095"
     ]
 }
