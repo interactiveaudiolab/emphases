@@ -90,6 +90,8 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
                             word_score = word_outputs.max()
                         elif method == 'avg':
                             word_score = word_outputs.mean()
+                        elif method == 'center':
+                            word_score = word_outputs[len(word_outputs) // 2]
                         else:
                             raise ValueError(f'Interpolation method {method} is not defined')
                         word_scores[stem, i] = word_score
