@@ -11,6 +11,9 @@ python -m emphases.data.download
 python -m emphases.data.preprocess
 python -m emphases.partition
 
+# Analyze the annotated data
+python -m emphases.data.analyze --dataset annotate
+
 # Train and evaluate experiments
 python -m emphases.train --config config/framewise-linear-small.py --gpus $1
 python -m emphases.train --config config/framewise-nearest-small.py --gpus $1

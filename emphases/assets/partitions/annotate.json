@@ -1,11 +1,33 @@
 {
     "train": [
+        "libritts-007067-000266",
+        "libritts-000040-000009",
+        "libritts-005022-000327",
         "libritts-000196-000144",
-        "libritts-005022-000033",
-        "libritts-005022-000327"
+        "libritts-005022-000100",
+        "libritts-003664-000024",
+        "libritts-001355-000095",
+        "libritts-008123-000164",
+        "libritts-005022-000157",
+        "libritts-001355-000053",
+        "libritts-000040-000076",
+        "libritts-007067-000145",
+        "libritts-003664-000044",
+        "libritts-007067-000107",
+        "libritts-000669-000180",
+        "libritts-007067-000172",
+        "libritts-008123-000170",
+        "libritts-000460-000199",
+        "libritts-000040-000086",
+        "libritts-007067-000215"
     ],
-    "valid": ["libritts-005022-000100"],
+    "valid": [
+        "libritts-005022-000104",
+        "libritts-007067-000300"
+    ],
     "test": [
-        "libritts-001355-000095"
+        "libritts-007067-000140",
+        "libritts-005022-000033",
+        "libritts-000460-000228"
     ]
 }
