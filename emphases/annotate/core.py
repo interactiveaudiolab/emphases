@@ -22,7 +22,7 @@ def datasets(
     # Create input and output directories
     input_directory = directory / 'input'
     input_directory.mkdir(exist_ok=True, parents=True)
-    output_directory = directory / 'output'
+    output_directory = emphases.DATA_DIR / 'annotate'
     output_directory.mkdir(exist_ok=True, parents=True)
 
     # Populate input directory with speech and text files

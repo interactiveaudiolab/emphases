@@ -200,5 +200,6 @@ TRAIN_DATA_LIMIT = None
 # Resampling mode for framewise models (from frames to words): 'max' or 'avg'
 FRAMES_TO_WORDS_RESAMPLE = None
 
+
 # Whether to BCELogitloss function
 USE_BCE_LOGITS_LOSS = False
