@@ -45,7 +45,7 @@ class Wordwise(torch.nn.Module):
         for i, (embedding, bounds, length) in iterator:
             for j in range(length):
                 start, end = bounds[0, j], bounds[1, j]
-                word_embeddings[i, :, j] = embedding[:, start:end].mean(dim=1)
+                word_embeddings[i, :, j] = emphases.frames_to_words(embedding[:, start:end], dim=1)
 
         # Infer emphasis scores from word embeddings
         return self.word_decoder(word_embeddings, word_bounds, word_lengths)
