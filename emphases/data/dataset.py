@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 import pypar
 import torch
@@ -42,7 +40,7 @@ class Dataset(torch.utils.data.Dataset):
         else:
             self.stems = all_stems
             self.lengths = all_lengths
-        
+
 
     def __getitem__(self, index):
         """Retrieve the indexth item"""
@@ -65,7 +63,7 @@ class Dataset(torch.utils.data.Dataset):
 
         # Load mels
         features = torch.load(self.cache / 'mels' / f'{stem}.pt')
-        
+
         # Load pitch
         if emphases.PITCH_FEATURE:
             pitch = torch.load(self.cache / 'pitch' / f'{stem}-pitch.pt')
