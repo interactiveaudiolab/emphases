@@ -298,8 +298,8 @@ def evaluate(directory, step, model, gpu, condition, loader):
                 word_scores = torch.zeros(word_centers.shape, device=scores.device)
                 word_targets = torch.zeros(word_centers.shape, device=scores.device)
                 word_masks = torch.zeros(word_centers.shape, device=scores.device)
-
-                for stem in range(targets.shape[1]): #Iterate over batch
+                
+                for stem in range(targets.shape[0]): #Iterate over batch
                     stem_word_centers = word_centers[stem]
                     stem_word_targets = targets.squeeze(1)[stem, stem_word_centers]
                     stem_word_mask = torch.where(stem_word_centers == 0, 0, 1)
