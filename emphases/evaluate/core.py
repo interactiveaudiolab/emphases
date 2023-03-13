@@ -38,7 +38,7 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
 
         # Setup test dataset
         iterator = emphases.iterator(
-            emphases.data.loader(dataset, 'test'),
+            emphases.data.loader(dataset, 'test', gpu),
             f'Evaluating {emphases.CONFIG} on {dataset}')
 
         # Iterate over test set
@@ -56,7 +56,7 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
                 batch_size=emphases.MAX_FRAMES_PER_BATCH,
                 pad=True,
                 gpu=gpu)[None]
-            
+
             if isinstance(scores, np.ndarray):
                 scores = torch.from_numpy(scores)
 
@@ -64,7 +64,7 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
                 len(scores),
                 dtype=torch.long,
                 device=device)
-            
+
             if emphases.METHOD == 'framewise' and not emphases.MODEL_TO_WORDS and emphases.FRAMES_TO_WORDS_RESAMPLE is not None:
                 # Get center time of each word in frames (we know that the targets are accurate here since they're interpolated from here)
                 word_centers = \

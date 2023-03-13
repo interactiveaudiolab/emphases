@@ -83,6 +83,7 @@ def datasets(datasets):
 # Individual dataset downloaders
 ###############################################################################
 
+
 def annotate():
     """Download annotated dataset"""
     # Extract annotations to data directory
@@ -142,7 +143,8 @@ def annotate():
     pyfoal.from_files_to_files(
         text_files,
         audio_files,
-        alignment_files)
+        alignment_files,
+        'p2fa')
 
     # Extract per-word emphasis scores
     for file in alignment_files:
@@ -264,29 +266,26 @@ def buckeye():
 
 def libritts():
     """Download libritts dataset"""
-    # # Setup source directory
-    # source_directory = emphases.SOURCE_DIR / 'libritts'
-    # source_directory.mkdir(exist_ok=True, parents=True)
+    # Setup source directory
+    source_directory = emphases.SOURCE_DIR / 'libritts'
+    source_directory.mkdir(exist_ok=True, parents=True)
 
-    # # Download
-    # url = 'https://us.openslr.org/resources/60/train-clean-100.tar.gz'
-    # file = source_directory / 'libritts-train-clean-100.tar.gz'
-    # download_file(url, file)
+    # Download
+    url = 'https://us.openslr.org/resources/60/train-clean-100.tar.gz'
+    file = source_directory / 'libritts-train-clean-100.tar.gz'
+    download_file(url, file)
 
-    # # Unzip
-    # with tarfile.open(file, 'r:gz') as tfile:
-    #     tfile.extractall(emphases.DATA_DIR)
+    # Unzip
+    with tarfile.open(file, 'r:gz') as tfile:
+        tfile.extractall(emphases.DATA_DIR)
 
-    # # Rename folder
+    # Rename folder
     directory = emphases.DATA_DIR / 'libritts'
-    # shutil.rmtree(directory, ignore_errors=True)
-    # shutil.move(emphases.DATA_DIR / 'LibriTTS', directory)
+    shutil.rmtree(directory, ignore_errors=True)
+    shutil.move(emphases.DATA_DIR / 'LibriTTS', directory)
 
-    # Get list of audio files for each speaker
-    audio_files = {
-        speaker: sorted(
-            (directory / 'train-clean-100' / str(speaker)).rglob('*.wav'))
-        for speaker in LIBRITTS_SPEAKERS}
+    # Get list of audio files
+    audio_files = list(directory.rglob('*.wav'))
 
     # Setup cache directory
     cache_directory = emphases.CACHE_DIR / 'libritts'
@@ -297,42 +296,40 @@ def libritts():
     for feature in features:
         (cache_directory / feature).mkdir(exist_ok=True, parents=True)
 
-    # Iterate over speakers
+    # Get output alignment files
+    alignment_files = []
+
+    # Iterate over files
     iterator = emphases.iterator(
-        audio_files.items(),
+        audio_files,
         'Formatting libritts',
         total=len(audio_files))
-    for speaker, audio_files in iterator:
+    for audio_file in iterator:
 
-        # Get output alignment files
-        alignment_files = []
+        # Load and resample audio
+        audio = emphases.load.audio(audio_file)
 
-        # Iterate over files
-        for i, audio_file in enumerate(audio_files):
+        # Save audio
+        stem = audio_file.stem
+        torchaudio.save(
+            cache_directory / 'audio' / f'{stem}.wav',
+            audio,
+            emphases.SAMPLE_RATE)
 
-            # Load and resample audio
-            audio = emphases.load.audio(audio_file)
-
-            # Save audio
-            stem = f'{speaker:06d}-{i:06d}'
-            torchaudio.save(
-                cache_directory / 'audio' / f'{stem}.wav',
-                audio,
-                emphases.SAMPLE_RATE)
-
-            # Save alignment file path
-            alignment_files.append(
-                cache_directory / 'alignment' / f'{stem}.TextGrid')
+        # Save alignment file path
+        alignment_files.append(
+            cache_directory / 'alignment' / f'{stem}.TextGrid')
 
         # Get corresponding text files
         text_files = [
             file.with_suffix('.normalized.txt') for file in audio_files]
 
-        # Align text and audio
-        pyfoal.from_files_to_files(
-            text_files,
-            audio_files,
-            alignment_files)
+    # Align text and audio
+    pyfoal.from_files_to_files(
+        text_files,
+        audio_files,
+        alignment_files,
+        'p2fa')
 
 
 ###############################################################################

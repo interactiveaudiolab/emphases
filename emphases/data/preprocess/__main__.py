@@ -16,6 +16,10 @@ def parse_args():
         nargs='+',
         default=emphases.DATASETS,
         help='The datasets to preprocess')
+    parser.add_argument(
+        '--gpu',
+        type=int,
+        help='The index of the gpu to run inference on')
     return parser.parse_args()
 
 

@@ -1,3 +1,4 @@
+import random
 import shutil
 
 import pypar
@@ -17,24 +18,35 @@ def datasets(
     directory=emphases.ANNOTATION_DIR,
     remote=False,
     production=False,
-    interval=120):
+    interval=120,
+    fraction=None):
     """Perform emphasis annotation on datasets"""
     # Create input and output directories
-    input_directory = directory / 'input'
-    input_directory.mkdir(exist_ok=True, parents=True)
-    output_directory = emphases.DATA_DIR / 'annotate'
+    directory.mkdir(exist_ok=True, parents=True)
+    index = f'{len(directory.glob("*"))}:02'
+    input_directory = directory / index
+    output_directory = emphases.DATA_DIR / 'annotate' / index
     output_directory.mkdir(exist_ok=True, parents=True)
 
     # Populate input directory with speech and text files
     for dataset in datasets:
 
+        # Get audio files
+        audio_files = (emphases.CACHE_DIR / dataset / 'audio').glob('*')
+
+        # Deterministic shuffle
+        random.seed(emphases.RANDOM_SEED)
+        random.shuffle(audio_files)
+
+        # Maybe annotate only a fraction
+        if fraction is not None:
+            audio_files = audio_files[:int(len(audio_files) * fraction)]
+
         # Iterate over audio files
-        for audio_file in (emphases.CACHE_DIR / dataset / 'audio').glob('*'):
+        for audio_file in audio_files:
 
             # Save audio
-            output_audio_file = \
-                input_directory / f'{dataset}-{audio_file.name}'
-            shutil.copyfile(audio_file, output_audio_file)
+            shutil.copyfile(audio_file, input_directory / audio_file.name)
 
             # Load alignment
             alignment = pypar.Alignment(
@@ -43,10 +55,8 @@ def datasets(
                 f'{audio_file.stem}.TextGrid')
 
             # Save text
-            output_text_file = (
-                output_audio_file.parent /
-                f'{output_audio_file.stem}-words.txt')
-            with open(output_text_file, 'w') as file:
+            text_file = input_directory.parent / f'{audio_file.stem}.txt'
+            with open(text_file, 'w') as file:
                 file.write(
                     ' '.join([
                         str(word) for word in alignment
