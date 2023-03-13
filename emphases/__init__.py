@@ -35,5 +35,7 @@ from . import load
 from . import partition
 from . import train
 from . import write
+from . import plot
 from .interpolate import interpolate
+from .word_resample import frames_to_words
 from .model import Model

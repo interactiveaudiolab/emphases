@@ -289,7 +289,7 @@ def evaluate(directory, step, model, gpu, condition, loader):
             # Forward pass
             scores = model(features, word_bounds, word_lengths, mask)
 
-            if emphases.METHOD == 'framewise' and not emphases.MODEL_TO_WORDS and emphases.FRAMEWISE_RESAMPLE is not None:
+            if emphases.METHOD == 'framewise' and not emphases.MODEL_TO_WORDS and emphases.FRAMES_TO_WORDS_RESAMPLE is not None:
                 # Get center time of each word in frames (we know that the targets are accurate here since they're interpolated from here)
                 word_centers = \
                     word_bounds[:, 0] + (word_bounds[:, 1] - word_bounds[:, 0]) // 2
@@ -298,8 +298,8 @@ def evaluate(directory, step, model, gpu, condition, loader):
                 word_scores = torch.zeros(word_centers.shape, device=scores.device)
                 word_targets = torch.zeros(word_centers.shape, device=scores.device)
                 word_masks = torch.zeros(word_centers.shape, device=scores.device)
-
-                for stem in range(targets.shape[1]): #Iterate over batch
+                
+                for stem in range(targets.shape[0]): #Iterate over batch
                     stem_word_centers = word_centers[stem]
                     stem_word_targets = targets.squeeze(1)[stem, stem_word_centers]
                     stem_word_mask = torch.where(stem_word_centers == 0, 0, 1)
@@ -311,13 +311,7 @@ def evaluate(directory, step, model, gpu, condition, loader):
                         word_outputs = scores.squeeze(1)[stem, start:end]
                         if word_outputs.shape[0] == 0:
                             continue
-                        method = emphases.FRAMEWISE_RESAMPLE
-                        if method == 'max':
-                            word_score = word_outputs.max()
-                        elif method == 'avg':
-                            word_score = word_outputs.mean()
-                        else:
-                            raise ValueError(f'Interpolation method {method} is not defined')
+                        word_score = emphases.frames_to_words(word_outputs)
                         word_scores[stem, i] = word_score
                 
                 scores = word_scores

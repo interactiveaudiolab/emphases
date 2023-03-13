@@ -1,4 +1,5 @@
 import multiprocessing as mp
+import os
 
 import librosa
 import numpy as np
@@ -47,7 +48,7 @@ def from_file_to_file(audio_file, output_file):
 
 def from_files_to_files(audio_files, output_files):
     """Compute mels for many files and save to disk"""
-    with mp.Pool() as pool:
+    with mp.get_context('spawn').Pool(os.cpu_count() // 2) as pool:
         pool.starmap(from_file_to_file, zip(audio_files, output_files))
 
 

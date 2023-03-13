@@ -40,10 +40,10 @@ SOURCE_DIR = Path(__file__).parent.parent.parent / 'data' / 'sources'
 
 
 # The maximum representable frequency
-FMAX = 400.
+FMAX = 550.
 
 # The minumum representable frequency
-FMIN = 50.
+FMIN = 40.
 
 # The number of samples between frames
 HOPSIZE = 160
@@ -153,7 +153,7 @@ VOICED_THRESHOLD = 50
 VARIANCE_RESAMPLE = 'max'
 
 # Used for interp_unvoiced_at for penn
-PENN_VOICED_THRESHOLD = .17
+PENN_VOICED_THRESHOLD = .065
 
 ###############################################################################
 # Model component parameters
@@ -198,7 +198,8 @@ TRAIN_DATA_LIMIT = None
 
 
 # Resampling mode for framewise models (from frames to words): 'max' or 'avg'
-FRAMEWISE_RESAMPLE = 'max'
+FRAMES_TO_WORDS_RESAMPLE = None
+
 
 # Whether to BCELogitloss function
 USE_BCE_LOGITS_LOSS = False

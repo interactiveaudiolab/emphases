@@ -249,12 +249,10 @@ def from_alignment_and_audio(
             audio,
             sample_rate,
             gpu)
-    
-    #Duration variance method
+
+    # Duration variance method
     elif emphases.METHOD == 'duration_variance':
-        return emphases.baselines.duration_variance.infer(
-            alignment
-        )
+        return emphases.baselines.duration_variance.infer(alignment)
 
 
 ###############################################################################
@@ -364,7 +362,10 @@ def preprocess(
         batch_audio = audio[:, start_sample:end_sample]
 
         # Preprocess audio
-        batch_features = emphases.data.preprocess.from_audio(batch_audio, batch_alignment, gpu=gpu)
+        batch_features = emphases.data.preprocess.from_audio(
+            batch_audio,
+            batch_alignment,
+            gpu=gpu)
 
         # Run inference
         yield batch_features, batch_word_bounds, batch_word_lengths
