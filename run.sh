@@ -11,10 +11,59 @@ python -m emphases.data.download
 python -m emphases.data.preprocess --gpu $1
 python -m emphases.partition
 
+# First pass experiments
+
+# Experiments:
+# - Transformer vs convolutional
+#   - Layers
+#   - Capacity
+# - Features
+#   - Loudness
+#   - Pitch
+#   - Periodicity
+#   - Mels
+# - BCE vs MSE loss
+# - Resampling method
+#   - max
+#   - centerpoint
+#   - mean
+# - Architecture
+#   - framewise
+#   - posthoc-wordwise
+#   - intermediate-wordwise
+
+# Start with a small, convolutional model (intermediate-wordwise + max + mels) and search loss ***
+# TODO - configs (2)
+
+# Next, search features ***
+# TODO - configs (15)
+
+# Next, search architecture and resampling method
+# TODO - configs (7)
+
+# Next, hparam search on both conv and transformer
+# TODO - configs (?)
+
+# Second pass experiments
+
+# Scaling laws
+# TODO - configs (?)
+
+# Ablations (features, resampling, and architecture)
+# TODO - configs (22)
+
+# Evaluate baselines
+python -m emphases.evaluate --config config/prominence.py --datasets buckeye
+python -m emphases.evaluate --config config/pitch_variance.py --datasets buckeye
+python -m emphases.evaluate --config config/duration_variance.py --datasets buckeye
+
+# Plots
+# TODO
+
 # Train and evaluate experiments
-python -m emphases.train --config config/framewise-linear-small.py --gpus $1
-python -m emphases.train --config config/framewise-nearest-small.py --gpus $1
-python -m emphases.train --config config/wordwise-small.py --gpus $1
+# python -m emphases.train --config config/framewise-linear-small.py --gpus $1
+# python -m emphases.train --config config/framewise-nearest-small.py --gpus $1
+# python -m emphases.train --config config/wordwise-small.py --gpus $1
 
 # Experimental feature variations
 # python -m emphases.train --config config/framewise-linear-mel-pitch-period-small.py --gpus $1
@@ -28,7 +77,4 @@ python -m emphases.train --config config/wordwise-small.py --gpus $1
 # Train on annotated dataset
 # python -m emphases.train --config config/framewise-linear-annotated-mel-prom-loud-pitch-period-small.py --dataset annotate --gpus $1
 
-# Evaluate baselines
-python -m emphases.evaluate --config config/prominence.py --datasets buckeye
-python -m emphases.evaluate --config config/pitch_variance.py --datasets buckeye
-python -m emphases.evaluate --config config/duration_variance.py --datasets buckeye
+
