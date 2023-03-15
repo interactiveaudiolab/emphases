@@ -62,7 +62,7 @@ crowdsource:
     total: 604800
 
     # The maximum time you will allow a participant to spend on your task
-    assignment: 1800
+    assignment: 3600
 
     # Duration after which payment is automatically made
     autoapprove: 172800
@@ -79,62 +79,59 @@ random_seed: 0
 # Introduction text to display on the first page participants visit
 welcome_text: "
   # **Consent to Participate in Research**\n
-  **Title of Research Study:** Datasets and Scaling Laws for Neural Emphasis Prediction\n
-  **Principal Investigator:** Dr. Bryan Pardo, Department of Computer Science\n
-  **Supported By:** This research is supported by Sony Research.\n
-  **Key Information about this research study:**\n
-  The following is a short summary of this study to help you decide whether to be a part of this study. Information that is more detailed is explained later on in this form.\n
-  The purpose of this study is to learn how native English speakers perceive emphasis in their native language. You will be asked to listen to recorded samples of English speech and rate words and phrases in the speech for qualities you perceive as related to the prominence of words or phrases.\n
-  We expect that you will be in this research study for about 15 minutes. There are no risks associated with participation in the proposed research beyond what you experience from using a computer in everyday life, or boredom. The main benefit is the satisfaction of contributing to linguists' knowledge concerning the speech perception system.
-  **Why am I being asked to take part in this research study?**\n
-  We are asking you to take part in this research study because you are a speaker of American English at least 18 years of age, with no known deficits in speech, hearing or reading, and with normal or corrected-to-normal vision.\n
-  **How many people will be in this study?**\n
-  We expect about 2216 people will be in this research study.\n
-  **What should I know about participating in a research study?**\n
+  **Title of Research Study:** Datasets and Scaling Laws for Neural Emphasis Prediction\n\n
+  **Principal Investigator:** Dr. Bryan Pardo, Department of Computer Science, Northwestern University\n\n
+  **Supported By:** This research is supported by Sony Research.\n\n
+  **Key Information about this research study:**\n\n
+  The following is a short summary of this study to help you decide whether to be a part of this study. Information that is more detailed is explained later on in this form.\n\n
+  The purpose of this study is to learn how English speakers perceive emphasis. You will be asked to listen to recorded samples of English speech and rate words and phrases in the speech for qualities you perceive as related to the prominence of words or phrases.
+  We expect that you will be in this research study for about 15 minutes. There are no risks associated with participation in the proposed research beyond what you experience from using a computer in everyday life, or boredom. The main benefit is the satisfaction of contributing to linguists' knowledge concerning the speech perception system.\n\n
+  **Why am I being asked to take part in this research study?**\n\n
+  We are asking you to take part in this research study because you are a speaker of American English at least 18 years of age, with no known deficits in speech, hearing or reading, and with normal or corrected-to-normal vision.\n\n
+  **How many people will be in this study?**\n\n
+  We expect about 2212 people will be in this research study.\n\n
+  **What should I know about participating in a research study?**\n\n
   - Whether or not you take part is up to you.\n
   - You can choose not to take part.\n
   - You can agree to take part and later change your mind.\n
-  - Your decision will not be held against you.\n
-  **What happens if I say, \"Yes, I want to be in this research\"?**\n
-  If you agree to participate, you will first be required to pass a listening test. If you do not pass, the survey will end and you will be compensated for your time at the same hourly rate. If you pass the listening test, you will be asked to identify emphases that you hear in the words and phrases of recorded samples of English. You will enter your responses by clicking on the words corresponding to the speech you hear, as presented on the computer screen. You will advance through the experiment at your own pace. Once you are finished, you will be asked two follow-up questions about your language background. The experiment will take place in one session and will last no longer than 30 minutes. You will participate in the experiment remotely, using your computer and your headphones, in a quiet location of your choosing. You will not directly interact with any member of the study team.\n
-  **What happens if I do not want to be in this research?**\n
-  Participation in research is voluntary. You can decide to participate or not to participate.\n
-  **What happens if I say \"Yes\", but I change my mind later?**\n
-  You can leave the research at any time and it will not be held against you. If you withdraw before completing the experiment, all data collected from you will be discarded without analysis.\n
-  **Will being in this study help me in any way?**\n
-  We cannot promise any benefits to you or others from your taking part in this research. However, this study may benefit society if the results lead to a better understanding of how people perceive speech.\n
-  **Is there any way being in this study could be bad for me?**\n
-  A possible risk for any research is that confidentiality could be compromised—that is, that people outside the study might get hold of confidential study information. We will do everything we can to minimize this risk, as described in more detail later in this form. As well, please make sure your volume is at an appropriate level and not too loud in order to prevent hearing loss.\n
-  **How will the researchers protect my information?**\n
-  We will remove or code any personal information that could identify you before files are shared with other researchers to ensure that, by current scientific standards and known methods, no one will be able to identify you from the information we share. This includes deidentifying your MTurk Worker ID from your results: MTurk Worker IDs will not be released. Despite these measures, we cannot guarantee anonymity of your personal data.\n
-  **Who will have access to the information collected during this research study?**\n
-  Efforts will be made to limit the use and disclosure of your personal information, including research study records, to people who have a need to review this information. We cannot promise complete secrecy.\n
-  There are reasons why information about you may be used or seen by other people beyond the research team during or after this study. Examples include:\n
+  - Your decision will not be held against you.\n\n
+  **What happens if I say, \"Yes, I want to be in this research\"?**\n\n
+  If you agree to participate, you will first be required to pass a listening test. If you do not pass, the survey will end and you will be compensated $0.45. If you pass the listening test, you will be asked to identify emphases that you hear in the words and phrases of recorded samples of English. You will enter your responses by clicking on the words corresponding to the speech you hear, as presented on the computer screen. You will advance through the experiment at your own pace. Once you are finished, you will be asked two follow-up questions about your language background. Participants who finish these follow-up questions receive a bonus of $2.89. The experiment will take place in one session and will last no longer than 30 minutes. You will participate in the experiment remotely, using your computer and your headphones, in a quiet location of your choosing. You will not directly interact with any member of the study team.\n\n
+  **What happens if I do not want to be in this research?**\n\n
+  Participation in research is voluntary. You can decide to participate or not to participate.\n\n
+  **What happens if I say \"Yes\", but I change my mind later?**\n\n
+  You can leave the research at any time and it will not be held against you. If you withdraw before completing the experiment, all data collected from you will be discarded without analysis.\n\n
+  **Will being in this study help me in any way?**\n\n
+  We cannot promise any benefits to you or others from your taking part in this research. However, this study may benefit society if the results lead to a better understanding of how people perceive speech.\n\n
+  **Is there any way being in this study could be bad for me?**\n\n
+  A possible risk for any research is that confidentiality could be compromised—that is, that people outside the study might get hold of confidential study information. We will do everything we can to minimize this risk, as described in more detail later in this form. As well, please make sure your volume is at an appropriate level and not too loud in order to prevent hearing loss.\n\n
+  **How will the researchers protect my information?**\n\n
+  We will remove or code any personal information that could identify you before files are shared with other researchers to ensure that, by current scientific standards and known methods, no one will be able to identify you from the information we share. This includes deidentifying your MTurk Worker ID from your results: MTurk Worker IDs will not be released. Despite these measures, we cannot guarantee anonymity of your personal data.\n\n
+  **Who will have access to the information collected during this research study?**\n\n
+  Efforts will be made to limit the use and disclosure of your personal information, including research study records, to people who have a need to review this information. We cannot promise complete secrecy.\n\n
+  There are reasons why information about you may be used or seen by other people beyond the research team during or after this study. Examples include:\n\n
   - University officials, government officials, study funders, auditors, and the Institutional Review Board may need access to the study information to make sure the study is done in a safe and appropriate manner.\n
-  - The research team may give information to appropriate authorities for reasons of health and safety—for example, if you indicate that you plan to harm yourself or others, or for public health reasons.\n
-  **How might the information collected in this study be shared in the future?**\n
-  We will keep the information we collect about you during this research study for study recordkeeping and for potential use in future research projects. De-identified data from this study may be shared with the research community, with journals in which study results are published, and with databases and data repositories used for research. We will remove or code any personal information that could directly identify you before the study data are shared.\n
-  Unless you revoke your consent, it will not expire. You may revoke consent to participation in this research at any time and in any format. To revoke your authorization, write to:\n
-  PI's Name: Bryan Pardo, Ph.D.\n
-  Institution: Northwestern University\n
-  Department: Computer Science\n
-  Address: 2233 Tech Drive, Evanston, IL 60208\n
-  **How might the information collected in this study be shared in the future?**\n
-  We will keep the information we collect about you during this research study for study recordkeeping and for potential use in future research projects.\n
-  De-identified data from this study may be shared with the research community, with journals in which study results are published, and with databases and data repositories used for research. We will remove or code any personal information that could directly identify you before the study data are shared. Despite these measures, we cannot guarantee anonymity of your personal data.\n
-  **Will I be paid or given anything for taking part in this study?**\n
-  For your participation in this study, you will receive compensation through the online platform at a rate of $13.35/hr. You will be compensated within 48 hours of completing the study. If you voluntarily withdraw from the study before completion, you will be paid for the portion that you completed.\n
-  **Who can I talk to?**\n
-  If you have questions, concerns, or complaints, or think the research has affected you in some way, talk to the Principal Investigator, at 847-491-7184 or pardo@northwestern.edu.\n
-  This research has been reviewed and approved by an Institutional Review Board (\"IRB\")—an IRB is a committee that protects the rights of people who participate in research studies. You may contact the IRB by phone at (312) 503-9338 or by email at irb@northwestern.edu if:\n
+  - The research team may give information to appropriate authorities for reasons of health and safety—for example, if you indicate that you plan to harm yourself or others, or for public health reasons.\n\n
+  **How might the information collected in this study be shared in the future?**\n\n
+  We will keep the information we collect about you during this research study for study recordkeeping and for potential use in future research projects. De-identified data from this study may be shared with the research community, with journals in which study results are published, and with databases and data repositories used for research. We will remove or code any personal information that could directly identify you before the study data are shared. Despite these measures, we cannot guarantee anonymity of your personal data.\n\n
+  Unless you revoke your consent, it will not expire. You may revoke consent to participation in this research at any time and in any format. To revoke your authorization, write to:\n\n
+  PI's Name: Bryan Pardo, Ph.D.\n\n
+  Institution: Northwestern University\n\n
+  Department: Computer Science\n\n
+  Address: 2233 Tech Drive, Evanston, IL 60208\n\n
+  **Will I be paid or given anything for taking part in this study?**\n\n
+  For your participation in this study, you will receive compensation through the online platform. Participants who complete the study are paid $3.34 ($0.45 + $2.89 bonus), while participants who fail the listening test are paid $0.45. You will be compensated within 48 hours of completing the study. If you voluntarily withdraw from the study before completion, you will be paid for the portion that you completed.\n\n
+  **Who can I talk to?**\n\n
+  If you have questions, concerns, or complaints, or think the research has affected you in some way, talk to the Principal Investigator, at 847-491-7184 or pardo@northwestern.edu, or the Student Investigator, at morrimax@u.northwestern.edu.\n\n
+  This research has been reviewed and approved by an Institutional Review Board (\"IRB\")—an IRB is a committee that protects the rights of people who participate in research studies. You may contact the IRB by phone at (312) 503-9338 or by email at irb@northwestern.edu if:\n\n
   - Your questions, concerns, or complaints are not being answered by the research team.\n
   - You cannot reach the research team.\n
   - You want to talk to someone besides the research team.\n
   - You have questions about your rights as a research participant.\n
-  - You want to get information or provide input about this research.\n
-  **Consent**\n
-  If you want a copy of this consent for your records, you can print it from this screen.\n
-  If you wish to participate, please click the \"Next\" button and you will be taken to the survey.\n
+  - You want to get information or provide input about this research.\n\n
+  **Consent**\n\n
+  If you want a copy of this consent for your records, you can print it from this screen.\n\n
+  If you wish to participate, please click the \"I Agree\" button and you will be taken to the survey.\n\n
   If you do not wish to participate in this study, please close this tab or window (e.g., by selecting X in the corner of your browser).
   "
 

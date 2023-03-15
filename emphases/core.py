@@ -172,7 +172,7 @@ def from_text_and_audio(
         scores: The float-valued emphasis scores for each word
     """
     # Get word alignment
-    alignment = pyfoal.align(text, audio, sample_rate)
+    alignment = pyfoal.align(text, audio, sample_rate, 'p2fa')
 
     # Infer
     scores = from_alignment_and_audio(
