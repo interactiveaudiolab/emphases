@@ -26,7 +26,7 @@ crowdsource:
   title: Emphasis annotation
 
   # The survey description shown to potential participants
-  description: Listen to a speech audio file and select the emphasized words
+  description: "Listen to English speech and select emphasized words. Requires headphones and a quiet listening environment to pass listening test prescreening. $2.89 bonus on completion. Estimated 15 minutes ($13.35 / hour)."
 
   # Keywords that participants can use to find your survey
   keywords: annotate, audio, emphasis, headphones, speech
@@ -49,10 +49,10 @@ crowdsource:
   payment:
 
     # The amount that you pay even if they don't pass prescreening
-    base: 0.20
+    base: 0.45
 
     # The additional amount that you pay participants who complete evaluation
-    completion: 0.25
+    completion: 2.89
 
   # How long to wait for things (in seconds)
   duration:
@@ -62,7 +62,7 @@ crowdsource:
     total: 604800
 
     # The maximum time you will allow a participant to spend on your task
-    assignment: 3600
+    assignment: 5400
 
     # Duration after which payment is automatically made
     autoapprove: 172800
@@ -96,7 +96,7 @@ welcome_text: "
   - You can agree to take part and later change your mind.\n
   - Your decision will not be held against you.\n\n
   **What happens if I say, \"Yes, I want to be in this research\"?**\n\n
-  If you agree to participate, you will first be required to pass a listening test. If you do not pass, the survey will end and you will be compensated $0.45. If you pass the listening test, you will be asked to identify emphases that you hear in the words and phrases of recorded samples of English. You will enter your responses by clicking on the words corresponding to the speech you hear, as presented on the computer screen. You will advance through the experiment at your own pace. Once you are finished, you will be asked two follow-up questions about your language background. Participants who finish these follow-up questions receive a bonus of $2.89. The experiment will take place in one session and will last no longer than 30 minutes. You will participate in the experiment remotely, using your computer and your headphones, in a quiet location of your choosing. You will not directly interact with any member of the study team.\n\n
+  If you agree to participate, you will first be required to pass a listening test. If you do not pass, the survey will end and you will be compensated $0.45. If you pass the listening test, you will be asked to identify emphases that you hear in the words and phrases of recorded samples of English. You will enter your responses by clicking on the words corresponding to the speech you hear, as presented on the computer screen. You will advance through the experiment at your own pace. Once you are finished, you will be asked two follow-up questions about your language background. Participants who finish these follow-up questions receive a bonus of $2.89 for a total of $3.34. The experiment will take place in one session and will last an average of 15 minutes and no longer than 30 minutes. You will participate in the experiment remotely, using your computer and your headphones, in a quiet location of your choosing. You will not directly interact with any member of the study team.\n\n
   **What happens if I do not want to be in this research?**\n\n
   Participation in research is voluntary. You can decide to participate or not to participate.\n\n
   **What happens if I say \"Yes\", but I change my mind later?**\n\n
