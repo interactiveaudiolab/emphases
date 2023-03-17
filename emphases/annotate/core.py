@@ -23,8 +23,9 @@ def datasets(
     """Perform emphasis annotation on datasets"""
     # Create input and output directories
     directory.mkdir(exist_ok=True, parents=True)
-    index = f'{len(directory.glob("*"))}:02'
+    index = f'{len(list(directory.glob("*"))):02}'
     input_directory = directory / index
+    input_directory.mkdir(exist_ok=True, parents=True)
     output_directory = emphases.DATA_DIR / 'annotate' / index
     output_directory.mkdir(exist_ok=True, parents=True)
 
@@ -32,7 +33,8 @@ def datasets(
     for dataset in datasets:
 
         # Get audio files
-        audio_files = (emphases.CACHE_DIR / dataset / 'audio').glob('*')
+        cache_directory = emphases.CACHE_DIR / dataset
+        audio_files = sorted((cache_directory / 'audio').glob('*'))
 
         # Deterministic shuffle
         random.seed(emphases.RANDOM_SEED)
@@ -50,12 +52,12 @@ def datasets(
 
             # Load alignment
             alignment = pypar.Alignment(
-                audio_file.parent.parent /
+                cache_directory /
                 'alignment' /
                 f'{audio_file.stem}.TextGrid')
 
             # Save text
-            text_file = input_directory.parent / f'{audio_file.stem}.txt'
+            text_file = input_directory / f'{audio_file.stem}-words.txt'
             with open(text_file, 'w') as file:
                 file.write(
                     ' '.join([

@@ -292,12 +292,9 @@ def libritts():
     cache_directory.mkdir(exist_ok=True, parents=True)
 
     # Create subdirectories
-    features = ['alignment', 'audio', 'scores']
+    features = ['alignment', 'audio']
     for feature in features:
         (cache_directory / feature).mkdir(exist_ok=True, parents=True)
-
-    # Get output alignment files
-    alignment_files = []
 
     # Iterate over files
     iterator = emphases.iterator(
@@ -316,15 +313,12 @@ def libritts():
             audio,
             emphases.SAMPLE_RATE)
 
-        # Save alignment file path
-        alignment_files.append(
-            cache_directory / 'alignment' / f'{stem}.TextGrid')
-
-        # Get corresponding text files
-        text_files = [
-            file.with_suffix('.normalized.txt') for file in audio_files]
-
     # Align text and audio
+    text_files = [
+        file.with_suffix('.normalized.txt') for file in audio_files]
+    alignment_files = [
+        cache_directory / 'alignment' / f'{file.stem}.TextGrid'
+        for file in audio_files]
     pyfoal.from_files_to_files(
         text_files,
         audio_files,
