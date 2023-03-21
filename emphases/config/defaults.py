@@ -179,13 +179,10 @@ NUM_CONVS = 4
 
 
 # Number of buckets of data lengths used by the sampler
-BUCKETS = 1
+BUCKETS = 8
 
 # Number of steps between saving checkpoints
 CHECKPOINT_INTERVAL = 25000  # steps
-
-# Batch size (per gpu)
-BATCH_SIZE = 64
 
 # Number of training steps
 NUM_STEPS = 300000
@@ -200,6 +197,8 @@ TRAIN_DATA_LIMIT = None
 # Resampling mode for framewise models (from frames to words): 'max' or 'avg'
 FRAMES_TO_WORDS_RESAMPLE = None
 
+# Maximum number of frames in one batch
+MAX_FRAMES = 50000
 
 # Whether to BCELogitloss function
 USE_BCE_LOGITS_LOSS = False

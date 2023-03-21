@@ -117,11 +117,18 @@ class Dataset(torch.utils.data.Dataset):
 
     def buckets(self):
         """Partition indices into buckets based on length for sampling"""
-        # Get the size of a bucket
-        size = len(self) // emphases.BUCKETS
+        if len(self) < emphases.BUCKETS:
+            #Just give each individually if not enough to get the right number of buckets
+            buckets = [np.array([i]) for i in range(0, len(self))]
+        else:
+            # Get the size of a bucket
+            size = len(self) // emphases.BUCKETS
 
-        # Get indices in order of length
-        indices = np.argsort(self.lengths)
+            # Get indices in order of length
+            indices = np.argsort(self.lengths)
+
+            buckets = [indices[i:i + size] for i in range(0, len(self), size)]
+        buckets = [(self.lengths[bucket[-1]], bucket) for bucket in buckets]
 
         # Split into buckets based on length
-        return [indices[i:i + size] for i in range(0, len(self), size)]
+        return buckets
