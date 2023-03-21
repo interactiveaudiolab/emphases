@@ -40,6 +40,10 @@ def parse_args():
         type=int,
         default=120,
         help='The time between monitoring updates in seconds')
+    parser.add_argument(
+        '--fraction',
+        type=float,
+        help='The fraction of data to use')
     return parser.parse_args()
 
 
