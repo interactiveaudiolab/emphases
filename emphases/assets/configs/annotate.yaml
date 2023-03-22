@@ -26,7 +26,7 @@ crowdsource:
   title: Emphasis annotation
 
   # The survey description shown to potential participants
-  description: "Listen to English speech and select emphasized words. Requires headphones and a quiet listening environment to pass listening test prescreening. $2.89 bonus on completion. Estimated 15 minutes ($13.35 / hour)."
+  description: "Participate in a research study by listening to English speech and selecting emphasized words. Requires headphones and a quiet listening environment to pass listening test prescreening. $2.89 bonus on completion. Estimated 15 minutes ($13.35 / hour)."
 
   # Keywords that participants can use to find your survey
   keywords: annotate, audio, emphasis, headphones, speech
@@ -68,7 +68,7 @@ crowdsource:
     autoapprove: 172800
 
 # The number of participants
-participants: 100
+participants: 2212
 
 # The number of evaluations each participant performs
 samples_per_participant: 30
@@ -221,7 +221,7 @@ followup_questions:
       'Telugu',
       'Thai',
       'Turkish',
-      'Ukranian',
+      'Ukrainian',
       'Urdu',
       'Uzbek',
       'Vietnamese',
@@ -230,7 +230,7 @@ followup_questions:
       'Yue Chinese',
       'Other']
 
-  # Ask participant for their native language
+  # Ask participant for their country of origin
   - name: Country
 
     # The type of question. One of [free-response, multiple-choice].
@@ -267,7 +267,7 @@ followup_questions:
       'India',
       'Iran',
       'Iraq',
-      'Isreal',
+      'Israel',
       'Jamaica',
       'Japan',
       'Jordan',
@@ -288,11 +288,11 @@ followup_questions:
       'Taiwan',
       'Thailand',
       'Turkey',
-      'Ukriane',
+      'Ukraine',
       'United Kingdom',
       'United States',
       'Uzbekistan',
       'Venezuela',
-      'Vietman',
+      'Vietnam',
       'Yemen',
       'Other']
