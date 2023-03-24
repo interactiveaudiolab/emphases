@@ -58,7 +58,8 @@ python -m emphases.evaluate --config config/pitch_variance.py --datasets buckeye
 python -m emphases.evaluate --config config/duration_variance.py --datasets buckeye
 
 # Plots
-# TODO
+python -m emphases.plot --data plots/dataset_scaling.csv --x_label "Training data (seconds)" --output_file plots/dataset_scaling.jpg
+python -m emphases.plot --data plots/num_annotators_scaling.csv --x_label "Number of annotators" --output_file plots/num_annotators_scaling.jpg
 
 # Train and evaluate experiments
 # python -m emphases.train --config config/framewise-linear-small.py --gpus $1
