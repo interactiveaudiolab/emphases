@@ -1,5 +1,5 @@
 import json
-import math
+import csv
 
 import emphases
 
@@ -9,9 +9,20 @@ import emphases
 ###############################################################################
 
 
-def from_evaluations(names, evaluations, x, output_file, x_label):
-    """Plot periodicity thresholds"""
+def from_evaluations(evaluations, x, output_file, x_label, data=None):
+    """Plot scaling laws"""
     import matplotlib.pyplot as plt
+
+    print("Starting from evaluations")
+
+    if data:
+        x = []
+        evaluations = []
+        with open(data, 'r') as fp:
+            csvreader = csv.reader(fp)
+            for row in csvreader:
+                evaluations.append(row[0])
+                x.append(float(row[1]))        
 
     # Create plot
     figure, axis = plt.subplots(figsize=(7, 3))
@@ -35,11 +46,12 @@ def from_evaluations(names, evaluations, x, output_file, x_label):
 
     y = []
     # Iterate over evaluations to plot
-    for name, evaluation in zip(names, evaluations):
+    for evaluation in evaluations:
         directory = emphases.EVAL_DIR / evaluation
 
         # Load results
         with open(directory / 'overall.json') as file:
+            print(directory)
             y_val = json.load(file)['aggregate']['pearson_correlation']
 
         y.append(y_val)
