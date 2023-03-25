@@ -11,6 +11,9 @@ python -m emphases.data.download
 python -m emphases.data.preprocess --gpu $1
 python -m emphases.partition
 
+# Analyze the annotated data
+python -m emphases.data.analyze --dataset annotate
+
 # First pass experiments
 
 # Experiments:
