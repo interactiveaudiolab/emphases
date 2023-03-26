@@ -37,7 +37,7 @@ class Model(torch.nn.Module):
 
     def forward(self, features, frame_lengths, word_bounds, word_lengths):
         # Embed frames
-        activation, mask = self.frame_encoder(
+        activation, _ = self.frame_encoder(
             self.input_layer(features),
             frame_lengths)
 
@@ -51,11 +51,10 @@ class Model(torch.nn.Module):
                 word_bounds)
 
             # Infer emphasis scores from word embeddings
-
-            activation = self.word_decoder(
+            activation, mask = self.word_decoder(
                 word_embeddings,
                 word_bounds,
                 word_lengths)
 
         # Project to scalar
-        return self.output_layer(activation)
+        return self.output_layer(activation), mask

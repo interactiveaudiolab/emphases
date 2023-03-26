@@ -11,6 +11,7 @@ import emphases
 
 
 class Convolution(torch.nn.Sequential):
+    # TODO - add masking
 
     def __init__(self):
         # Bind common parameters
