@@ -73,19 +73,18 @@ def train(
     #######################
 
     torch.manual_seed(emphases.RANDOM_SEED)
-    train_loader = emphases.data.loader(dataset, 'train', gpu, train_limit=emphases.TRAIN_DATA_LIMIT)
+    train_loader = emphases.data.loader(
+        dataset,
+        'train',
+        gpu,
+        train_limit=emphases.TRAIN_DATA_LIMIT)
     valid_loader = emphases.data.loader(dataset, 'valid', gpu)
 
-    #################
-    # Create models #
-    #################
+    ################
+    # Create model #
+    ################
 
-    if emphases.METHOD == 'wordwise':
-        model = emphases.model.Wordwise().to(device)
-    elif emphases.METHOD == 'framewise':
-        model = emphases.model.Framewise().to(device)
-    else:
-        raise ValueError(f'Method {emphases.METHOD} is not defined')
+    model = emphases.Model()
 
     ####################
     # Create optimizer #
@@ -97,25 +96,15 @@ def train(
     # Maybe load from checkpoint #
     ##############################
 
-    path = emphases.checkpoint.latest_path(
-        checkpoint_directory,
-        '*.pt'),
-
-    # For some reason, returning None from latest_path returns (None,)
-    path = None if path == (None,) else path
+    path = emphases.checkpoint.latest_path(checkpoint_directory)
 
     if path is not None:
 
         # Load model
-        (
+        model, optimizer, step = emphases.checkpoint.load(
+            path,
             model,
-            optimizer,
-            step
-        ) = emphases.checkpoint.load(
-            path[0],
-            model,
-            optimizer
-        )
+            optimizer)
 
     else:
 
@@ -148,18 +137,17 @@ def train(
     while step < emphases.NUM_STEPS:
 
         # Seed sampler
-        epoch = step // len(train_loader.dataset)
-        train_loader.batch_sampler.set_epoch(epoch)
+        train_loader.batch_sampler.set_epoch(step // len(train_loader.dataset))
 
         for batch in train_loader:
 
             # Unpack batch
             (
                 features,
-                targets,
+                frame_lengths,
                 word_bounds,
                 word_lengths,
-                mask,
+                targets,
                 _,           # alignment
                 _,           # audio
                 _            # stem
@@ -167,21 +155,22 @@ def train(
 
             # Copy to GPU
             features = features.to(device)
-            targets = targets.to(device)
+            frame_lengths = word_lengths.to(device)
             word_bounds = word_bounds.to(device)
             word_lengths = word_lengths.to(device)
-            mask = mask.to(device)
+            targets = targets.to(device)
 
             with torch.cuda.amp.autocast():
 
                 # Forward pass
-                scores = model(features, word_bounds, word_lengths, mask)
+                scores, mask = model(
+                    features,
+                    frame_lengths,
+                    word_bounds,
+                    word_lengths)
 
                 # Compute loss
-                if emphases.USE_BCE_LOGITS_LOSS:
-                    train_loss = bceLogitsloss(scores, targets, mask)
-                else:
-                    train_loss = loss(scores, targets, mask)
+                train_loss = loss(scores, targets, word_bounds, mask)
 
             ######################
             # Optimize model #
@@ -270,10 +259,10 @@ def evaluate(directory, step, model, gpu, condition, loader):
             # Unpack batch
             (
                 features,
-                targets,
+                frame_lengths,
                 word_bounds,
                 word_lengths,
-                mask,
+                targets,
                 _,           # alignment
                 _,           # audio
                 _            # stems
@@ -281,45 +270,24 @@ def evaluate(directory, step, model, gpu, condition, loader):
 
             # Copy to GPU
             features = features.to(device)
-            targets = targets.to(device)
+            frame_lengths = word_lengths.to(device)
             word_bounds = word_bounds.to(device)
             word_lengths = word_lengths.to(device)
-            mask = mask.to(device)
+            targets = targets.to(device)
 
             # Forward pass
-            scores = model(features, word_bounds, word_lengths, mask)
+            scores, mask = model(
+                features,
+                frame_lengths,
+                word_bounds,
+                word_lengths)
 
-            if emphases.METHOD == 'framewise' and not emphases.MODEL_TO_WORDS and emphases.FRAMES_TO_WORDS_RESAMPLE is not None:
-                # Get center time of each word in frames (we know that the targets are accurate here since they're interpolated from here)
-                word_centers = \
-                    word_bounds[:, 0] + (word_bounds[:, 1] - word_bounds[:, 0]) // 2
-                
-                #Allocate tensors for wordwise scores and targets
-                word_scores = torch.zeros(word_centers.shape, device=scores.device)
-                word_targets = torch.zeros(word_centers.shape, device=scores.device)
-                word_masks = torch.zeros(word_centers.shape, device=scores.device)
-                
-                for stem in range(targets.shape[0]): #Iterate over batch
-                    stem_word_centers = word_centers[stem]
-                    stem_word_targets = targets.squeeze(1)[stem, stem_word_centers]
-                    stem_word_mask = torch.where(stem_word_centers == 0, 0, 1)
-
-                    word_targets[stem] = stem_word_targets
-                    word_masks[stem] = stem_word_mask
-
-                    for i, (start, end) in enumerate(word_bounds[stem].T):
-                        word_outputs = scores.squeeze(1)[stem, start:end]
-                        if word_outputs.shape[0] == 0:
-                            continue
-                        word_score = emphases.frames_to_words(word_outputs)
-                        word_scores[stem, i] = word_score
-                
-                scores = word_scores
-                targets = word_targets
-                mask = word_masks
+            # Downsample to word resolution for evaluation
+            if emphases.DOWNSAMPLE_LOCATION in ['loss', 'inference']:
+                scores = emphases.downsample(scores, word_lengths, word_bounds)
 
             # Update metrics
-            metrics.update(scores, targets, mask)
+            metrics.update(scores, targets, word_bounds, mask)
 
     # Format results
     scalars = {
@@ -327,6 +295,30 @@ def evaluate(directory, step, model, gpu, condition, loader):
 
     # Write to tensorboard
     emphases.write.scalars(directory, step, scalars)
+
+
+###############################################################################
+# Loss function
+###############################################################################
+
+
+def loss(scores, targets, word_bounds, mask):
+    """Compute masked loss"""
+    # If we are not downsampling the network output before the loss, we must
+    # upsample the targets
+    if emphases.DOWNSAMPLE_LOCATION == 'inference':
+
+        # Interpolate
+        targets = emphases.upsample(
+            targets,
+            scores.shape[-1],
+            word_bounds)
+
+        # Linear interpolation can cause out-of-range
+        if emphases.UPSAMPLE_METHOD == 'linear':
+            targets = torch.clamp(targets, min=0., max=1.)
+
+    return emphases.LOSS(scores * mask, targets * mask)
 
 
 ###############################################################################
@@ -361,17 +353,3 @@ def ddp_context(rank, world_size):
 
         # Close ddp
         torch.distributed.destroy_process_group()
-
-
-###############################################################################
-# Utilities
-###############################################################################
-
-
-def loss(scores, targets, mask):
-    """Compute masked loss"""
-    return torch.nn.functional.mse_loss(scores * mask, targets * mask)
-
-def bceLogitsloss(scores, targets, mask):
-    """Compute masked Binary Cross Entropy between target and input"""
-    return torch.nn.functional.binary_cross_entropy_with_logits(scores * mask, targets * mask)

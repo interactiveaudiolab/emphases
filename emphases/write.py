@@ -1,10 +1,21 @@
 from torch.utils.tensorboard import SummaryWriter
 
+import emphases
+
 
 ###############################################################################
 # Tensorboard logging
 ###############################################################################
 
+
+def audio(directory, step, audio, sample_rate=emphases.SAMPLE_RATE):
+    """Write audio to Tensorboard"""
+    for name, waveform in audio.items():
+        writer(directory).add_audio(
+            name,
+            waveform,
+            step,
+            sample_rate)
 
 def figures(directory, step, figures):
     """Write figures to Tensorboard"""

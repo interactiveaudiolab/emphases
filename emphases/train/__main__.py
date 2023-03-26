@@ -19,7 +19,7 @@ def main(config, dataset, gpus=None):
     shutil.copyfile(config, directory / config.name)
 
     # Train
-    emphases.train.run(
+    checkpoint = emphases.train.run(
         dataset,
         directory,
         directory,
@@ -27,10 +27,7 @@ def main(config, dataset, gpus=None):
         gpus)
 
     # Evaluate
-    emphases.evaluate.datasets(
-        [dataset],
-        emphases.checkpoint.latest_path(directory),
-        gpus[0])
+    emphases.evaluate.datasets([dataset], checkpoint, gpus[0])
 
 
 def parse_args():

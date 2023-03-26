@@ -26,24 +26,18 @@ def collate(batch):
     max_frame_length = frame_lengths.max().item()
 
     # Network output lengths
-    if emphases.METHOD == 'framewise' and not emphases.MODEL_TO_WORDS:
-        output_lengths = frame_lengths
-        max_output_length = max_frame_length
-    elif emphases.METHOD in ['framewise', 'prominence', 'pitch_variance', 'duration_variance', 'wordwise']:
-        output_lengths = word_lengths
-        max_output_length = max_word_length
-    else:
-        raise ValueError(f'Inference method {emphases.METHOD} is not defined')
+    output_lengths = word_lengths
+    max_output_length = max_word_length
 
     # Allocate padded tensors
-    padded_features = torch.zeros((len(features), emphases.NUM_FEATURES, max_frame_length))
+    padded_features = torch.zeros(
+        (len(features), emphases.NUM_FEATURES, max_frame_length))
     padded_scores = torch.zeros((len(scores), 1, max_output_length))
     padded_bounds = torch.zeros(
         (len(word_bounds), 2, max_word_length),
         dtype=torch.long)
     padded_audio = torch.zeros(
         (len(audios), 1, max_frame_length * emphases.HOPSIZE))
-    mask = torch.zeros((len(scores), 1, max_output_length))
 
     # Place batch in padded tensors
     iterator = enumerate(
@@ -73,15 +67,12 @@ def collate(batch):
         end_sample = frame_length * emphases.HOPSIZE
         padded_audio[i, :, :end_sample] = audio[:, :end_sample]
 
-        # Create mask
-        mask[i, :, :output_length] = 1.
-
     return (
         padded_features,
-        padded_scores,
+        frame_lengths,
         padded_bounds,
         word_lengths,
-        mask,
+        padded_scores,
         alignments,
         padded_audio,
         stems)

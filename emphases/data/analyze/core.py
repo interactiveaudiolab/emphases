@@ -1,10 +1,22 @@
-import os
+"""
+Dataset statistics
+- # of words annotated
+- # of words labeled as emphasized
+- Average duration, std dev of words, audio files
+- Average duration, std dev of annotated words
+- Average duration/ # words in files with ZERO annotation
+- relationship between (# of emphasized words in a sentence vs # of words/duration in sentence)
+
+Annotator statistics
+- Average number of words per utterance annotated by each annotator
+- Inter-annotator agreement between each pair of annotators, using metrics such
+  as Cohen's kappa or Fleiss' kappa
+- Average time taken by each annotator to annotate an utterance
+"""
 import json
 import yaml
 
 import emphases
-import torch
-import torchaudio
 import pypar
 
 import pandas as pd
@@ -12,25 +24,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-"""
+###############################################################################
+# Analyze emphasis annotation data
+###############################################################################
 
-# TODO: 
-# Need more data, the stats definition would take shape as the data grows
-
-Overall stats
-- # of words annotated
-- # of words marked prominent
-- Average duration, std dev of words, audio files
-- Average duration, std dev of annotated words
-- Average duration/ # words in files with ZERO annotation
-- relationship between (# of prominent words in a sentence vs # of words/duration in sentence)
-
-Annotator specific stats
-- Average number of words per utterance annotated by each annotator
-- Inter-annotator agreement between each pair of annotators, using metrics such as Cohen's kappa or Fleiss' kappa
-- Average time taken by each annotator to annotate an utterance
-
-"""
 
 def analysis(datasets):
     for dataset in datasets:
@@ -39,22 +36,29 @@ def analysis(datasets):
         else:
             raise ValueError(f'Dataset {dataset} is not defined')
 
+
+###############################################################################
+# Utilities
+###############################################################################
+
+
 class AnnotateStats():
     def __init__(self, stem):
         self.stem = stem
         self.cache_directory = emphases.CACHE_DIR / 'annotate'
         self.alignment = pypar.Alignment(self.cache_directory / 'alignment' / f'{stem}.TextGrid')
-        
-    def get_duration(self):
+
+    def duration(self):
         return self.alignment.duration()
-    
-    def get_word_durations(self):
-        bounds = self.alignment.word_bounds(emphases.SAMPLE_RATE)
-        return [(bound[1] - bound[0])/emphases.SAMPLE_RATE for bound in bounds]
-    
+
+    def word_durations(self):
+        return [word.duration() for word in self.alignment]
+
     def get_prom_durations(self, response):
-        word_durations = self.get_word_durations()
-        return [word_durations[idx] for idx, mark in enumerate(response) if int(mark)]
+        word_durations = self.word_durations()
+        return [
+            word_durations[idx] for idx, mark in enumerate(response)
+            if int(mark)]
 
 def annotate():
     stats_data = {}
@@ -73,8 +77,8 @@ def annotate():
     results_file = data_directory / 'results.json'
 
     analysis_dir = emphases.EVAL_DIR / 'annotate'
-    (analysis_dir).mkdir(exist_ok=True, parents=True)
-    
+    analysis_dir.mkdir(exist_ok=True, parents=True)
+
     # Load the responses
     df = pd.read_csv(response_file)
 
@@ -86,10 +90,10 @@ def annotate():
     stats_data['total_prominent_words'] = df.prom_count.sum()
 
     # Duration stats
-    df['duration_seconds'] = df['Stem'].apply(lambda x:AnnotateStats(x).get_duration())
-    df['word_durations'] = df['Stem'].apply(lambda x:AnnotateStats(x).get_word_durations())
+    df['duration_seconds'] = df['Stem'].apply(lambda x:AnnotateStats(x).duration())
+    df['word_durations'] = df['Stem'].apply(lambda x:AnnotateStats(x).word_durations())
     df['prom_durations'] = df.apply(lambda x:AnnotateStats(x['Stem']).get_prom_durations(x['Response']), axis=1)
-    
+
     # get word and prom word duration stats
     all_word_durations = []
     _ = [all_word_durations.extend(item) for item in df['word_durations'].to_list()]
@@ -116,13 +120,15 @@ def annotate():
     plt.xlabel('Utterance length')
     plt.ylabel('Number of prominent words per utterance')
     fig.savefig(analysis_dir / 'prom_vs_utter_len.png', dpi=fig.dpi)
-    
-    # Save analysis statistics
+
+    # Get stats to save
     for key in stats_data:
-        if isinstance(stats_data[key], np.float64) or isinstance(stats_data[key], np.int64):
+        if (
+            isinstance(stats_data[key], np.float64) or
+            isinstance(stats_data[key], np.int64)
+        ):
             stats_data[key] = float(stats_data[key])
 
+    # Save stats
     with open(analysis_dir / 'analysis.json', 'w') as fp:
         json.dump(stats_data, fp, indent=4)
-
-    print(f"Analysis saved in {analysis_dir}")

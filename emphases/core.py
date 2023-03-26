@@ -213,7 +213,7 @@ def from_alignment_and_audio(
         scores: The float-valued emphasis scores for each word
     """
     # Neural method
-    if emphases.METHOD in ['framewise', 'wordwise']:
+    if emphases.METHOD == 'neural':
 
         scores = []
 
@@ -226,24 +226,23 @@ def from_alignment_and_audio(
             batch_size,
             pad,
             gpu)
-        for features, word_bounds, word_lengths in iterator:
+        for features, word_bounds in iterator:
 
             # Infer
-            scores.append(
-                infer(features, word_bounds, word_lengths, checkpoint).detach()[0])
+            scores.append(infer(features, word_bounds, checkpoint).detach()[0])
 
         # Concatenate results
         return torch.cat(scores, 1)
 
     # Prominence method
-    elif emphases.METHOD == 'prominence':
+    if emphases.METHOD == 'prominence':
         return emphases.baselines.prominence.infer(
             alignment,
             audio,
             sample_rate)
 
     # Pitch variance method
-    elif emphases.METHOD == 'pitch_variance':
+    if emphases.METHOD == 'pitch-variance':
         return emphases.baselines.pitch_variance.infer(
             alignment,
             audio,
@@ -251,8 +250,11 @@ def from_alignment_and_audio(
             gpu)
 
     # Duration variance method
-    elif emphases.METHOD == 'duration_variance':
+    if emphases.METHOD == 'duration-variance':
         return emphases.baselines.duration_variance.infer(alignment)
+
+    raise ValueError(
+        f'Emphasis annotation method {emphases.METHOD} is not defined')
 
 
 ###############################################################################
@@ -260,11 +262,7 @@ def from_alignment_and_audio(
 ###############################################################################
 
 
-def infer(
-    features,
-    word_bounds,
-    word_lengths,
-    checkpoint=emphases.DEFAULT_CHECKPOINT):
+def infer(features, word_bounds, checkpoint=emphases.DEFAULT_CHECKPOINT):
     """Perform model inference to annotate emphases of each word"""
     # Maybe cache model
     if (
@@ -283,8 +281,18 @@ def infer(
         # Move model to correct device (no-op if devices are the same)
         infer.model = infer.model.to(features.device)
 
+    # Use full sequence lengths
+    frame_lengths = torch.ones(
+        (1, features.shape[-1]),
+        dtype=torch.long,
+        device=features.device)
+    word_lengths = torch.ones(
+        (1, word_bounds.shape[-1]),
+        dtype=torch.long,
+        device=features.device)
+
     # Infer
-    return infer.model(features, word_bounds, word_lengths)
+    return infer.model(features, frame_lengths, word_bounds, word_lengths)[0]
 
 
 def preprocess(
@@ -347,11 +355,6 @@ def preprocess(
         batch_word_bounds = torch.cat(
             [torch.tensor(bound)[None] for bound in bounds]).T[None]
 
-        # Compute length in words
-        batch_word_lengths = torch.tensor(
-            [len(batch_alignment)],
-            dtype=torch.long)
-
         # Slice audio at frame boundaries
         start_sample = int(emphases.convert.frames_to_samples(
             int(emphases.convert.seconds_to_frames(
@@ -364,14 +367,142 @@ def preprocess(
         # Preprocess audio
         batch_features = emphases.data.preprocess.from_audio(
             batch_audio,
-            batch_alignment,
             gpu=gpu)
 
         # Run inference
-        yield batch_features, batch_word_bounds, batch_word_lengths
+        yield batch_features, batch_word_bounds
 
         # Update start word
         start = end
+
+
+###############################################################################
+# Word and frame resolution resampling
+###############################################################################
+
+
+# # TODO - targets should NOT already be resampled to frame rate
+# # TODO - move to inference
+# # Get center time of each word in frames (we know that the targets are accurate here since they're interpolated from here)
+# word_centers = \
+#     word_bounds[:, 0] + (word_bounds[:, 1] - word_bounds[:, 0]) // 2
+
+# #Allocate tensors for wordwise scores and targets
+# word_scores = torch.zeros(word_centers.shape, device=scores.device)
+# word_targets = torch.zeros(word_centers.shape, device=scores.device)
+# word_masks = torch.zeros(word_centers.shape, device=scores.device)
+
+# for stem in range(targets.shape[0]): #Iterate over batch
+#     stem_word_centers = word_centers[stem]
+#     stem_word_targets = targets.squeeze(1)[stem, stem_word_centers]
+#     stem_word_mask = torch.where(stem_word_centers == 0, 0, 1)
+
+#     word_targets[stem] = stem_word_targets
+#     word_masks[stem] = stem_word_mask
+
+#     for i, (start, end) in enumerate(word_bounds[stem].T):
+#         word_outputs = scores.squeeze(1)[stem, start:end]
+#         if word_outputs.shape[0] == 0:
+#             continue
+#         word_score = emphases.frames_to_words(word_outputs)
+#         word_scores[stem, i] = word_score
+
+# scores = word_scores
+# targets = word_targets
+# mask = word_masks
+
+
+def downsample(x, word_lengths, word_bounds):
+    """Interpolate from frame to word resolution"""
+    # Average resampling
+    if emphases.DOWNSAMPLE_METHOD == 'average':
+
+        # Allocate memory for word resolution sequence
+        word_embeddings = torch.zeros(
+            (x.shape[0], x.shape[1], word_lengths.max().item()),
+            device=x.device)
+
+        # Take average of frames corresponding to each word
+        i = 0
+        iterator = enumerate(zip(x, word_bounds, word_lengths))
+        for i, (embedding, bounds, length) in iterator:
+            for j in range(length):
+                start, end = bounds[0, j], bounds[1, j]
+                word_embeddings[i, :, j] = embedding[:, start:end].mean(dim=1)
+
+    # Maximum resampling
+    # TODO - vectorize max and center resampling methods
+    if emphases.DOWNSAMPLE_METHOD == 'max':
+        if dim is not None:
+            max_out = input.max(dim=dim)
+            return max_out.values
+        return input.max()
+
+    # Centerpoint resampling
+    elif emphases.DOWNSAMPLE_METHOD == 'center':
+
+        centers = word
+        center_index = torch.Tensor([input.shape[dim] // 2]).int().to(device=input.device)
+        return torch.index_select(input, dim, center_index).squeeze()
+
+    else:
+        raise ValueError(
+            f'Interpolation method {emphases.DOWNSAMPLE_METHOD} is not defined')
+
+
+def upsample(x, frame_lengths, word_bounds):
+    """Interpolate from word to frame resolution"""
+    # TODO - batch
+    x = x[0]
+    frames = frame_lengths[0]
+    word_bounds = word_bounds[0]
+
+    # Get center time of each word in frames
+    word_centers = (
+        word_bounds[0] + (word_bounds[1] - word_bounds[0]) / 2.)[None]
+
+    # Get frame centers
+    frame_centers = .5 + torch.arange(frames)[None]
+
+    # Linear interpolation
+    if emphases.UPSAMPLE_METHOD == 'linear':
+
+        # Compute slope and intercept at original times
+        slope = (
+            (x[:, 1:] - x[:, :-1]) /
+            (word_times[:, 1:] - word_times[:, :-1]))
+        intercept = x[:, :-1] - slope.mul(word_times[:, :-1])
+
+        # Compute indices at which we evaluate points
+        indices = torch.sum(
+            torch.ge(frame_times[:, :, None], word_times[:, None, :]), -1) - 1
+        indices = torch.clamp(indices, 0, slope.shape[-1] - 1)
+
+        # Compute index into parameters
+        line_idx = torch.linspace(
+            0,
+            indices.shape[0],
+            1,
+            device=indices.device).to(torch.long)
+        line_idx = line_idx.expand(indices.shape)
+
+        # Interpolate
+        return (
+            slope[line_idx, indices].mul(frame_times) +
+            intercept[line_idx, indices])
+
+    # Nearest neighbors interpolation
+    if emphases.UPSAMPLE_METHOD == 'nearest':
+
+        # Compute indices at which we evaluate points
+        indices = torch.sum(
+            torch.ge(frame_times[:, :, None], word_times[:, None, :]), -1) - 1
+        indices = torch.clamp(indices, 0, word_times.shape[-1] - 1)
+
+        # Get nearest score
+        return torch.index_select(x, 1, indices[0])
+
+    raise ValueError(f'Interpolation method {method} is not defined')
 
 
 ###############################################################################

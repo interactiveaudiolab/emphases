@@ -1,4 +1,3 @@
-"""Config parameters whose values depend on other config parameters"""
 import emphases
 
 
@@ -38,8 +37,8 @@ HOPSIZE_SECONDS = emphases.HOPSIZE / emphases.SAMPLE_RATE
 
 
 # Number of input features to the model
-NUM_FEATURES = emphases.NUM_MELS + \
-                int(emphases.PITCH_FEATURE) + \
-                int(emphases.PERIODICITY_FEATURE) + \
-                int(emphases.LOUDNESS_FEATURE) + \
-                int(emphases.PROMINENCE_FEATURE)
+NUM_FEATURES = (
+    emphases.NUM_MELS +
+    int(emphases.PITCH_FEATURE) +
+    int(emphases.PERIODICITY_FEATURE) +
+    int(emphases.LOUDNESS_FEATURE))

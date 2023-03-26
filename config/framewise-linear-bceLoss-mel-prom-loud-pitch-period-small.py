@@ -24,9 +24,6 @@ METHOD = 'framewise'
 # Number of training steps
 NUM_STEPS = 1000
 
-# Whether to BCELogitloss function
-USE_BCE_LOGITS_LOSS = True
-
 # Whether to use pitch features
 PITCH_FEATURE = True
 

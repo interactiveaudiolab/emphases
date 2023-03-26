@@ -42,7 +42,7 @@ python -m emphases.data.analyze --dataset annotate
 # TODO - configs (15)
 
 # Next, search architecture and resampling method
-# TODO - configs (7)
+# TODO - configs (9)
 
 # Next, hparam search on both conv and transformer
 # TODO - configs (?)

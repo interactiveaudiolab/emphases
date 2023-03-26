@@ -1,106 +1,85 @@
-import math
 import functools
+import math
 
 import torch
 
 import emphases
 
-class Encoder(torch.nn.Module):
 
-    def __init__(
-        self,
-        input_channels=emphases.NUM_FEATURES,
-        output_channels=1,
-        hidden_channels=emphases.HIDDEN_CHANNELS,
-        n_heads=emphases.N_HEADS,
-        n_layers=emphases.N_LAYERS,
-        window_size=4):
+###############################################################################
+# Transformer stack
+###############################################################################
+
+
+class Transformer(torch.nn.Module):
+
+    def __init__(self):
         super().__init__()
+        self.layers = torch.nn.ModuleList([
+            TransformerLayer(emphases.CHANNELS)
+            for _ in range(emphases.LAYERS)])
 
-        filter_channels = hidden_channels
-        kernel_size = emphases.FFN_KERNEL_SIZE
+    def forward(self, x, lengths):
+        mask = mask_from_lengths(lengths)
+        for layer in self.layers[:-1]:
+            x = layer(x, mask)
+            x = torch.relu(x)
+        return self.layers[-1](x, mask), mask
 
-        conv_fn = functools.partial(
-            torch.nn.Conv1d,
-            kernel_size=emphases.ATTN_ENC_KERNEL_SIZE,
-            padding='same'
-        )
-        self.pre_encoder = torch.nn.Sequential(
-            conv_fn(input_channels, hidden_channels),
-            torch.nn.ReLU(),
-            conv_fn(hidden_channels, hidden_channels),
-            torch.nn.ReLU(),
-            conv_fn(hidden_channels, hidden_channels)
-        )
-        self.attn_layers = torch.nn.ModuleList()
-        self.norm_layers_1 = torch.nn.ModuleList()
-        self.ffn_layers = torch.nn.ModuleList()
-        self.norm_layers_2 = torch.nn.ModuleList()
-        self.decoder = torch.nn.Sequential(
-            conv_fn(hidden_channels, output_channels)
-        )
-        for _ in range(n_layers):
-            self.attn_layers.append(
-                MultiHeadAttention(
-                    hidden_channels,
-                    hidden_channels,
-                    hidden_channels,
-                    n_heads,
-                    window_size=window_size))
-            self.norm_layers_1.append(
-                LayerNorm(hidden_channels))
-            self.ffn_layers.append(
-                FFN(
-                    hidden_channels,
-                    hidden_channels,
-                    filter_channels,
-                    kernel_size))
-            self.norm_layers_2.append(
-                LayerNorm(hidden_channels))
 
-    def forward(self, x, bounds, lengths, mask=None):
-        if mask is not None:
-            if mask.shape[-1] != x.shape[-1]:
-                #We have a framewise x, wordwise mask
-                framewise_mask = torch.ones((x.shape[0], 1, x.shape[2]), device=x.device)
-                for i in range(x.shape[0]):
-                    framewise_mask[bounds.mT[i, lengths[i] - 1, i]:] = 0
-                mask = framewise_mask
-            mask_unsqueezed = mask.unsqueeze(2) * mask.unsqueeze(-1)
-            x = x * mask
-        else:
-            mask_unsqueezed = None
-        x = self.pre_encoder(x)
-        for i in range(len(self.attn_layers)):
-            y = self.attn_layers[i](
-                x,
-                x,
-                mask_unsqueezed)
-            x = self.norm_layers_1[i](x + y)
+###############################################################################
+# Transformer layer
+###############################################################################
 
-            y = self.ffn_layers[i](x, mask)
-            x = self.norm_layers_2[i](x + y)
-        return self.decoder(x)
+
+class TransformerLayer(torch.nn.Sequential):
+
+    def __init__(self, channels):
+        super().__init__()
+        self.channels = channels
+
+        # Multihead attention
+        self.attention = MultiHeadAttention(channels)
+
+        # Feed-forward layer
+        self.feed_forward = FeedForward(channels)
+
+    def forward(self, x, mask):
+        y = self.attention(x, mask.unsqueeze(2) * mask.unsqueeze(-1))
+        x = self.normalize(x + y)
+        y = self.feed_forward(x, mask)
+        return self.normalize(x + y)
+
+    def normalize(self, x):
+        """Perform per-channel layer normalization"""
+        return torch.nn.functional.layer_norm(
+            x.transpose(1, 2),
+            (self.channels,)
+        ).transpose(1, 2)
+
+
+###############################################################################
+# Attention
+###############################################################################
 
 
 class MultiHeadAttention(torch.nn.Module):
+    """Basic implementation of Multi-head attention"""
 
     def __init__(
         self,
-        in_channels,
         channels,
-        out_channels,
-        n_heads,
-        window_size=4):
+        n_heads=emphases.ATTENTION_HEADS,
+        window_size=emphases.ATTENTION_WINDOW_SIZE):
         super().__init__()
         assert channels % n_heads == 0
         # Setup layers
         self.n_heads = n_heads
         self.window_size = window_size
-        self.conv_q = torch.nn.Conv1d(in_channels, channels, 1)
-        self.conv_k = torch.nn.Conv1d(in_channels, channels, 1)
-        self.conv_v = torch.nn.Conv1d(in_channels, channels, 1)
-        self.conv_o = torch.nn.Conv1d(channels, out_channels, 1)
+        self.conv_q = torch.nn.Conv1d(channels, channels, 1)
+        self.conv_k = torch.nn.Conv1d(channels, channels, 1)
+        self.conv_v = torch.nn.Conv1d(channels, channels, 1)
+        self.conv_o = torch.nn.Conv1d(channels, channels, 1)
 
         # Setup relative positional embedding
         self.k_channels = channels // n_heads
@@ -121,10 +100,10 @@ class MultiHeadAttention(torch.nn.Module):
         torch.nn.init.xavier_uniform_(self.conv_k.weight)
         torch.nn.init.xavier_uniform_(self.conv_v.weight)
 
-    def forward(self, x, c, mask=None):
+    def forward(self, x, mask=None):
         q = self.conv_q(x)
-        k = self.conv_k(c)
-        v = self.conv_v(c)
+        k = self.conv_k(x)
+        v = self.conv_v(x)
         x, self.attn = self.attention(q, k, v, mask=mask)
         return self.conv_o(x)
 
@@ -226,53 +205,36 @@ class MultiHeadAttention(torch.nn.Module):
         x_flat = torch.nn.functional.pad(x_flat, (length, 0))
         return x_flat.view([batch, heads, length, 2 * length])[:, :, :, 1:]
 
-class LayerNorm(torch.nn.Module):
 
-    def __init__(self, channels, eps=1e-5):
+###############################################################################
+# Feed forward stack
+###############################################################################
+
+
+class FeedForward(torch.nn.Module):
+
+    def __init__(self, channels):
         super().__init__()
-        self.channels = channels
-        self.eps = eps
-        self.gamma = torch.nn.Parameter(torch.ones(channels))
-        self.beta = torch.nn.Parameter(torch.zeros(channels))
+        conv_fn = functools.partial(
+            torch.nn.Conv1d,
+            kernel_size=emphases.KERNEL_SIZE,
+            padding='same')
+        self.conv_1 = conv_fn(channels, channels)
+        self.conv_2 = conv_fn(channels, channels)
 
-    def forward(self, x):
-        return torch.nn.functional.layer_norm(
-            x.transpose(1, -1),
-            (self.channels,),
-            self.gamma,
-            self.beta,
-            self.eps).transpose(1, -1)
-
-class FFN(torch.nn.Module):
-
-    def __init__(
-        self,
-        in_channels,
-        out_channels,
-        filter_channels,
-        kernel_size):
-        super().__init__()
-        self.kernel_size = kernel_size
-        self.conv_1 = torch.nn.Conv1d(
-            in_channels,
-            filter_channels,
-            kernel_size)
-        self.conv_2 = torch.nn.Conv1d(
-            filter_channels,
-            out_channels,
-            kernel_size)
-
-    def forward(self, x, mask=None):
-        if mask is not None: x = x * mask
-        x = self.conv_1(self.pad(x))
+    def forward(self, x, mask):
+        x = self.conv_1(x * mask)
         x = torch.relu(x)
-        if mask is not None: x = x * mask
-        x = self.conv_2(self.pad(x))
-        if mask is not None: x = x * mask
-        return x
+        x = self.conv_2(x * mask)
+        return x * mask
 
-    def pad(self, x):
-        if self.kernel_size == 1:
-            return x
-        padding = ((self.kernel_size - 1) // 2, self.kernel_size // 2)
-        return torch.nn.functional.pad(x, padding)
+
+###############################################################################
+# Utilities
+###############################################################################
+
+
+def mask_from_lengths(lengths):
+    """Create boolean mask from sequence lengths"""
+    x = torch.arange(lengths.max(), dtype=lengths.dtype, device=lengths.device)
+    return (x.unsqueeze(0) < lengths.unsqueeze(1)).unsqueeze(1)

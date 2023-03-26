@@ -1,20 +1,19 @@
-import json
 import csv
+import json
+
+import matplotlib.pyplot as plt
+
 
 import emphases
 
 
 ###############################################################################
-# Create figure
+# Plot scaling laws
 ###############################################################################
 
 
-def from_evaluations(evaluations, x, output_file, x_label, data=None):
+def scaling_laws(evaluations, x, output_file, x_label, data=None):
     """Plot scaling laws"""
-    import matplotlib.pyplot as plt
-
-    print("Starting from evaluations")
-
     if data:
         x = []
         evaluations = []
@@ -22,7 +21,7 @@ def from_evaluations(evaluations, x, output_file, x_label, data=None):
             csvreader = csv.reader(fp)
             for row in csvreader:
                 evaluations.append(row[0])
-                x.append(float(row[1]))        
+                x.append(float(row[1]))
 
     # Create plot
     figure, axis = plt.subplots(figsize=(7, 3))
@@ -56,8 +55,7 @@ def from_evaluations(evaluations, x, output_file, x_label, data=None):
 
         y.append(y_val)
 
-        # Plot
-    
+    # Plot
     axis.plot(x, y)
 
     # Add legend

@@ -14,33 +14,40 @@ import emphases
 class Dataset(torch.utils.data.Dataset):
 
     def __init__(self, name, partition, train_limit=None):
-        # Get list of stems
         self.cache = emphases.CACHE_DIR / name
-        all_stems = emphases.load.partition(name)[partition]
+
+        # Get list of stems
+        self.stems = emphases.load.partition(name)[partition]
 
         # Store lengths for bucketing
         audio_files = list([
-            self.cache / 'audio' / f'{stem}.wav' for stem in all_stems])
-        all_lengths = [
-            emphases.convert.samples_to_frames(torchaudio.info(audio_file).num_frames)
+            self.cache / 'audio' / f'{stem}.wav' for stem in stems])
+        self.lengths = [
+            emphases.convert.samples_to_frames(
+                torchaudio.info(audio_file).num_frames)
             for audio_file in audio_files]
-        limit_frames = emphases.convert.seconds_to_frames(train_limit) if train_limit is not None else None
-        if (limit_frames is not None) and limit_frames < sum(all_lengths):
-            total_frames = 0
-            self.stems = []
-            self.lengths = []
-            while total_frames < limit_frames:
-                stem_frames = all_lengths.pop(0)
-                if total_frames + stem_frames <= limit_frames:
-                    self.lengths.append(stem_frames)
-                    self.stems.append(all_stems.pop(0))
-                    total_frames += stem_frames
-                else:
-                    total_frames = limit_frames
-        else:
-            self.stems = all_stems
-            self.lengths = all_lengths
 
+        # Maybe only use a subset of training data
+        if partition == 'train' and emphases.TRAIN_DATA_LIMIT is not None:
+
+            # Get max dataset size in frames
+            frame_limit = emphases.convert.seconds_to_frames(train_limit)
+
+            frames = 0
+            stems, lengths = [], []
+            for stem, length in zip(self.stems, self.lengths):
+
+                # Stop when we reach limit
+                if frames + length > frame_limit:
+                    break
+
+                # Update current length
+                frames += length
+                lengths.append(length)
+                stems.append(stem)
+
+            self.stems = stems
+            self.lengths = lengths
 
     def __getitem__(self, index):
         """Retrieve the indexth item"""
@@ -71,7 +78,8 @@ class Dataset(torch.utils.data.Dataset):
 
         # Load periodicity
         if emphases.PERIODICITY_FEATURE:
-            periodicity = torch.load(self.cache / 'pitch' / f'{stem}-periodicity.pt')
+            periodicity = torch.load(
+                self.cache / 'pitch' / f'{stem}-periodicity.pt')
             features = torch.cat((features, periodicity[None, :]), dim=1)
 
         # Load loudness
@@ -79,35 +87,8 @@ class Dataset(torch.utils.data.Dataset):
             loudness = torch.load(self.cache / 'loudness' / f'{stem}.pt')
             features = torch.cat((features, loudness[None, :]), dim=1)
 
-        # Get center time of each word in frames
-        word_centers = \
-            word_bounds[0] + (word_bounds[1] - word_bounds[0]) / 2.
-
-        # Get frame centers
-        frame_centers = .5 + torch.arange(features.shape[-1])
-
-        # Load prominence
-        if emphases.PROMINENCE_FEATURE:
-            prominence = torch.load(self.cache / 'prominence' / f'{stem}.pt')
-            # Interpolate the prominence values
-            prominence = emphases.interpolate(
-                frame_centers[None],
-                word_centers[None],
-                prominence)
-            features = torch.cat((features, prominence[None, :]), dim=1)
-
         # Load per-word ground truth emphasis scores
         scores = torch.load(self.cache / 'scores' / f'{stem}.pt')[None]
-
-        # Maybe interpolate scores for framewise model
-        if emphases.METHOD in ['framewise'] and not emphases.MODEL_TO_WORDS:
-
-            # Interpolate
-            scores = emphases.interpolate(
-                frame_centers[None],
-                word_centers[None],
-                scores)
-            scores = torch.clamp(scores, min=0)
 
         return features, scores, word_bounds, alignment, audio, stem
 
@@ -117,18 +98,14 @@ class Dataset(torch.utils.data.Dataset):
 
     def buckets(self):
         """Partition indices into buckets based on length for sampling"""
-        if len(self) < emphases.BUCKETS:
-            #Just give each individually if not enough to get the right number of buckets
-            buckets = [np.array([i]) for i in range(0, len(self))]
-        else:
-            # Get the size of a bucket
-            size = len(self) // emphases.BUCKETS
+        # Get the size of a bucket
+        size = len(self) // emphases.BUCKETS
 
-            # Get indices in order of length
-            indices = np.argsort(self.lengths)
-
-            buckets = [indices[i:i + size] for i in range(0, len(self), size)]
-        buckets = [(self.lengths[bucket[-1]], bucket) for bucket in buckets]
+        # Get indices in order of length
+        indices = np.argsort(self.lengths)
 
         # Split into buckets based on length
-        return buckets
+        buckets = [indices[i:i + size] for i in range(0, len(self), size)]
+
+        # Add max length of each bucket
+        return [(self.lengths[bucket[-1]], bucket) for bucket in buckets]

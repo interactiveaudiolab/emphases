@@ -31,6 +31,7 @@ def datasets(datasets):
         with open(file, 'w') as file:
             json.dump(partition, file, ensure_ascii=False, indent=4)
 
+
 def annotate():
     """Partition Annotated dataset"""
     # Get audio files
@@ -53,7 +54,6 @@ def annotate():
         "train": stems[:left],
         "valid": stems[left:right],
         "test": stems[right:]}
-
 
 
 def buckeye():

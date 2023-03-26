@@ -31,6 +31,3 @@ PERIODICITY_FEATURE = True
 
 # Whether to use loudness features
 LOUDNESS_FEATURE = True
-
-# Whether to use prominence features
-PROMINENCE_FEATURE = True
