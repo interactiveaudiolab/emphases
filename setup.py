@@ -7,7 +7,7 @@ with open('README.md', encoding='utf8') as file:
 
 setup(
     name='emphases',
-    description='Representations of prosody for detecting emphases',
+    description='Datasets and Scaling Laws for Neural Emphasis Prediction',
     version='0.0.0',
     author='Interactive Audio Lab',
     author_email='interactiveaudiolab@gmail.com',

@@ -71,10 +71,8 @@ def annotate():
             print(exc)
 
     data_directory = emphases.DATA_DIR / 'annotate' / annotation_config['name']
-    cache_directory = emphases.CACHE_DIR / 'annotate'
 
     response_file = data_directory / 'tables' / 'responses.csv'
-    results_file = data_directory / 'results.json'
 
     analysis_dir = emphases.EVAL_DIR / 'annotate'
     analysis_dir.mkdir(exist_ok=True, parents=True)
