@@ -16,7 +16,7 @@ def generate_configs():
         'mels': [True]
     }
     LOSS_FUNCTION = ['BCELogitloss', 'MSEloss']
-    FRAMES_TO_WORDS_RESAMPLE = ['max', 'center', 'avg']
+    DOWNSAMPLE_METHOD = ['max', 'center', 'avg']
     ARCHITECTURE = ['framewise', 'posthoc-wordwise', 'intermediate-wordwise']
 
     # Define default values for non-variable parameters
@@ -35,8 +35,8 @@ def generate_configs():
                         features['pitch'],
                         features['periodicity'],
                         features['mels'],
-                        LOSS_FUNCTION, 
-                        FRAMES_TO_WORDS_RESAMPLE, 
+                        LOSS_FUNCTION,
+                        DOWNSAMPLE_METHOD,
                         ARCHITECTURE))
 
     # Loop through all combinations and generate a config file for each
@@ -58,7 +58,7 @@ def generate_configs():
         config['METHOD'] = 'wordwise' if architecture == 'intermediate-wordwise' else 'framewise'
         config['ENCODING_STACK'] = encoding_stack
         config['MODEL_TO_WORDS'] = True if architecture != 'framewise' else False
-        config['FRAMES_TO_WORDS_RESAMPLE'] = resample_method
+        config['DOWNSAMPLE_METHOD'] = resample_method
         config['PITCH_FEATURE'] = pitch_feature
         config['PERIODICITY_FEATURE'] = periodicity_feature
         config['LOUDNESS_FEATURE'] = loudness_feature

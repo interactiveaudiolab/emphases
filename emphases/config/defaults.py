@@ -74,14 +74,18 @@ WINDOW_SIZE = 1024
 # List of all datasets
 DATASETS = ['buckeye', 'libritts']
 
+# Whether to use mel features
+# TODO
+MEL_FEATURE = True
+
 # Whether to use loudness features
-LOUDNESS_FEATURE = False
+LOUDNESS_FEATURE = True
 
 # Whether to use pitch features
-PITCH_FEATURE = False
+PITCH_FEATURE = True
 
-# Whether to use pitch features
-PERIODICITY_FEATURE = False
+# Whether to use periodicity features
+PERIODICITY_FEATURE = True
 
 # Seed for all random number generators
 RANDOM_SEED = 1234
@@ -140,7 +144,7 @@ VOICED_THRESHOLD = 50
 
 
 # Model architecture. One of ['convolution', 'transformer'].
-ARCHITECTURE = 'convolution'
+ARCHITECTURE = 'transformer'
 
 # Number of heads for multihead attention
 ATTENTION_HEADS = 2
@@ -180,6 +184,7 @@ UPSAMPLE_METHOD = 'linear'
 
 
 # Number of buckets of data lengths used by the sampler
+# TODO - update when training on libritts (try 8)
 BUCKETS = 1
 
 # Number of steps between saving checkpoints
@@ -197,5 +202,5 @@ NUM_WORKERS = 2
 # Number of seconds of data to limit training to
 TRAIN_DATA_LIMIT = None
 
-# Loss function to use
+# Loss function
 LOSS = torch.nn.functional.binary_cross_entropy_with_logits

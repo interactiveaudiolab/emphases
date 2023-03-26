@@ -381,37 +381,6 @@ def preprocess(
 ###############################################################################
 
 
-# # TODO - targets should NOT already be resampled to frame rate
-# # TODO - move to inference
-# # Get center time of each word in frames (we know that the targets are accurate here since they're interpolated from here)
-# word_centers = \
-#     word_bounds[:, 0] + (word_bounds[:, 1] - word_bounds[:, 0]) // 2
-
-# #Allocate tensors for wordwise scores and targets
-# word_scores = torch.zeros(word_centers.shape, device=scores.device)
-# word_targets = torch.zeros(word_centers.shape, device=scores.device)
-# word_masks = torch.zeros(word_centers.shape, device=scores.device)
-
-# for stem in range(targets.shape[0]): #Iterate over batch
-#     stem_word_centers = word_centers[stem]
-#     stem_word_targets = targets.squeeze(1)[stem, stem_word_centers]
-#     stem_word_mask = torch.where(stem_word_centers == 0, 0, 1)
-
-#     word_targets[stem] = stem_word_targets
-#     word_masks[stem] = stem_word_mask
-
-#     for i, (start, end) in enumerate(word_bounds[stem].T):
-#         word_outputs = scores.squeeze(1)[stem, start:end]
-#         if word_outputs.shape[0] == 0:
-#             continue
-#         word_score = emphases.frames_to_words(word_outputs)
-#         word_scores[stem, i] = word_score
-
-# scores = word_scores
-# targets = word_targets
-# mask = word_masks
-
-
 def downsample(x, word_lengths, word_bounds):
     """Interpolate from frame to word resolution"""
     # Average resampling
@@ -458,11 +427,11 @@ def upsample(x, frame_lengths, word_bounds):
     word_bounds = word_bounds[0]
 
     # Get center time of each word in frames
-    word_centers = (
+    word_times = (
         word_bounds[0] + (word_bounds[1] - word_bounds[0]) / 2.)[None]
 
     # Get frame centers
-    frame_centers = .5 + torch.arange(frames)[None]
+    frame_times = .5 + torch.arange(frames)[None]
 
     # Linear interpolation
     if emphases.UPSAMPLE_METHOD == 'linear':
@@ -502,7 +471,8 @@ def upsample(x, frame_lengths, word_bounds):
         # Get nearest score
         return torch.index_select(x, 1, indices[0])
 
-    raise ValueError(f'Interpolation method {method} is not defined')
+    raise ValueError(
+        f'Interpolation method {emphases.UPSAMPLE_METHOD} is not defined')
 
 
 ###############################################################################
