@@ -110,10 +110,10 @@ LOG_INTERVAL = 1000  # steps
 # Method to use for inference
 METHOD = 'framewise'
 
-#Convert from frames to words on model evaluation (i.e. loss is evaluated wordwise)
+# Convert from frames to words on model evaluation (i.e. loss is evaluated wordwise)
 MODEL_TO_WORDS = True
 
-#Either 'conv' or 'transformer', type of encoding stack to use
+# Either 'conv' or 'transformer', type of encoding stack to use
 ENCODING_STACK = 'conv'
 
 ###############################################################################
@@ -194,11 +194,11 @@ NUM_WORKERS = 2
 TRAIN_DATA_LIMIT = None
 
 
-# Resampling mode for framewise models (from frames to words): 'max' or 'avg'
+# Resampling mode for framewise models (from frames to words): 'max' or 'avg' or 'center'
 FRAMES_TO_WORDS_RESAMPLE = None
 
 # Maximum number of frames in one batch
 MAX_FRAMES = 50000
 
-# Whether to BCELogitloss function
+# Whether to use BCELogitloss function
 USE_BCE_LOGITS_LOSS = False

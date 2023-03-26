@@ -39,3 +39,4 @@ from . import plot
 from .interpolate import interpolate
 from .word_resample import frames_to_words
 from .model import Model
+from .generate_configs import generate_configs
