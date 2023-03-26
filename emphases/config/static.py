@@ -38,7 +38,7 @@ HOPSIZE_SECONDS = emphases.HOPSIZE / emphases.SAMPLE_RATE
 
 # Number of input features to the model
 NUM_FEATURES = (
-    emphases.NUM_MELS +
+    emphases.MEL_FEATURE * emphases.NUM_MELS +
     int(emphases.PITCH_FEATURE) +
     int(emphases.PERIODICITY_FEATURE) +
     int(emphases.LOUDNESS_FEATURE))

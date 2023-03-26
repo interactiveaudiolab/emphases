@@ -1,6 +1,7 @@
-import emphases
 import penn
 import torch
+
+import emphases
 
 
 ###############################################################################
@@ -53,12 +54,15 @@ def from_audio(audio, sample_rate=emphases.SAMPLE_RATE, gpu=None):
     # Move to device (no-op if devices are the same)
     audio = audio.to('cpu' if gpu is None else f'cuda:{gpu}')
 
+    features = []
+
     # Preprocess mels
-    features = emphases.data.preprocess.mels.from_audio(audio, sample_rate)
+    if emphases.MEL_FEATURE:
+        features.append(
+            emphases.data.preprocess.mels.from_audio(audio, sample_rate))
 
+    # Preprocess pitch and periodicity
     if emphases.PITCH_FEATURE or emphases.PERIODICITY_FEATURE:
-
-        # Preprocess pitch and periodicity
         pitch, periodicity = penn.from_audio(
             audio,
             sample_rate,
@@ -70,16 +74,19 @@ def from_audio(audio, sample_rate=emphases.SAMPLE_RATE, gpu=None):
             gpu=gpu)
 
         if emphases.PITCH_FEATURE:
-            pitch = torch.log2(pitch)[None, :].to(audio.device)
-            features = torch.cat((features, pitch), dim=1)
+            features.append(torch.log2(pitch))
 
         if emphases.PERIODICITY_FEATURE:
-            periodicity = periodicity[None, :].to(audio.device)
-            features = torch.cat((features, periodicity), dim=1)
+            features.append(periodicity)
 
+    # Preprocess loudness
     if emphases.LOUDNESS_FEATURE:
-        loudness = emphases.data.preprocess.loudness.from_audio(audio, sample_rate)
-        loudness = loudness[None, :].to(audio.device)
-        features = torch.cat((features, loudness), dim=1)
+        loudness = emphases.data.preprocess.loudness.from_audio(
+            audio,
+            sample_rate)
+        features.append(loudness.to(audio.device))
 
-    return features
+    # Concatenate features
+    features = features[0] if len(features) == 1 else torch.cat(features)
+
+    return features[None]
