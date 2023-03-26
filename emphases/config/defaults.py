@@ -75,7 +75,6 @@ WINDOW_SIZE = 1024
 DATASETS = ['buckeye', 'libritts']
 
 # Whether to use mel features
-# TODO
 MEL_FEATURE = True
 
 # Whether to use loudness features
