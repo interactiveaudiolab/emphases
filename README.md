@@ -284,16 +284,15 @@ Tensorboard. This can be done with `ssh -L 6006:localhost:6006
 ## Citation
 
 ### IEEE
-P. Pawar, M. Morrison, N. Pruyne, J. Cole, and B. Pardo, "Datasets and Scaling Laws for Neural Emphasis Prediction," Interspeech, <TODO - month> 2023.
+M. Morrison, P. Pawar, N. Pruyne, J. Cole, and B. Pardo, "Datasets and Scaling Laws for Neural Emphasis Prediction," <TODO - conference>, 2023.
 
 
 ### BibTex
 
 ```
-@inproceedings{pawar2023datasets,
+@inproceedings{morrison2023datasets,
     title={Datasets and Scaling Laws for Neural Emphasis Prediction},
-    author={Pawar, Pranav and Morrison, Max and Pruyne, Nathan and Cole, Jennifer and Pardo, Bryan},
-    booktitle={Interspeech},
-    month={TODO},
+    author={Morrison, Max and Pawar, Pranav and Pruyne, Nathan and Cole, Jennifer and Pardo, Bryan},
+    booktitle={TODO},
     year={2023}
 }

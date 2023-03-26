@@ -1,3 +1,5 @@
+import torch
+
 from pathlib import Path
 
 
@@ -48,6 +50,15 @@ FMIN = 40.
 # The number of samples between frames
 HOPSIZE = 160
 
+# Number of linear frequency channels
+NUM_FFT =  1024
+
+# Number of mel channels
+NUM_MELS = 80
+
+# Voiced/unvoiced threshold for pitch estimation
+PENN_VOICED_THRESHOLD = .065
+
 # The audio samling rate
 SAMPLE_RATE = 16000
 
@@ -63,26 +74,18 @@ WINDOW_SIZE = 1024
 # List of all datasets
 DATASETS = ['buckeye', 'libritts']
 
-# Interpolation method for framewise training
-INTERPOLATION = 'linear'
-
-# Number of linear frequency channels
-NUM_FFT =  1024
-
-# Number of mel channels
-NUM_MELS = 80
-
-# Whether to use pitch features
-PITCH_FEATURE = False
-
-# Whether to use pitch features
-PERIODICITY_FEATURE = False
+# Whether to use mel features
+# TODO
+MEL_FEATURE = True
 
 # Whether to use loudness features
-LOUDNESS_FEATURE = False
+LOUDNESS_FEATURE = True
 
-# Whether to use prominence features
-PROMINENCE_FEATURE = False
+# Whether to use pitch features
+PITCH_FEATURE = True
+
+# Whether to use periodicity features
+PERIODICITY_FEATURE = True
 
 # Seed for all random number generators
 RANDOM_SEED = 1234
@@ -98,23 +101,12 @@ SPLIT_SIZE_VALID = .1
 ###############################################################################
 
 
-# Maximum number of frames to perform inference on at once
-MAX_FRAMES_PER_BATCH = 2560
-
 # Number of steps between evaluation
 EVALUATION_INTERVAL = 100  # steps
 
 # Number of steps between logging to Tensorboard
 LOG_INTERVAL = 1000  # steps
 
-# Method to use for inference
-METHOD = 'framewise'
-
-# Convert from frames to words on model evaluation (i.e. loss is evaluated wordwise)
-MODEL_TO_WORDS = True
-
-# Either 'conv' or 'transformer', type of encoding stack to use
-ENCODING_STACK = 'conv'
 
 ###############################################################################
 # Prominence baseline parameters
@@ -145,33 +137,46 @@ PROMINENCE_PITCH_WEIGHT = 1.
 # Voiced/unvoiced threshold from 0 (all voiced) to 100 (all unvoiced)
 VOICED_THRESHOLD = 50
 
-###############################################################################
-# Variance baseline parameters
-###############################################################################
-
-# Variance resampling mode (from phonemes to words): 'max' or 'avg'
-VARIANCE_RESAMPLE = 'max'
-
-# Used for interp_unvoiced_at for penn
-PENN_VOICED_THRESHOLD = .065
 
 ###############################################################################
-# Model component parameters
+# Model parameters
 ###############################################################################
 
-HIDDEN_CHANNELS = 128
 
-N_HEADS = 2
+# Model architecture. One of ['convolution', 'transformer'].
+ARCHITECTURE = 'transformer'
 
-N_LAYERS = 2
+# Number of heads for multihead attention
+ATTENTION_HEADS = 2
 
-ATTN_ENC_KERNEL_SIZE = 3
+# Window size of attention layers
+ATTENTION_WINDOW_SIZE = 4
 
-CONV_KERNEL_SIZE = 5
+# Model width
+CHANNELS = 256
 
-FFN_KERNEL_SIZE = 3
+# Location to perform resampling from frame resolution to word resolution.
+# One of ['inference', 'intermediate', 'loss'].
+DOWNSAMPLE_LOCATION = 'intermediate'
 
-NUM_CONVS = 4
+# Method to use for resampling from frame resolution to word resolution.
+# One of ['average', 'center', 'max'].
+DOWNSAMPLE_METHOD = 'max'
+
+# Convolution kernel size
+KERNEL_SIZE = 3
+
+# Number of network layers
+LAYERS = 4
+
+# Method to use for inference. One of
+# ['neural', 'pitch-variance', 'duration-variance', 'prominence].
+METHOD = 'neural'
+
+# Method to use for resampling from word resolution to frame resolution.
+# One of ['linear', 'nearest'].
+UPSAMPLE_METHOD = 'linear'
+
 
 ###############################################################################
 # Training parameters
@@ -179,10 +184,14 @@ NUM_CONVS = 4
 
 
 # Number of buckets of data lengths used by the sampler
-BUCKETS = 8
+# TODO - update when training on libritts (try 8)
+BUCKETS = 1
 
 # Number of steps between saving checkpoints
 CHECKPOINT_INTERVAL = 25000  # steps
+
+# Maximum number of frames in one batch
+MAX_FRAMES = 50000
 
 # Number of training steps
 NUM_STEPS = 300000
@@ -193,12 +202,5 @@ NUM_WORKERS = 2
 # Number of seconds of data to limit training to
 TRAIN_DATA_LIMIT = None
 
-
-# Resampling mode for framewise models (from frames to words): 'max' or 'avg' or 'center'
-FRAMES_TO_WORDS_RESAMPLE = None
-
-# Maximum number of frames in one batch
-MAX_FRAMES = 50000
-
-# Whether to use BCELogitloss function
-USE_BCE_LOGITS_LOSS = False
+# Loss function
+LOSS = torch.nn.functional.binary_cross_entropy_with_logits

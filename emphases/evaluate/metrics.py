@@ -11,24 +11,25 @@ import emphases
 class Metrics:
 
     def __init__(self):
-        self.similarity = CosineSimilarity()
         self.pearson_correlation = PearsonCorrelation()
         self.loss = Loss()
 
     def __call__(self):
-        return self.similarity() | self.pearson_correlation() | self.loss()
+        return self.pearson_correlation() | self.loss()
 
-    def update(self, scores, targets, lengths):
+    def update(self, scores, targets, word_bounds, mask=None):
         # Detach from graph
         scores = scores.detach()
 
-        # Update loss
-        self.similarity.update(scores, targets, lengths)
-        self.pearson_correlation.update(scores, targets, lengths)
-        self.loss.update(scores, targets, lengths)
+        # Default to evaluating on all sequence elements
+        if mask is None:
+            mask = torch.ones_like(scores)
+
+        # Update
+        self.pearson_correlation.update(scores, targets, mask)
+        self.loss.update(scores, targets, word_bounds, mask)
 
     def reset(self):
-        self.similarity.reset()
         self.pearson_correlation.reset()
         self.loss.reset()
 
@@ -37,25 +38,6 @@ class Metrics:
 # Individual metrics
 ###############################################################################
 
-
-class CosineSimilarity:
-
-    def __init__(self):
-        self.reset()
-
-    def __call__(self):
-        return {'similarity': (self.total / self.count).item()}
-
-    def update(self, scores, targets, mask):
-        scores[mask == 0] = 0.
-        targets[mask == 0] = 0.
-        self.total += torch.nn.functional.cosine_similarity(
-            scores.squeeze(1), targets.squeeze(1)).sum()
-        self.count += scores.shape[0]
-
-    def reset(self):
-        self.count = 0
-        self.total = 0.
 
 class PearsonCorrelation:
 
@@ -66,6 +48,7 @@ class PearsonCorrelation:
         return {'pearson_correlation': (self.total / self.count).item()}
 
     def update(self, scores, targets, mask):
+        # TODO - this has a bug that biases words in short sentences
         scores[mask == 0] = 0.
         targets[mask == 0] = 0.
         self.total += torch.corrcoef(
@@ -77,6 +60,7 @@ class PearsonCorrelation:
         self.count = 0
         self.total = 0.
 
+
 class Loss():
 
     def __init__(self):
@@ -85,8 +69,8 @@ class Loss():
     def __call__(self):
         return {'loss': (self.total / self.count).item()}
 
-    def update(self, scores, targets, mask):
-        self.total += emphases.train.loss(scores, targets, mask)
+    def update(self, scores, targets, word_bounds, mask):
+        self.total += emphases.train.loss(scores, targets, word_bounds, mask)
         self.count += mask.sum()
 
     def reset(self):

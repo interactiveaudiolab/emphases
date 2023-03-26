@@ -3,8 +3,9 @@ from pathlib import Path
 
 import emphases
 
+
 ###############################################################################
-# Periodicity threshold figure
+# Scaling laws plot
 ###############################################################################
 
 
@@ -39,5 +40,6 @@ def parse_args():
     )
     return parser.parse_known_args()[0]
 
+
 if __name__ == '__main__':
-    emphases.plot.from_evaluations(**vars(parse_args()))
+    emphases.plot.scaling_laws(**vars(parse_args()))

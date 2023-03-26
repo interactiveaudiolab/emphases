@@ -24,29 +24,60 @@ python -m emphases.data.analyze --dataset annotate
 #   - Periodicity
 #   - Mels
 # - BCE vs MSE loss
-# - Resampling method
+# - Downsampling method
+#   - average
+#   - center
 #   - max
-#   - centerpoint
-#   - mean
-# - Architecture
-#   - framewise
-#   - posthoc-wordwise
-#   - intermediate-wordwise
+# - Downsampling location
+#   - inference
+#   - intermediate
+#   - loss
+
+# Start with a small, transformer model (intermediate-wordwise + max + mels + prosody) and search loss ***
+python -m emphases.train --config config/first-pass/base.py --gpus $1
+python -m emphases.train --config config/first-pass/mse.py --gpus $1
+
+# Next, search features
+python -m emphases.train --config config/first-pass/no-loudness.py --gpus $1
+python -m emphases.train --config config/first-pass/no-mels.py --gpus $1
+python -m emphases.train --config config/first-pass/no-periodicity.py --gpus $1
+python -m emphases.train --config config/first-pass/no-pitch.py --gpus $1
+
+# Next, search combinations of downsampling method and location
+python -m emphases.train --config config/first-pass/average-inference.py --gpus $1
+python -m emphases.train --config config/first-pass/average-intermediate.py --gpus $1
+python -m emphases.train --config config/first-pass/average-loss.py --gpus $1
+python -m emphases.train --config config/first-pass/center-inference.py --gpus $1
+python -m emphases.train --config config/first-pass/center-intermediate.py --gpus $1
+python -m emphases.train --config config/first-pass/center-loss.py --gpus $1
+python -m emphases.train --config config/first-pass/max-inference.py --gpus $1
+python -m emphases.train --config config/first-pass/max-loss.py --gpus $1
+
+# Next, hparam search on both conv and transformer
+# python -m emphases.train --config config/first-pass/convolution-4-256.py --gpus $1
+# python -m emphases.train --config config/first-pass/convolution-4-512.py --gpus $1
+# python -m emphases.train --config config/first-pass/convolution-6-1024.py --gpus $1
+# python -m emphases.train --config config/first-pass/convolution-6-256.py --gpus $1
+# python -m emphases.train --config config/first-pass/convolution-6-512.py --gpus $1
+# python -m emphases.train --config config/first-pass/convolution-6-1024.py --gpus $1
+# python -m emphases.train --config config/first-pass/transformer-4-256.py --gpus $1
+# python -m emphases.train --config config/first-pass/transformer-4-512.py --gpus $1
+# python -m emphases.train --config config/first-pass/transformer-6-256.py --gpus $1
+# python -m emphases.train --config config/first-pass/transformer-6-512.py --gpus $1
 
 # Looped config generation and execution for first pass
+# python -m emphases.generate_configs
 
-python -m emphases.generate_configs
+# config_dir=config/hyperparam-search
 
-config_dir=config/hyperparam-search
+# # Loop through each file in the directory
+# for file in $(find "$config_dir" -type f -name "*.py" | sort -n); do
+#     # Get the file name without the directory path or extension
+#     file_name=$(basename "$file" .py)
 
-# Loop through each file in the directory
-for file in $(find "$config_dir" -type f -name "*.py" | sort -n); do
-    # Get the file name without the directory path or extension
-    file_name=$(basename "$file" .py)
-    
-    # Execute the command with the file name variable
-    python -m emphases.train --config "$config_dir/$file_name.py" --gpus $1
-done
+#     # Execute the command with the file name variable
+#     python -m emphases.train --config "$config_dir/$file_name.py" --gpus $1
+# done
 
 # Second pass experiments
 
@@ -56,94 +87,17 @@ done
 # Ablations (features, resampling, and architecture)
 # TODO - configs (22)
 
-# Archived - First pass experiments - manual curation
-
-# Start with a small, convolutional model (intermediate-wordwise + max + mels) and search loss ***
-# python -m emphases.train --config config/first-pass/loss-bce-intermediate-wordwise-resampling-max-mels.py --gpus $1
-# python -m emphases.train --config config/first-pass/loss-mse-intermediate-wordwise-resampling-max-mels.py --gpus $1
-
-# Next, search features ***
-# TODO - configs (15) - TODO - introduce USE_MELS flag
-# configs (8) - if always using mels
-
-# Mels
-# Already covered in loss search
-
-# # Mels + Loudness
-# python -m emphases.train --config config/first-pass/feat-mels-loud-intermediate-wordwise-resampling-max.py --gpus $1
-
-# # Mels + Pitch
-# python -m emphases.train --config config/first-pass/feat-mels-pitch-intermediate-wordwise-resampling-max.py --gpus $1
-
-# # Mels + Periodicity
-# python -m emphases.train --config config/first-pass/feat-mels-period-intermediate-wordwise-resampling-max.py --gpus $1
-
-# # Mels + Pitch + Loudness
-# python -m emphases.train --config config/first-pass/feat-mels-pitch-loud-intermediate-wordwise-resampling-max.py --gpus $1
-
-# # Mels + Periodicity + Loudness
-# python -m emphases.train --config config/first-pass/feat-mels-period-loud-intermediate-wordwise-resampling-max.py --gpus $1
-
-# # Mels + Pitch + Periodicity
-# python -m emphases.train --config config/first-pass/feat-mels-pitch-period-intermediate-wordwise-resampling-max.py --gpus $1
-
-# # Mels + Pitch + Periodicity + Loudness i.e. All
-# python -m emphases.train --config config/first-pass/feat-all-intermediate-wordwise-resampling-max.py --gpus $1
-
-# Next, search architecture and resampling method
-# TODO - configs (7) using all features
-
-# # Just Framewise
-# python -m emphases.train --config config/first-pass/framewise-only.py --gpus $1
-
-# # Max-Posthoc-wordwise
-# python -m emphases.train --config config/first-pass/max-posthoc-wordwise.py --gpus $1
-
-# # Centerpoint-Posthoc-wordwise
-# python -m emphases.train --config config/first-pass/center-posthoc-wordwise.py --gpus $1
-
-# # Avg-Posthoc-wordwise
-# python -m emphases.train --config config/first-pass/avg-posthoc-wordwise.py --gpus $1
-
-# # Max-Intermediate-wordwise
-# python -m emphases.train --config config/first-pass/max-intermediate-wordwise.py --gpus $1
-
-# # Centerpoint-Intermediate-wordwise
-# python -m emphases.train --config config/first-pass/center-intermediate-wordwise.py --gpus $1
-
-# # Avg-Intermediate-wordwise
-# python -m emphases.train --config config/first-pass/avg-intermediate-wordwise.py --gpus $1
-
-# Next, hparam search on both conv and transformer
-# Done in the automated loop
-# TODO - configs (?) - TODO loop operation (?)
-
 # Evaluate baselines
 python -m emphases.evaluate --config config/prominence.py --datasets buckeye
 python -m emphases.evaluate --config config/pitch_variance.py --datasets buckeye
 python -m emphases.evaluate --config config/duration_variance.py --datasets buckeye
 
 # Plots
-python -m emphases.plot --data plots/dataset_scaling.csv --x_label "Training data (seconds)" --output_file plots/dataset_scaling.jpg
-python -m emphases.plot --data plots/num_annotators_scaling.csv --x_label "Number of annotators" --output_file plots/num_annotators_scaling.jpg
-
-
-# Archived Configs
-# Train and evaluate experiments
-# python -m emphases.train --config config/framewise-linear-small.py --gpus $1
-# python -m emphases.train --config config/framewise-nearest-small.py --gpus $1
-# python -m emphases.train --config config/wordwise-small.py --gpus $1
-
-# Experimental feature variations
-# python -m emphases.train --config config/framewise-linear-mel-pitch-period-small.py --gpus $1
-# python -m emphases.train --config config/framewise-linear-mel-loud-pitch-period-small.py --gpus $1
-# python -m emphases.train --config config/framewise-linear-mel-prom-loud-pitch-period-small.py --gpus $1
-# python -m emphases.train --config config/wordwise-mel-prom-loud-pitch-period-small.py --gpus $1
-# python -m emphases.train --config config/framewise-linear-bceLoss-mel-prom-loud-pitch-period-small.py --gpus $1
-# python -m emphases.train --config config/framewise-nearest-bceLoss-mel-prom-loud-pitch-period-small.py --gpus $1
-# python -m emphases.train --config config/wordwise-bceLoss-mel-prom-loud-pitch-period-small.py --gpus $1
-
-# Train on annotated dataset
-# python -m emphases.train --config config/framewise-linear-annotated-mel-prom-loud-pitch-period-small.py --dataset annotate --gpus $1
-
-
+python -m emphases.plot \
+    --data plots/dataset_scaling.csv \
+    --x_label "Training data (seconds)" \
+    --output_file plots/dataset_scaling.jpg
+python -m emphases.plot \
+    --data plots/num_annotators_scaling.csv \
+    --x_label "Number of annotators" \
+    --output_file plots/num_annotators_scaling.jpg

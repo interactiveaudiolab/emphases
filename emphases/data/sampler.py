@@ -67,15 +67,14 @@ class Sampler:
 
             # Get current batch size
             size = emphases.MAX_FRAMES // max_length
-            
+
             # Make batches
             batches.extend(
                 [bucket[i:i + size] for i in range(0, len(bucket), size)])
-        
 
         # Shuffle
         return [
-            batches[i] for i in 
+            batches[i] for i in
             torch.randperm(len(batches), generator=generator).tolist()]
 
     def set_epoch(self, epoch):

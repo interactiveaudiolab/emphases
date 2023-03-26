@@ -7,6 +7,7 @@ import numpy as np
 import penn
 import warnings
 
+
 ###############################################################################
 # Interface
 ###############################################################################
@@ -20,12 +21,14 @@ def from_audio(audio, sample_rate=emphases.SAMPLE_RATE):
     # Compute loudness
     return a_weighted(audio, sample_rate, hop_length=emphases.HOPSIZE)
 
+
 def from_file(audio_file):
     """Load audio and compute mels"""
     audio = emphases.load.audio(audio_file)
 
     # Compute loudness
     return from_audio(audio)
+
 
 def from_file_to_file(audio_file, output_file):
     """Compute loudness from audio file and save to disk"""
@@ -41,9 +44,11 @@ def from_files_to_files(audio_files, output_files):
     with mp.Pool() as pool:
         pool.starmap(from_file_to_file, zip(audio_files, output_files))
 
-##############################################################
+
+###############################################################################
 # Loudness
-##############################################################
+###############################################################################
+
 
 # Minimum decibel level
 MIN_DB = -100.
@@ -70,11 +75,6 @@ def a_weighted(audio, sample_rate, hop_length=None, pad=False):
 
     # Convert to numpy
     audio = audio.detach().cpu().numpy().squeeze(0)
-
-    # # Resample
-    # if sample_rate != penn.SAMPLE_RATE:
-    #     audio = resampy.resample(audio, sample_rate, penn.SAMPLE_RATE)
-    #     hop_length = int(hop_length * penn.SAMPLE_RATE / sample_rate)
 
     # Cache weights
     if not hasattr(a_weighted, 'weights'):
@@ -104,8 +104,9 @@ def a_weighted(audio, sample_rate, hop_length=None, pad=False):
 
 def perceptual_weights():
     """A-weighted frequency-dependent perceptual loudness weights"""
-    frequencies = librosa.fft_frequencies(sr=penn.SAMPLE_RATE,
-                                          n_fft=penn.WINDOW_SIZE)
+    frequencies = librosa.fft_frequencies(
+        sr=penn.SAMPLE_RATE,
+        n_fft=penn.WINDOW_SIZE)
 
     # A warning is raised for nearly inaudible frequencies, but it ends up
     # defaulting to -100 db. That default is fine for our purposes.

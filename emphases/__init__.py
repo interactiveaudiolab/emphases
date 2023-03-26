@@ -1,7 +1,3 @@
-# Development
-# - perform framewise evaluation on per-word scores
-
-
 ###############################################################################
 # Configuration
 ###############################################################################
@@ -25,6 +21,7 @@ from .config.static import *
 
 
 from .core import *
+from .model import Model
 from . import annotate
 from . import baselines
 from . import checkpoint
@@ -33,10 +30,6 @@ from . import data
 from . import evaluate
 from . import load
 from . import partition
+from . import plot
 from . import train
 from . import write
-from . import plot
-from .interpolate import interpolate
-from .word_resample import frames_to_words
-from .model import Model
-from .generate_configs import generate_configs

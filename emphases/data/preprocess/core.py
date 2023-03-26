@@ -1,7 +1,6 @@
 import emphases
 import penn
 import torch
-import pypar
 
 
 ###############################################################################
@@ -48,28 +47,8 @@ def datasets(datasets, gpu=None):
             interp_unvoiced_at=emphases.PENN_VOICED_THRESHOLD,
             gpu=gpu)
 
-        # # Get alignment files
-        # alignment_files = sorted(cache_directory.rglob('*.TextGrid'))
 
-        # Preprocess prominence
-        # (cache_directory / 'prominence').mkdir(exist_ok=True, parents=True)
-        # prominence_files = [
-        #     cache_directory / 'prominence' / f'{file.stem}.pt'
-        #     for file in audio_files]
-        # iterator = emphases.iterator(
-        #     zip(audio_files, alignment_files, prominence_files),
-        #     'Preparing prominence features',
-        #     total=len(audio_files))
-        # for audio_file, alignment_file, save_file in iterator:
-        #     prominence = emphases.baselines.prominence.infer(
-        #                 pypar.Alignment(alignment_file),
-        #                 emphases.load.audio(audio_file),
-        #                 emphases.SAMPLE_RATE)
-        #     prominence = torch.from_numpy(prominence)
-        #     torch.save(prominence, save_file)
-
-
-def from_audio(audio, alignment, sample_rate=emphases.SAMPLE_RATE, gpu=None):
+def from_audio(audio, sample_rate=emphases.SAMPLE_RATE, gpu=None):
     """Preprocess one audio file"""
     # Move to device (no-op if devices are the same)
     audio = audio.to('cpu' if gpu is None else f'cuda:{gpu}')
@@ -102,35 +81,5 @@ def from_audio(audio, alignment, sample_rate=emphases.SAMPLE_RATE, gpu=None):
         loudness = emphases.data.preprocess.loudness.from_audio(audio, sample_rate)
         loudness = loudness[None, :].to(audio.device)
         features = torch.cat((features, loudness), dim=1)
-
-    if emphases.PROMINENCE_FEATURE:
-        prominence = emphases.baselines.prominence.infer(
-            alignment,
-            audio.cpu(),
-            sample_rate)
-
-        # Compute word bounds
-        bounds = alignment.word_bounds(
-            emphases.SAMPLE_RATE,
-            emphases.HOPSIZE,
-            silences=True)
-        word_bounds = torch.cat(
-            [torch.tensor(bound)[None] for bound in bounds]).T
-
-        # Get center time of each word in frames
-        word_centers = \
-            word_bounds[0] + (word_bounds[1] - word_bounds[0]) / 2.
-
-        # Get frame centers
-        frame_centers = .5 + torch.arange(features.shape[-1])
-
-        # Interpolate to the frame rate
-        prominence = torch.from_numpy(prominence)
-        prominence = emphases.interpolate(
-            frame_centers[None],
-            word_centers[None],
-            prominence).to(audio.device, dtype=torch.float)
-
-        features = torch.cat((features, prominence[None, :]), dim=1)
 
     return features

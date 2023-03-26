@@ -1,7 +1,7 @@
 MODULE = 'emphases'
 
 # Configuration name
-CONFIG = 'duration_variance'
+CONFIG = 'duration-variance'
 
 # Method to use for inference
-METHOD = 'duration_variance'
+METHOD = 'duration-variance'

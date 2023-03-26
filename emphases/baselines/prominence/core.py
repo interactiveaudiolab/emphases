@@ -105,7 +105,7 @@ def infer(alignment, audio, sample_rate):
         pos_loma,
         alignment,
         rate=200))
-        
+
     # Prominence dimensions - [time, value]
     prominences = np.array(max_loma)
 
@@ -115,8 +115,6 @@ def infer(alignment, audio, sample_rate):
         max_loma,
         neg_loma,
         alignment))
-
-    # return prominences[:, 1], boundaries[:, 1]
 
     return prominences[:, 1][None]
 
