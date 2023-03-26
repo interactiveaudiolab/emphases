@@ -14,26 +14,7 @@ python -m emphases.partition
 # Analyze the annotated data
 python -m emphases.data.analyze --dataset annotate
 
-# Experiments:
-# - Transformer vs convolutional
-#   - Layers
-#   - Capacity
-# - Features
-#   - Loudness
-#   - Pitch
-#   - Periodicity
-#   - Mels
-# - BCE vs MSE loss
-# - Downsampling method
-#   - average
-#   - center
-#   - max
-# - Downsampling location
-#   - inference
-#   - intermediate
-#   - loss
-
-# Start with a small, transformer model (intermediate-wordwise + max + mels + prosody) and search loss ***
+# Start with a small, transformer model (intermediate-wordwise + max + mels + prosody) and search loss
 python -m emphases.train --config config/first-pass/base.py --gpus $1
 python -m emphases.train --config config/first-pass/mse.py --gpus $1
 
