@@ -21,7 +21,7 @@ class Dataset(torch.utils.data.Dataset):
 
         # Store lengths for bucketing
         audio_files = list([
-            self.cache / 'audio' / f'{stem}.wav' for stem in stems])
+            self.cache / 'audio' / f'{stem}.wav' for stem in self.stems])
         self.lengths = [
             emphases.convert.samples_to_frames(
                 torchaudio.info(audio_file).num_frames)

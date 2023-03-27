@@ -15,6 +15,7 @@ setup(
     install_requires=[
         'librosa',
         'matplotlib',
+        'pandas',
         'penn',
         'pycwt',
         'pyfoal',

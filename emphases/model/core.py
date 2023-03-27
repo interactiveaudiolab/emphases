@@ -28,9 +28,7 @@ class Model(torch.nn.Module):
 
         # If we are resampling within the model, initialize word decoder
         if emphases.DOWNSAMPLE_LOCATION == 'intermediate':
-            self.word_decoder = emphases.model.Layers(
-                emphases.CHANNELS,
-                1)
+            self.word_decoder = emphases.model.Layers()
 
         # Output projection
         self.output_layer = conv_fn(emphases.CHANNELS, 1)

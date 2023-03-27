@@ -107,4 +107,4 @@ class MelSpectrogram(torch.nn.Module):
         audio = torch.nn.functional.pad(audio, (p, p), "reflect").squeeze(1)
 
         # Compute logmelspectrogram
-        return self.log_mel_spectrogram(audio)
+        return self.log_mel_spectrogram(audio)[0]
