@@ -5,14 +5,14 @@
 #  $1 - index of GPU to use
 
 # Download datasets
-python -m emphases.data.download
+# python -m emphases.data.download
 
 # Setup experiments
-python -m emphases.data.preprocess --gpu $1
-python -m emphases.partition
+# python -m emphases.data.preprocess --gpu $1
+# python -m emphases.partition
 
 # Analyze the annotated data
-python -m emphases.data.analyze --dataset annotate
+# python -m emphases.data.analyze --dataset annotate
 
 # Start with a small, transformer model (intermediate-wordwise + max + mels + prosody) and search loss
 python -m emphases.train --config config/first-pass/base.py --gpus $1
@@ -69,9 +69,10 @@ python -m emphases.train --config config/first-pass/max-loss.py --gpus $1
 # TODO - configs (22)
 
 # Evaluate baselines
+# TODO - use all datasets during final run
 python -m emphases.evaluate --config config/prominence.py --datasets buckeye
-python -m emphases.evaluate --config config/pitch_variance.py --datasets buckeye
-python -m emphases.evaluate --config config/duration_variance.py --datasets buckeye
+python -m emphases.evaluate --config config/pitch-variance.py --datasets buckeye
+python -m emphases.evaluate --config config/duration-variance.py --datasets buckeye
 
 # Plots
 python -m emphases.plot \
