@@ -84,7 +84,7 @@ def train(
     # Create model #
     ################
 
-    model = emphases.Model()
+    model = emphases.Model().to(device)
 
     ####################
     # Create optimizer #
@@ -155,12 +155,12 @@ def train(
 
             # Copy to GPU
             features = features.to(device)
-            frame_lengths = word_lengths.to(device)
+            frame_lengths = frame_lengths.to(device)
             word_bounds = word_bounds.to(device)
             word_lengths = word_lengths.to(device)
             targets = targets.to(device)
 
-            with torch.cuda.amp.autocast():
+            with torch.autocast(device.type):
 
                 # Forward pass
                 scores, mask = model(
@@ -270,7 +270,7 @@ def evaluate(directory, step, model, gpu, condition, loader):
 
             # Copy to GPU
             features = features.to(device)
-            frame_lengths = word_lengths.to(device)
+            frame_lengths = frame_lengths.to(device)
             word_bounds = word_bounds.to(device)
             word_lengths = word_lengths.to(device)
             targets = targets.to(device)
