@@ -49,10 +49,7 @@ class Model(torch.nn.Module):
                 word_bounds)
 
             # Infer emphasis scores from word embeddings
-            activation, mask = self.word_decoder(
-                word_embeddings,
-                word_bounds,
-                word_lengths)
+            activation, mask = self.word_decoder(word_embeddings, word_lengths)
 
         # Project to scalar
         return self.output_layer(activation), mask

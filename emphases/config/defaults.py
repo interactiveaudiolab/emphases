@@ -100,11 +100,13 @@ SPLIT_SIZE_VALID = .1
 ###############################################################################
 
 
-# Number of steps between evaluation
-EVALUATION_INTERVAL = 100  # steps
-
 # Number of steps between logging to Tensorboard
-LOG_INTERVAL = 1000  # steps
+# TEMPORARY
+# LOG_INTERVAL = 1000  # steps
+LOG_INTERVAL = 100  # steps
+
+# Number of steps to perform for tensorboard logging
+LOG_STEPS = 32
 
 
 ###############################################################################
@@ -183,23 +185,28 @@ UPSAMPLE_METHOD = 'linear'
 
 
 # Number of buckets of data lengths used by the sampler
-# TODO - update when training on libritts (try 8)
+# TEMPORARY
+# BUCKETS = 8
 BUCKETS = 1
 
 # Number of steps between saving checkpoints
-CHECKPOINT_INTERVAL = 25000  # steps
+# TEMPORARY
+# CHECKPOINT_INTERVAL = 25000  # steps
+CHECKPOINT_INTERVAL = 500  # steps
+
+# Loss function
+LOSS = torch.nn.functional.binary_cross_entropy_with_logits
 
 # Maximum number of frames in one batch
 MAX_FRAMES = 50000
 
 # Number of training steps
-NUM_STEPS = 300000
+# TEMPORARY
+# NUM_STEPS = 300000
+NUM_STEPS = 3000
 
 # Number of data loading worker threads
 NUM_WORKERS = 2
 
 # Number of seconds of data to limit training to
 TRAIN_DATA_LIMIT = None
-
-# Loss function
-LOSS = torch.nn.functional.binary_cross_entropy_with_logits

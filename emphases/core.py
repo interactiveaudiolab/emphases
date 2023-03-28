@@ -400,23 +400,37 @@ def downsample(x, word_lengths, word_bounds):
                 word_embeddings[i, :, j] = embedding[:, start:end].mean(dim=1)
 
     # Maximum resampling
-    # TODO - vectorize max and center resampling methods
-    if emphases.DOWNSAMPLE_METHOD == 'max':
-        if dim is not None:
-            max_out = input.max(dim=dim)
-            return max_out.values
-        return input.max()
+    elif emphases.DOWNSAMPLE_METHOD in ['center', 'max']:
 
-    # Centerpoint resampling
-    elif emphases.DOWNSAMPLE_METHOD == 'center':
+        # Centerpoint resampling
+        if emphases.DOWNSAMPLE_METHOD == 'center':
+            # TODO
+            indices = None
 
-        centers = word
-        center_index = torch.Tensor([input.shape[dim] // 2]).int().to(device=input.device)
-        return torch.index_select(input, dim, center_index).squeeze()
+        # Max resampling
+        if emphases.DOWNSAMPLE_METHOD == 'max':
+            # TODO
+            indices = None
+
+        # Downsample to words via index selection
+        # Input shape: (
+        #   batch,
+        #   channels,
+        #   max(frame_lengths))
+        # Output shape: (
+        #   batch,
+        #   channels,
+        #   max(word_lengths))
+        word_embeddings = x.transpose(1, 2)[
+            torch.arange(x.shape[0])[:, None],
+            indices
+        ].transpose(1, 2)
 
     else:
         raise ValueError(
             f'Interpolation method {emphases.DOWNSAMPLE_METHOD} is not defined')
+
+    return word_embeddings
 
 
 def upsample(x, frame_lengths, word_bounds):
