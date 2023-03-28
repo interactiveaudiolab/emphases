@@ -282,12 +282,12 @@ def infer(features, word_bounds, checkpoint=emphases.DEFAULT_CHECKPOINT):
         infer.model = infer.model.to(features.device)
 
     # Use full sequence lengths
-    frame_lengths = torch.ones(
-        (1, features.shape[-1]),
+    frame_lengths = torch.tensor(
+        [features.shape[-1]],
         dtype=torch.long,
         device=features.device)
-    word_lengths = torch.ones(
-        (1, word_bounds.shape[-1]),
+    word_lengths = torch.tensor(
+        [word_bounds.shape[-1]],
         dtype=torch.long,
         device=features.device)
 
