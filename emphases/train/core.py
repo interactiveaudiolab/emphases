@@ -197,7 +197,7 @@ def train(
                 # Evaluate #
                 ############
 
-                if step % emphases.EVALUATION_INTERVAL == 0:
+                if step % emphases.LOG_INTERVAL == 0:
                     evaluate_fn = functools.partial(
                         evaluate,
                         log_directory,
@@ -254,7 +254,7 @@ def evaluate(directory, step, model, gpu, condition, loader):
     # Prepare model for inference
     with emphases.inference_context(model):
 
-        for batch in loader:
+        for i, batch in enumerate(loader):
 
             # Unpack batch
             (
@@ -288,6 +288,10 @@ def evaluate(directory, step, model, gpu, condition, loader):
 
             # Update metrics
             metrics.update(scores, targets, word_bounds, mask)
+
+            # Stop when we exceed some number of batches
+            if i + 1 == emphases.LOG_STEPS:
+                break
 
     # Format results
     scalars = {
@@ -326,10 +330,21 @@ def loss(scores, targets, word_bounds, mask):
 ###############################################################################
 
 
-def train_ddp(rank, dataset, directory, gpus):
+def train_ddp(
+    rank,
+    dataset,
+    checkpoint_directory,
+    output_directory,
+    log_directory,
+    gpus):
     """Train with distributed data parallelism"""
     with ddp_context(rank, len(gpus)):
-        train(dataset, directory, gpus)
+        train(
+            dataset,
+            checkpoint_directory,
+            output_directory,
+            log_directory,
+            gpus[rank])
 
 
 @contextlib.contextmanager
