@@ -433,60 +433,66 @@ def downsample(x, word_lengths, word_bounds):
     return word_embeddings
 
 
-def upsample(x, frame_lengths, word_bounds):
+def upsample(xs, frame_lengths, word_bounds):
     """Interpolate from word to frame resolution"""
-    # TODO - batch
-    x = x[0]
-    frames = frame_lengths[0]
-    word_bounds = word_bounds[0]
+    result = torch.zeros(
+        (xs.shape[0], xs.shape[1], frame_lengths.max()),
+        dtype=xs.dtype,
+        device=xs.device)
+    iterator = enumerate(zip(xs, frame_lengths, word_bounds))
+    for i, (x, frames, word_bound) in iterator:
 
-    # Get center time of each word in frames
-    word_times = (
-        word_bounds[0] + (word_bounds[1] - word_bounds[0]) / 2.)[None]
+        # Get center time of each word in frames
+        word_times = (
+            word_bound[0] + (word_bound[1] - word_bound[0]) / 2.)[None]
 
-    # Get frame centers
-    frame_times = .5 + torch.arange(frames)[None]
+        # Get frame centers
+        frame_times = .5 + torch.arange(frames)[None]
 
-    # Linear interpolation
-    if emphases.UPSAMPLE_METHOD == 'linear':
+        # Linear interpolation
+        if emphases.UPSAMPLE_METHOD == 'linear':
 
-        # Compute slope and intercept at original times
-        slope = (
-            (x[:, 1:] - x[:, :-1]) /
-            (word_times[:, 1:] - word_times[:, :-1]))
-        intercept = x[:, :-1] - slope.mul(word_times[:, :-1])
+            # Compute slope and intercept at original times
+            slope = (
+                (x[:, 1:] - x[:, :-1]) /
+                (word_times[:, 1:] - word_times[:, :-1]))
+            intercept = x[:, :-1] - slope.mul(word_times[:, :-1])
 
-        # Compute indices at which we evaluate points
-        indices = torch.sum(
-            torch.ge(frame_times[:, :, None], word_times[:, None, :]), -1) - 1
-        indices = torch.clamp(indices, 0, slope.shape[-1] - 1)
+            # Compute indices at which we evaluate points
+            indices = torch.sum(
+                torch.ge(frame_times[:, :, None], word_times[:, None, :]),
+                -1
+            ) - 1
+            indices = torch.clamp(indices, 0, slope.shape[-1] - 1)
 
-        # Compute index into parameters
-        line_idx = torch.linspace(
-            0,
-            indices.shape[0],
-            1,
-            device=indices.device).to(torch.long)
-        line_idx = line_idx.expand(indices.shape)
+            # Compute index into parameters
+            line_idx = torch.linspace(
+                0,
+                indices.shape[0],
+                1,
+                device=indices.device).to(torch.long)
+            line_idx = line_idx.expand(indices.shape)
 
-        # Interpolate
-        return (
-            slope[line_idx, indices].mul(frame_times) +
-            intercept[line_idx, indices])
+            # Interpolate
+            result[i, :frames] = (
+                slope[line_idx, indices].mul(frame_times) +
+                intercept[line_idx, indices])
 
-    # Nearest neighbors interpolation
-    if emphases.UPSAMPLE_METHOD == 'nearest':
+        # Nearest neighbors interpolation
+        if emphases.UPSAMPLE_METHOD == 'nearest':
 
-        # Compute indices at which we evaluate points
-        indices = torch.sum(
-            torch.ge(frame_times[:, :, None], word_times[:, None, :]), -1) - 1
-        indices = torch.clamp(indices, 0, word_times.shape[-1] - 1)
+            # Compute indices at which we evaluate points
+            indices = torch.sum(
+                torch.ge(frame_times[:, :, None], word_times[:, None, :]),
+                -1
+            ) - 1
+            indices = torch.clamp(indices, 0, word_times.shape[-1] - 1)
 
-        # Get nearest score
-        return torch.index_select(x, 1, indices[0])
+            # Get nearest score
+            result[i, :frames] = torch.index_select(x, 1, indices[0])
 
-    raise ValueError(
-        f'Interpolation method {emphases.UPSAMPLE_METHOD} is not defined')
+        raise ValueError(
+            f'Interpolation method {emphases.UPSAMPLE_METHOD} is not defined')
 
 
 ###############################################################################

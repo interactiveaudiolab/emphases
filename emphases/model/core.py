@@ -53,3 +53,14 @@ class Model(torch.nn.Module):
 
         # Project to scalar
         return self.output_layer(activation), mask
+
+
+###############################################################################
+# Utilities
+###############################################################################
+
+
+def mask_from_lengths(lengths):
+    """Create boolean mask from sequence lengths"""
+    x = torch.arange(lengths.max(), dtype=lengths.dtype, device=lengths.device)
+    return (x.unsqueeze(0) < lengths.unsqueeze(1)).unsqueeze(1)
