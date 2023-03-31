@@ -20,7 +20,7 @@ class Transformer(torch.nn.Module):
             for _ in range(emphases.LAYERS)])
 
     def forward(self, x, lengths):
-        mask = mask_from_lengths(lengths)
+        mask = emphases.model.mask_from_lengths(lengths)
         for layer in self.layers[:-1]:
             x = layer(x, mask)
             x = torch.relu(x)
@@ -227,14 +227,3 @@ class FeedForward(torch.nn.Module):
         x = torch.relu(x)
         x = self.conv_2(x * mask)
         return x * mask
-
-
-###############################################################################
-# Utilities
-###############################################################################
-
-
-def mask_from_lengths(lengths):
-    """Create boolean mask from sequence lengths"""
-    x = torch.arange(lengths.max(), dtype=lengths.dtype, device=lengths.device)
-    return (x.unsqueeze(0) < lengths.unsqueeze(1)).unsqueeze(1)
