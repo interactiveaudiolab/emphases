@@ -159,7 +159,7 @@ def train(
             word_bounds = word_bounds.to(device)
             word_lengths = word_lengths.to(device)
             targets = targets.to(device)
-
+            import pdb; pdb.set_trace()
             with torch.autocast(device.type):
 
                 # Forward pass
@@ -274,7 +274,7 @@ def evaluate(directory, step, model, gpu, condition, loader):
             word_bounds = word_bounds.to(device)
             word_lengths = word_lengths.to(device)
             targets = targets.to(device)
-
+            
             # Forward pass
             scores, mask = model(
                 features,
@@ -282,12 +282,12 @@ def evaluate(directory, step, model, gpu, condition, loader):
                 word_bounds,
                 word_lengths)
 
+            # Update metrics
+            metrics.update(scores, targets, word_bounds, mask)
+
             # Downsample to word resolution for evaluation
             if emphases.DOWNSAMPLE_LOCATION in ['loss', 'inference']:
                 scores = emphases.downsample(scores, word_lengths, word_bounds)
-
-            # Update metrics
-            metrics.update(scores, targets, word_bounds, mask)
 
             # Stop when we exceed some number of batches
             if i + 1 == emphases.LOG_STEPS:
