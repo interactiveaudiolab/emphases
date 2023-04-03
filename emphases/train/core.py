@@ -159,7 +159,6 @@ def train(
             word_bounds = word_bounds.to(device)
             word_lengths = word_lengths.to(device)
             targets = targets.to(device)
-            import pdb; pdb.set_trace()
             with torch.autocast(device.type):
 
                 # Forward pass
@@ -171,7 +170,7 @@ def train(
 
                 # Compute loss
                 train_loss = loss(scores, targets, word_bounds, mask)
-
+                
             ######################
             # Optimize model #
             ######################

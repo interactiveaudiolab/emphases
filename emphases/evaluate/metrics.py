@@ -26,7 +26,7 @@ class Metrics:
             mask = torch.ones_like(scores)
 
         # Update
-        self.pearson_correlation.update(scores, targets, mask)
+        self.pearson_correlation.update(scores, targets, word_bounds, mask)
         self.loss.update(scores, targets, word_bounds, mask)
 
     def reset(self):
@@ -47,15 +47,26 @@ class PearsonCorrelation:
     def __call__(self):
         return {'pearson_correlation': (self.total / self.count).item()}
 
-    def update(self, scores, targets, mask):
-        # TODO - this has a bug that biases words in short sentences
+    def update(self, scores, targets, word_bounds, mask):
         scores[mask == 0] = 0.
         targets[mask == 0] = 0.
-        self.total += torch.corrcoef(
-            torch.cat([scores, targets]).squeeze(1)
-        )[:, 0][-1]
-        self.count += scores.shape[0]
 
+        if emphases.DOWNSAMPLE_LOCATION=="intermediate":
+            corr_matrix = torch.corrcoef(
+                torch.cat([scores, targets]).squeeze(1)
+            )
+            n = scores.shape[0]*2
+            rows = torch.arange(0, n//2)
+            cols = torch.arange(n // 2, n)
+            batch_sum = sum(torch.diagonal(corr_matrix[rows[:, None], cols[None, :]], 0))
+
+            self.total += batch_sum
+            self.count += scores.shape[0]
+
+        else:
+            # TODO
+            pass
+            
     def reset(self):
         self.count = 0
         self.total = 0.
