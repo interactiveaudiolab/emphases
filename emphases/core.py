@@ -384,7 +384,7 @@ def preprocess(
 def downsample(x, word_lengths, word_bounds):
     """Interpolate from frame to word resolution"""
     # Average resampling
-    if emphases.DOWNSAMPLE_METHOD == 'average':
+    if emphases.DOWNSAMPLE_METHOD in ['average', 'max']:
 
         # Allocate memory for word resolution sequence
         word_embeddings = torch.zeros(
@@ -397,20 +397,18 @@ def downsample(x, word_lengths, word_bounds):
         for i, (embedding, bounds, length) in iterator:
             for j in range(length):
                 start, end = bounds[0, j], bounds[1, j]
-                word_embeddings[i, :, j] = embedding[:, start:end].mean(dim=1)
+                if emphases.DOWNSAMPLE_METHOD == 'average':
+                    word_embeddings[i, :, j] = embedding[:, start:end].mean(dim=1)
+                else: #max
+                    word_embeddings[i, :, j] = embedding[:, start:end].max(dim=1).values
 
-    # Maximum resampling
-    elif emphases.DOWNSAMPLE_METHOD in ['center', 'max']:
+    # Centerpoint resampling
+    elif emphases.DOWNSAMPLE_METHOD in ['center']:
 
         # Centerpoint resampling
         if emphases.DOWNSAMPLE_METHOD == 'center':
             # TODO
-            indices = None
-
-        # Max resampling
-        if emphases.DOWNSAMPLE_METHOD == 'max':
-            # TODO
-            indices = None
+            indices = (word_bounds[:, 0] + word_bounds[:, 1]) // 2
 
         # Downsample to words via index selection
         # Input shape: (
