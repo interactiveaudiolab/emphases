@@ -64,9 +64,13 @@ class PearsonCorrelation:
             self.count += scores.shape[0]
 
         else:
-            # TODO
-            pass
-            
+            for idx, bound in enumerate(word_bounds):
+                slices = [(scores[idx, :, s:e], targets[idx, :, s:e]) 
+                            for s, e in bound.transpose(0, 1).tolist()]
+                for pair in slices:
+                    self.total += torch.corrcoef(torch.cat([pair[0], pair[1]]).squeeze(1))[:, 0][-1]
+                    self.count += 1
+
     def reset(self):
         self.count = 0
         self.total = 0.

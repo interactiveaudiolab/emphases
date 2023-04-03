@@ -94,7 +94,7 @@ def annotate():
             print(exc)
 
     source_directory = emphases.ANNOTATION_DIR
-    data_directory = emphases.DATA_DIR / 'annotate' / annotation_config['name']
+    data_directory = emphases.DATA_DIR / 'annotate' / '01' / annotation_config['name']
     response_file = data_directory / 'tables' / 'responses.csv'
     results_file = data_directory / 'results.json'
     shutil.copytree(source_directory / 'input', data_directory / 'input', dirs_exist_ok=True)
@@ -114,7 +114,7 @@ def annotate():
 
     # Get annotated audio files
     audio_files = sorted((data_directory / 'input').glob('*.wav'))
-    audio_files = [file for file in audio_files if file.stem in annotated_samples]
+    audio_files = [file for file in audio_files if file.stem.replace('libritts-', '') in annotated_samples]
 
     # Get output alignment files
     alignment_files = []
@@ -122,23 +122,25 @@ def annotate():
     # Iterate over files
     for i, audio_file in enumerate(audio_files):
 
+        save_stem = audio_file.stem.replace('libritts-', '')
+
         # Load and resample audio
         audio = emphases.load.audio(audio_file)
 
         # Save to disk
         torchaudio.save(
-            cache_directory / 'audio' / audio_file.name,
+            cache_directory / 'audio' / f'{save_stem}.wav',
             audio,
             emphases.SAMPLE_RATE)
 
         # Save alignment file path
         alignment_files.append(
-            cache_directory / 'alignment' / f'{audio_file.stem}.TextGrid')
+            cache_directory / 'alignment' / f'{save_stem}.TextGrid')
 
     # Get corresponding text files
     text_files = [
         file.parent / f"{file.stem}-words.txt" for file in audio_files]
-
+    
     # Align text and audio
     pyfoal.from_files_to_files(
         text_files,
