@@ -1,5 +1,6 @@
 import fractions
 
+import torch
 import numpy as np
 from scipy.signal import resample_poly
 
@@ -107,11 +108,11 @@ def infer(alignment, audio, sample_rate):
         rate=200))
 
     # Prominence dimensions - [time, value]
-    prominences = np.array(max_loma)
+    prominences = torch.tensor(max_loma)
 
     # Decode boundaries
     # Boundries dimensions - [time, value]
-    boundaries = np.array(emphases.baselines.prominence.loma.get_boundaries(
+    boundaries = torch.tensor(emphases.baselines.prominence.loma.get_boundaries(
         max_loma,
         neg_loma,
         alignment))

@@ -10,8 +10,8 @@ import emphases
 
 class Metrics:
 
-    def __init__(self):
-        self.pearson_correlation = PearsonCorrelation()
+    def __init__(self, stats):
+        self.pearson_correlation = PearsonCorrelation(stats)
         self.loss = Loss()
 
     def __call__(self):
@@ -23,7 +23,7 @@ class Metrics:
 
         # Default to evaluating on all sequence elements
         if mask is None:
-            mask = torch.ones_like(scores)
+            mask = torch.ones_like(scores, dtype=torch.bool)
 
         # Update
         self.pearson_correlation.update(scores, targets, mask)
@@ -41,25 +41,27 @@ class Metrics:
 
 class PearsonCorrelation:
 
-    def __init__(self):
+    def __init__(self, stats):
         self.reset()
+        self.mean = stats.get('prediction_mean', None)
+        self.std = stats.get('prediction_std', None)
+        self.target_mean = stats.get('target_mean', None)
+        self.target_std = stats.get('target_std', None)
 
     def __call__(self):
-        return {'pearson_correlation': (self.total / self.count).item()}
+        correlation = (
+            1. / (self.std * self.target_std) *
+            (self.total / self.count).item())
+        return {'pearson_correlation': correlation}
 
     def update(self, scores, targets, mask):
-        # TODO - this has a bug that biases words in short sentences
-        scores[mask == 0] = 0.
-        targets[mask == 0] = 0.
-        self.total += torch.corrcoef(
-            torch.cat([scores, targets]).squeeze(1)
-        )[:, 0][-1]
-        self.count += scores.shape[0]
+        self.total += sum(
+            (scores[mask] - self.mean) * (targets[mask] - self.target_mean))
+        self.count += mask.sum()
 
     def reset(self):
         self.count = 0
         self.total = 0.
-
 
 class Loss():
 
