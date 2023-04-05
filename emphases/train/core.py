@@ -1,6 +1,7 @@
 import contextlib
 import functools
 import os
+import json
 
 import torch
 
@@ -119,6 +120,14 @@ def train(
         model = torch.nn.parallel.DistributedDataParallel(
             model,
             device_ids=[rank])
+
+    ##################################################
+    # Save target statistics #
+    ##################################################
+    
+    emphases.dataset = dataset
+    init_target_stats('train', dataset)
+    init_target_stats('valid', dataset)
 
     #########
     # Train #
@@ -247,8 +256,13 @@ def evaluate(directory, step, model, gpu, condition, loader):
     """Perform model evaluation"""
     device = 'cpu' if gpu is None else f'cuda:{gpu}'
 
+    # Load target and prediction stats
+    stats = load_target_stats(condition, 'annotate')
+
     # Setup evaluation metrics
-    metrics = emphases.evaluate.Metrics()
+    metrics = emphases.evaluate.Metrics(stats)
+
+    prediction_collection = torch.tensor([]).to(device)
 
     # Prepare model for inference
     with emphases.inference_context(model):
@@ -281,12 +295,15 @@ def evaluate(directory, step, model, gpu, condition, loader):
                 word_bounds,
                 word_lengths)
 
-            # Update metrics
-            metrics.update(scores, targets, word_bounds, mask)
-
             # Downsample to word resolution for evaluation
             if emphases.DOWNSAMPLE_LOCATION in ['loss', 'inference']:
                 scores = emphases.downsample(scores, word_lengths, word_bounds)
+
+            prediction_collection = torch.cat((prediction_collection, scores.flatten()))
+            # TODO - update the mean and std without the collection method
+            
+            # Update metrics
+            metrics.update(scores, targets, word_bounds, mask)
 
             # Stop when we exceed some number of batches
             if i + 1 == emphases.LOG_STEPS:
@@ -299,6 +316,45 @@ def evaluate(directory, step, model, gpu, condition, loader):
     # Write to tensorboard
     emphases.write.scalars(directory, step, scalars)
 
+    # Update prediction stats
+    stats['prediction_mean'] = torch.mean(prediction_collection).item()
+    stats['prediction_std'] = torch.std(prediction_collection).item()
+
+    stats_file = emphases.ASSETS_DIR / 'statistics' / f'{emphases.dataset}_{condition}_stats.json'
+    with open(stats_file, 'w') as f:
+        json.dump(stats, f, indent=True)
+
+###############################################################################
+# Partition specific statistics
+###############################################################################
+
+def init_target_stats(partition, dataset):
+    
+    partition_data = json.loads(open(emphases.PARTITION_DIR / f'{dataset}.json', 'r').read())
+    targets_dir = emphases.CACHE_DIR / dataset / 'scores'
+    partition_files = [file for file in targets_dir.glob('*.pt') if file.stem in partition_data[partition]]
+
+    scores = torch.tensor([])
+    for file in partition_files:
+        scores = torch.cat((torch.load(file), scores))
+        
+    stats = {
+        "target_mean": torch.mean(scores).item(),
+        "target_std": torch.std(scores).item(),
+        "prediction_mean": torch.mean(scores).item(),
+        "prediction_std": torch.std(scores).item()
+        }
+    
+    # Save the statistics
+    (emphases.ASSETS_DIR / 'statistics').mkdir(exist_ok=True)
+    stats_file = emphases.ASSETS_DIR / 'statistics' / f'{dataset}_{partition}_stats.json'
+
+    with open(stats_file, 'w') as f:
+        json.dump(stats, f, indent=True)
+
+def load_target_stats(partition, dataset):    
+    stats_file = emphases.ASSETS_DIR / 'statistics' / f'{dataset}_{partition}_stats.json'
+    return json.loads(open(stats_file, 'r').read())
 
 ###############################################################################
 # Loss function

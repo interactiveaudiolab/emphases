@@ -10,8 +10,8 @@ import emphases
 
 class Metrics:
 
-    def __init__(self):
-        self.pearson_correlation = PearsonCorrelation()
+    def __init__(self, stats):
+        self.pearson_correlation = PearsonCorrelation(stats)
         self.loss = Loss()
 
     def __call__(self):
@@ -26,7 +26,7 @@ class Metrics:
             mask = torch.ones_like(scores)
 
         # Update
-        self.pearson_correlation.update(scores, targets, word_bounds, mask)
+        self.pearson_correlation.update(scores, targets, mask)
         self.loss.update(scores, targets, word_bounds, mask)
 
     def reset(self):
@@ -41,40 +41,27 @@ class Metrics:
 
 class PearsonCorrelation:
 
-    def __init__(self):
+    def __init__(self, stats):
         self.reset()
+        self.mean = stats.get('prediction_mean', None)
+        self.std = stats.get('prediction_std', None)
+        self.target_mean = stats.get('target_mean', None)
+        self.target_std = stats.get('target_std', None)
 
     def __call__(self):
-        return {'pearson_correlation': (self.total / self.count).item()}
+        correlation = (
+            1. / (self.std * self.target_std) *
+            (self.total / self.count).item())
+        return {'pearson_correlation': correlation}
 
-    def update(self, scores, targets, word_bounds, mask):
-        scores[mask == 0] = 0.
-        targets[mask == 0] = 0.
-
-        if emphases.DOWNSAMPLE_LOCATION=="intermediate":
-            corr_matrix = torch.corrcoef(
-                torch.cat([scores, targets]).squeeze(1)
-            )
-            n = scores.shape[0]*2
-            rows = torch.arange(0, n//2)
-            cols = torch.arange(n // 2, n)
-            batch_sum = sum(torch.diagonal(corr_matrix[rows[:, None], cols[None, :]], 0))
-
-            self.total += batch_sum
-            self.count += scores.shape[0]
-
-        else:
-            for idx, bound in enumerate(word_bounds):
-                slices = [(scores[idx, :, s:e], targets[idx, :, s:e]) 
-                            for s, e in bound.transpose(0, 1).tolist()]
-                for pair in slices:
-                    self.total += torch.corrcoef(torch.cat([pair[0], pair[1]]).squeeze(1))[:, 0][-1]
-                    self.count += 1
+    def update(self, scores, targets, mask):
+        self.total += sum(
+            (scores[mask] - self.mean) * (targets[mask] - self.target_mean))
+        self.count += mask.sum()
 
     def reset(self):
         self.count = 0
         self.total = 0.
-
 
 class Loss():
 
