@@ -7,7 +7,7 @@
 
 </div>
 
-Official code for the paper _Datasets and Scaling Laws for Neural Emphasis Prediction_
+Official code for the paper _Datasets and Scaling Laws for Automatic Emphasis Prediction_
 
 
 ## Table of contents
@@ -59,7 +59,7 @@ audio_file = 'example.wav'
 alignment, results = emphases.from_file(text_file, audio_file)
 
 # Check which words were emphasized
-for word, result in zip(alignment.words(), results):
+for word, result in zip(alignment, results):
     if result:
         print(f'{word} was emphasized')
 ```
@@ -276,22 +276,17 @@ Tensorboard. This can be done with `ssh -L 6006:localhost:6006
 <user>@<server-ip-address>`. Then, open `localhost:6006` in your browser.
 
 
-## Test
-
-`pip install pytest && pytest`
-
-
 ## Citation
 
 ### IEEE
-M. Morrison, P. Pawar, N. Pruyne, J. Cole, and B. Pardo, "Datasets and Scaling Laws for Neural Emphasis Prediction," <TODO - conference>, 2023.
+M. Morrison, P. Pawar, N. Pruyne, J. Cole, and B. Pardo, "Datasets and Scaling Laws for Automatic Emphasis Prediction," <TODO - conference>, 2023.
 
 
 ### BibTex
 
 ```
 @inproceedings{morrison2023datasets,
-    title={Datasets and Scaling Laws for Neural Emphasis Prediction},
+    title={Datasets and Scaling Laws for Automatic Emphasis Prediction},
     author={Morrison, Max and Pawar, Pranav and Pruyne, Nathan and Cole, Jennifer and Pardo, Bryan},
     booktitle={TODO},
     year={2023}

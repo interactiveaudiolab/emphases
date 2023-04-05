@@ -35,8 +35,8 @@ def infer(alignment, audio, sample_rate, gpu=None):
         end = int(emphases.convert.seconds_to_frames(word.end()))
         word_spreads.append(spread(pitch[0, start:end]))
 
-    # TODO - scale using statistics computed over training dataset
-    return (word_spreads - spread)[None]
+    # Zero-center
+    return (word_spreads - utterance_spread)[None]
 
 
 ###############################################################################

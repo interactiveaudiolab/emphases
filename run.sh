@@ -1,38 +1,38 @@
 # Runs experiments in the paper
-# "Datasets and Scaling Laws for Neural Emphasis Prediction"
+# "Datasets and Scaling Laws for Automatic Emphasis Prediction"
 
 # Args
-#  $1 - index of GPU to use
+#  $1 - the GPU index
 
 # Download datasets
-# python -m emphases.data.download
+python -m emphases.data.download
 
 # Setup experiments
-# python -m emphases.data.preprocess --gpu $1
-# python -m emphases.partition
+python -m emphases.data.preprocess --gpu $1
+python -m emphases.partition
 
 # Analyze the annotated data
 # python -m emphases.data.analyze --dataset annotate
 
 # Start with a small, transformer model (intermediate-wordwise + max + mels + prosody) and search loss
 python -m emphases.train --config config/first-pass/base.py --gpus $1
-python -m emphases.train --config config/first-pass/mse.py --gpus $1
+# python -m emphases.train --config config/first-pass/mse.py --gpus $1
 
-# Next, search features
-python -m emphases.train --config config/first-pass/no-loudness.py --gpus $1
-python -m emphases.train --config config/first-pass/no-mels.py --gpus $1
-python -m emphases.train --config config/first-pass/no-periodicity.py --gpus $1
-python -m emphases.train --config config/first-pass/no-pitch.py --gpus $1
+# # Next, search features
+# python -m emphases.train --config config/first-pass/no-loudness.py --gpus $1
+# python -m emphases.train --config config/first-pass/no-mels.py --gpus $1
+# python -m emphases.train --config config/first-pass/no-periodicity.py --gpus $1
+# python -m emphases.train --config config/first-pass/no-pitch.py --gpus $1
 
-# Next, search combinations of downsampling method and location
-python -m emphases.train --config config/first-pass/average-inference.py --gpus $1
-python -m emphases.train --config config/first-pass/average-intermediate.py --gpus $1
-python -m emphases.train --config config/first-pass/average-loss.py --gpus $1
-python -m emphases.train --config config/first-pass/center-inference.py --gpus $1
-python -m emphases.train --config config/first-pass/center-intermediate.py --gpus $1
-python -m emphases.train --config config/first-pass/center-loss.py --gpus $1
-python -m emphases.train --config config/first-pass/max-inference.py --gpus $1
-python -m emphases.train --config config/first-pass/max-loss.py --gpus $1
+# # Next, search combinations of downsampling method and location
+# python -m emphases.train --config config/first-pass/average-inference.py --gpus $1
+# python -m emphases.train --config config/first-pass/average-intermediate.py --gpus $1
+# python -m emphases.train --config config/first-pass/average-loss.py --gpus $1
+# python -m emphases.train --config config/first-pass/center-inference.py --gpus $1
+# python -m emphases.train --config config/first-pass/center-intermediate.py --gpus $1
+# python -m emphases.train --config config/first-pass/center-loss.py --gpus $1
+# python -m emphases.train --config config/first-pass/max-inference.py --gpus $1
+# python -m emphases.train --config config/first-pass/max-loss.py --gpus $1
 
 # Next, hparam search on both conv and transformer
 # python -m emphases.train --config config/first-pass/convolution-4-256.py --gpus $1
