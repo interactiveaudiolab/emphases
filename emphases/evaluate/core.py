@@ -14,25 +14,43 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
     """Perform evaluation"""
     device = torch.device('cpu' if gpu is None else f'cuda:{gpu}')
 
+    # Get mean and variance stats for Pearson Correlation on validation data
+    target_stats = emphases.evaluate.metrics.Statistics()
+    predicted_stats = emphases.evaluate.metrics.Statistics()
+    # TODO - update dataset and partition
+    # for batch in emphases.data.loader('libritts', 'valid', gpu):
+    for batch in emphases.data.loader('buckeye', 'test', gpu):
+
+        # Unpack
+        _, _, _, _, targets, alignments, audio, _ = batch
+
+        # Get predicted scores
+        scores = emphases.from_alignment_and_audio(
+            alignments[0],
+            audio[0],
+            emphases.SAMPLE_RATE,
+            checkpoint=checkpoint,
+            pad=True,
+            gpu=gpu)
+
+        # Update statistics
+        target_stats.update(targets)
+        predicted_stats.update(scores)
+
     # Containers for results
     overall, granular = {}, {}
-
-    # target, prediction statistics of validation set
-    if datasets:
-        stats_dataset = "annotate"
-        validation_stats = emphases.train.load_target_stats('valid', stats_dataset)
 
     # Get metric class
     metric_fn = emphases.evaluate.Metrics
 
     # Per-file metrics
-    file_metrics = metric_fn(validation_stats)
+    file_metrics = metric_fn(predicted_stats, target_stats)
 
     # Per-dataset metrics
-    dataset_metrics = metric_fn(validation_stats)
+    dataset_metrics = metric_fn(predicted_stats, target_stats)
 
     # Aggregate metrics over all datasets
-    aggregate_metrics = metric_fn(validation_stats)
+    aggregate_metrics = metric_fn(predicted_stats, target_stats)
 
     # Evaluate each dataset
     for dataset in datasets:
@@ -44,12 +62,12 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
         iterator = emphases.iterator(
             emphases.data.loader(dataset, 'test', gpu),
             f'Evaluating {emphases.CONFIG} on {dataset}')
-        
+
         # Iterate over test set
         for batch in iterator:
 
             # Unpack
-            (_, _, word_bounds, _, targets, alignments, audio, stems) = batch
+            _, _, word_bounds, _, targets, alignments, audio, stems = batch
 
             # Reset file metrics
             file_metrics.reset()

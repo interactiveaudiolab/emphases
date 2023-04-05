@@ -10,8 +10,8 @@ import emphases
 
 class Metrics:
 
-    def __init__(self, stats):
-        self.pearson_correlation = PearsonCorrelation(stats)
+    def __init__(self, *stats):
+        self.pearson_correlation = PearsonCorrelation(*stats)
         self.loss = Loss()
 
     def __call__(self):
@@ -23,7 +23,10 @@ class Metrics:
 
         # Default to evaluating on all sequence elements
         if mask is None:
-            mask = torch.ones_like(scores, dtype=torch.bool)
+            mask = torch.ones_like(
+                scores,
+                dtype=torch.bool,
+                device=scores.device)
 
         # Update
         self.pearson_correlation.update(scores, targets, mask)
@@ -39,14 +42,29 @@ class Metrics:
 ###############################################################################
 
 
+class Loss:
+
+    def __init__(self):
+        self.reset()
+
+    def __call__(self):
+        return {'loss': (self.total / self.count).item()}
+
+    def update(self, scores, targets, word_bounds, mask):
+        self.total += emphases.train.loss(scores, targets, word_bounds, mask)
+        self.count += mask.sum()
+
+    def reset(self):
+        self.count = 0
+        self.total = 0.
+
+
 class PearsonCorrelation:
 
-    def __init__(self, stats):
+    def __init__(self, predicted_stats, target_stats):
         self.reset()
-        self.mean = stats.get('prediction_mean', None)
-        self.std = stats.get('prediction_std', None)
-        self.target_mean = stats.get('target_mean', None)
-        self.target_std = stats.get('target_std', None)
+        self.mean, self.std = predicted_stats()
+        self.target_mean, self.target_std = target_stats()
 
     def __call__(self):
         correlation = (
@@ -63,18 +81,30 @@ class PearsonCorrelation:
         self.count = 0
         self.total = 0.
 
-class Loss():
+
+###############################################################################
+# Utilities
+###############################################################################
+
+
+class Statistics:
 
     def __init__(self):
         self.reset()
 
     def __call__(self):
-        return {'loss': (self.total / self.count).item()}
+        variance = self.m2 / (self.count - 1)
+        return self.mean, variance
 
-    def update(self, scores, targets, word_bounds, mask):
-        self.total += emphases.train.loss(scores, targets, word_bounds, mask)
-        self.count += mask.sum()
+    def update(self, x):
+        for y in x.flatten():
+            self.count += 1
+            delta = y - self.mean
+            self.mean += delta / self.count
+            delta2 = y - self.mean
+            self.m2 += delta * delta2
 
     def reset(self):
+        self.m2 = 0.
+        self.mean = 0.
         self.count = 0
-        self.total = 0.
