@@ -17,17 +17,22 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
     # Containers for results
     overall, granular = {}, {}
 
+    # target, prediction statistics of validation set
+    if datasets:
+        stats_dataset = "annotate"
+        validation_stats = emphases.train.load_target_stats('valid', stats_dataset)
+
     # Get metric class
     metric_fn = emphases.evaluate.Metrics
 
     # Per-file metrics
-    file_metrics = metric_fn()
+    file_metrics = metric_fn(validation_stats)
 
     # Per-dataset metrics
-    dataset_metrics = metric_fn()
+    dataset_metrics = metric_fn(validation_stats)
 
     # Aggregate metrics over all datasets
-    aggregate_metrics = metric_fn()
+    aggregate_metrics = metric_fn(validation_stats)
 
     # Evaluate each dataset
     for dataset in datasets:
@@ -39,7 +44,7 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
         iterator = emphases.iterator(
             emphases.data.loader(dataset, 'test', gpu),
             f'Evaluating {emphases.CONFIG} on {dataset}')
-
+        
         # Iterate over test set
         for batch in iterator:
 
