@@ -23,7 +23,7 @@ class Metrics:
 
         # Default to evaluating on all sequence elements
         if mask is None:
-            mask = torch.ones_like(scores)
+            mask = torch.ones_like(scores, dtype=torch.bool)
 
         # Update
         self.pearson_correlation.update(scores, targets, mask)

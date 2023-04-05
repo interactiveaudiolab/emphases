@@ -18,7 +18,9 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
     overall, granular = {}, {}
 
     # target, prediction statistics of validation set
-    validation_stats = emphases.train.load_target_stats('valid', emphases.dataset)
+    if datasets:
+        stats_dataset = "annotate"
+        validation_stats = emphases.train.load_target_stats('valid', stats_dataset)
 
     # Get metric class
     metric_fn = emphases.evaluate.Metrics
