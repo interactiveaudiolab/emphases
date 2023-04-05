@@ -16,15 +16,15 @@ python -m emphases.partition
 
 # Start with a small, transformer model (intermediate-wordwise + max + mels + prosody) and search loss
 python -m emphases.train --config config/first-pass/base.py --gpus $1
-# python -m emphases.train --config config/first-pass/mse.py --gpus $1
+python -m emphases.train --config config/first-pass/mse.py --gpus $1
 
-# # Next, search features
-# python -m emphases.train --config config/first-pass/no-loudness.py --gpus $1
-# python -m emphases.train --config config/first-pass/no-mels.py --gpus $1
-# python -m emphases.train --config config/first-pass/no-periodicity.py --gpus $1
-# python -m emphases.train --config config/first-pass/no-pitch.py --gpus $1
+# Next, search features
+python -m emphases.train --config config/first-pass/no-loudness.py --gpus $1
+python -m emphases.train --config config/first-pass/no-mels.py --gpus $1
+python -m emphases.train --config config/first-pass/no-periodicity.py --gpus $1
+python -m emphases.train --config config/first-pass/no-pitch.py --gpus $1
 
-# # Next, search combinations of downsampling method and location
+# Next, search combinations of downsampling method and location
 # python -m emphases.train --config config/first-pass/average-inference.py --gpus $1
 # python -m emphases.train --config config/first-pass/average-intermediate.py --gpus $1
 # python -m emphases.train --config config/first-pass/average-loss.py --gpus $1
@@ -46,19 +46,6 @@ python -m emphases.train --config config/first-pass/base.py --gpus $1
 # python -m emphases.train --config config/first-pass/transformer-6-256.py --gpus $1
 # python -m emphases.train --config config/first-pass/transformer-6-512.py --gpus $1
 
-# Looped config generation and execution for first pass
-# python -m emphases.generate_configs
-
-# config_dir=config/hyperparam-search
-
-# # Loop through each file in the directory
-# for file in $(find "$config_dir" -type f -name "*.py" | sort -n); do
-#     # Get the file name without the directory path or extension
-#     file_name=$(basename "$file" .py)
-
-#     # Execute the command with the file name variable
-#     python -m emphases.train --config "$config_dir/$file_name.py" --gpus $1
-# done
 
 # Second pass experiments
 

@@ -389,46 +389,33 @@ def downsample(x, word_lengths, word_bounds):
         # Allocate memory for word resolution sequence
         word_embeddings = torch.zeros(
             (x.shape[0], x.shape[1], word_lengths.max().item()),
+            dtype=x.dtype,
             device=x.device)
 
         # Take average of frames corresponding to each word
-        i = 0
         iterator = enumerate(zip(x, word_bounds, word_lengths))
         for i, (embedding, bounds, length) in iterator:
             for j in range(length):
                 start, end = bounds[0, j], bounds[1, j]
                 if emphases.DOWNSAMPLE_METHOD == 'average':
                     word_embeddings[i, :, j] = embedding[:, start:end].mean(dim=1)
-                else: #max
+                else: # max
                     word_embeddings[i, :, j] = embedding[:, start:end].max(dim=1).values
 
-    # Centerpoint resampling
-    elif emphases.DOWNSAMPLE_METHOD in ['center']:
+        return word_embeddings
 
-        # Centerpoint resampling
-        if emphases.DOWNSAMPLE_METHOD == 'center':
-            # TODO
-            indices = (word_bounds[:, 0] + word_bounds[:, 1]) // 2
+    # Centerpoint resampling
+    if emphases.DOWNSAMPLE_METHOD == 'center':
 
         # Downsample to words via index selection
-        # Input shape: (
-        #   batch,
-        #   channels,
-        #   max(frame_lengths))
-        # Output shape: (
-        #   batch,
-        #   channels,
-        #   max(word_lengths))
-        word_embeddings = x.transpose(1, 2)[
+        indices = (word_bounds[:, 0] + word_bounds[:, 1]) // 2
+        return x.transpose(1, 2)[
             torch.arange(x.shape[0])[:, None],
             indices
         ].transpose(1, 2)
 
-    else:
-        raise ValueError(
-            f'Interpolation method {emphases.DOWNSAMPLE_METHOD} is not defined')
-
-    return word_embeddings
+    raise ValueError(
+        f'Interpolation method {emphases.DOWNSAMPLE_METHOD} is not defined')
 
 
 def upsample(xs, frame_lengths, word_bounds):
