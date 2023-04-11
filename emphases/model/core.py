@@ -35,24 +35,51 @@ class Model(torch.nn.Module):
 
     def forward(self, features, frame_lengths, word_bounds, word_lengths):
         # Embed frames
-        activation, mask = self.frame_encoder(
+        frame_embeddings = self.frame_encoder(
             self.input_layer(features),
             frame_lengths)
 
-        # Maybe perform resampling from frame to word resolution within model
-        if emphases.DOWNSAMPLE_LOCATION in ['intermediate', 'loss']:
+        if emphases.DOWNSAMPLE_LOCATION == 'intermediate':
 
-            # Downsample from frame to word resolution
+            # Downsample activations to word resolution
             word_embeddings = emphases.downsample(
-                activation,
+                frame_embeddings,
                 word_bounds,
                 word_lengths)
 
             # Infer emphasis scores from word embeddings
-            activation, mask = self.word_decoder(word_embeddings, word_lengths)
+            word_embeddings = self.word_decoder(word_embeddings, word_lengths)
+
+        elif emphases.DOWNSAMPLE_LOCATION == 'loss':
+
+            # Downsample activations to word resolution
+            word_embeddings = emphases.downsample(
+                frame_embeddings,
+                word_bounds,
+                word_lengths)
+
+        elif emphases.DOWNSAMPLE_LOCATION == 'inference':
+
+            if self.training:
+
+                # Return frame resolution prominence for framewise loss
+                return self.output_layer(frame_embeddings)
+
+            else:
+
+                # Downsample activations to word resolution
+                word_embeddings = emphases.downsample(
+                    frame_embeddings,
+                    word_bounds,
+                    word_lengths)
+
+        else:
+            raise ValueError(
+                f'Downsample location {emphases.DOWNSAMPLE_LOCATION} ' +
+                'not recognized')
 
         # Project to scalar
-        return self.output_layer(activation), mask
+        return self.output_layer(word_embeddings)
 
 
 ###############################################################################

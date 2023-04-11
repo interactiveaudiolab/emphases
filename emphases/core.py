@@ -292,7 +292,7 @@ def infer(features, word_bounds, checkpoint=emphases.DEFAULT_CHECKPOINT):
         device=features.device)
 
     # Infer
-    return infer.model(features, frame_lengths, word_bounds, word_lengths)[0]
+    return infer.model(features, frame_lengths, word_bounds, word_lengths)
 
 
 def preprocess(
@@ -381,28 +381,34 @@ def preprocess(
 ###############################################################################
 
 
-def downsample(x, word_bounds, word_lengths):
+def downsample(xs, word_bounds, word_lengths):
     """Interpolate from frame to word resolution"""
     # Average resampling
     if emphases.DOWNSAMPLE_METHOD in ['average', 'max']:
 
         # Allocate memory for word resolution sequence
-        word_embeddings = torch.zeros(
-            (x.shape[0], x.shape[1], word_lengths.max().item()),
-            dtype=x.dtype,
-            device=x.device)
+        result = torch.zeros(
+            (xs.shape[0], xs.shape[1], word_lengths.max().item()),
+            dtype=xs.dtype,
+            device=xs.device)
 
-        # Take average of frames corresponding to each word
-        iterator = enumerate(zip(x, word_bounds, word_lengths))
-        for i, (embedding, bounds, length) in iterator:
+        # Iterate over batch
+        iterator = enumerate(zip(xs, word_bounds, word_lengths))
+        for i, (x, bounds, length) in iterator:
+
+            # Iterate over words
             for j in range(length):
-                start, end = bounds[0, j], bounds[1, j]
-                if emphases.DOWNSAMPLE_METHOD == 'average':
-                    word_embeddings[i, :, j] = embedding[:, start:end].mean(dim=1)
-                else: # max
-                    word_embeddings[i, :, j] = embedding[:, start:end].max(dim=1).values
 
-        return word_embeddings
+                # Get word bounds
+                start, end = bounds[0, j], bounds[1, j]
+
+                # Downsample
+                result[i, :, j] = (
+                    x[:, start:end].mean(dim=1)
+                    if emphases.DOWNSAMPLE_METHOD == 'average'
+                    else x[:, start:end].max(dim=1).values)
+
+        return result
 
     # Centerpoint resampling
     if emphases.DOWNSAMPLE_METHOD == 'center':
@@ -482,7 +488,8 @@ def upsample(xs, word_bounds, word_lengths, frame_lengths):
 
         else:
             raise ValueError(
-                f'Interpolation method {emphases.UPSAMPLE_METHOD} is not defined')
+                f'Interpolation method {emphases.UPSAMPLE_METHOD} ' +
+                'is not defined')
 
     return result
 

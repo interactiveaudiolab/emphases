@@ -24,7 +24,7 @@ class Transformer(torch.nn.Module):
         for layer in self.layers[:-1]:
             x = layer(x, mask)
             x = torch.relu(x)
-        return self.layers[-1](x, mask), mask
+        return self.layers[-1](x, mask)
 
 
 ###############################################################################

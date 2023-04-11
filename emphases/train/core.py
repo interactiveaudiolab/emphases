@@ -172,7 +172,7 @@ def train(
             with torch.autocast(device.type):
 
                 # Forward pass
-                scores, mask = model(
+                scores = model(
                     features,
                     frame_lengths,
                     word_bounds,
@@ -297,15 +297,7 @@ def evaluate(directory, step, model, gpu, stats, condition, loader):
             targets = targets.to(device)
 
             # Forward pass
-            scores, _ = model(
-                features,
-                frame_lengths,
-                word_bounds,
-                word_lengths)
-
-            # Downsample to word resolution for evaluation
-            if emphases.DOWNSAMPLE_LOCATION == 'inference':
-                scores = emphases.downsample(scores, word_bounds, word_lengths)
+            scores = model(features, frame_lengths, word_bounds, word_lengths)
 
             # Update metrics
             metrics.update(
@@ -340,13 +332,12 @@ def loss(
     word_lengths,
     training=False):
     """Compute masked loss"""
-    # If we are not downsampling the network output before the loss, we must
-    # upsample the targets
     if emphases.DOWNSAMPLE_LOCATION == 'inference':
 
         if training:
 
-            # Upsample targets
+            # If we are not downsampling the network output before the loss, we
+            # must upsample the targets
             targets = emphases.upsample(
                 targets,
                 word_bounds,
@@ -362,9 +353,6 @@ def loss(
 
         else:
 
-            # Downsample scores
-            scores = emphases.downsample(scores, word_bounds, word_lengths)
-
             # Word resolution sequence mask
             mask = emphases.model.mask_from_lengths(word_lengths)
 
@@ -373,7 +361,7 @@ def loss(
         # Word resolution sequence mask
         mask = emphases.model.mask_from_lengths(word_lengths)
 
-    return emphases.LOSS(scores * mask, targets * mask)
+    return emphases.LOSS(scores[mask], targets[mask])
 
 
 ###############################################################################

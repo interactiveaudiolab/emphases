@@ -10,28 +10,24 @@ import emphases
 ###############################################################################
 
 
-class Convolution(torch.nn.Module):
+class Convolution(torch.nn.Sequential):
 
     def __init__(self):
-        super().__init__()
-
         # Bind common parameters
         conv_fn = functools.partial(
             torch.nn.Conv1d,
             kernel_size=emphases.KERNEL_SIZE,
             padding='same')
 
-        # Hidden layers
+        # Layers
         layers = []
         channels = emphases.CHANNELS
-        for _ in range(emphases.LAYERS - 1):
+        for _ in range(emphases.LAYERS):
             layers.extend((conv_fn(channels, channels), torch.nn.ReLU()))
 
-        # Output layer
-        layers.append(conv_fn(channels, 1))
+        # Register to Module
+        super().__init__(*layers)
 
-        self.layers = torch.nn.Sequential(*layers)
-
-    def forward(self, x, lengths):
-        mask = emphases.model.mask_from_lengths(lengths)
-        return self.layers(x) * mask, mask
+    # Ignore sequence length parameter needed for Transformer model
+    def forward(self, x, _):
+        return super()(x)
