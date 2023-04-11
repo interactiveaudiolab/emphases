@@ -1,4 +1,4 @@
-import torch
+import math
 
 import emphases
 
@@ -11,29 +11,33 @@ import emphases
 class Metrics:
 
     def __init__(self, *stats):
-        self.pearson_correlation = PearsonCorrelation(*stats)
+        self.correlation = PearsonCorrelation(*stats)
         self.loss = Loss()
 
     def __call__(self):
-        return self.pearson_correlation() | self.loss()
+        return self.correlation() | self.loss()
 
-    def update(self, scores, targets, word_bounds, mask=None):
+    def update(
+        self,
+        scores,
+        targets,
+        frame_lengths,
+        word_bounds,
+        word_lengths):
         # Detach from graph
         scores = scores.detach()
 
-        # Default to evaluating on all sequence elements
-        if mask is None:
-            mask = torch.ones_like(
-                scores,
-                dtype=torch.bool,
-                device=scores.device)
-
         # Update
-        self.pearson_correlation.update(scores, targets, mask)
-        self.loss.update(scores, targets, word_bounds, mask)
+        self.correlation.update(scores, targets, word_lengths)
+        self.loss.update(
+            scores,
+            targets,
+            frame_lengths,
+            word_bounds,
+            word_lengths)
 
     def reset(self):
-        self.pearson_correlation.reset()
+        self.correlation.reset()
         self.loss.reset()
 
 
@@ -50,9 +54,20 @@ class Loss:
     def __call__(self):
         return {'loss': (self.total / self.count).item()}
 
-    def update(self, scores, targets, word_bounds, mask):
-        self.total += emphases.train.loss(scores, targets, word_bounds, mask)
-        self.count += mask.sum()
+    def update(
+        self,
+        scores,
+        targets,
+        frame_lengths,
+        word_bounds,
+        word_lengths):
+        self.total += emphases.train.loss(
+            scores,
+            targets,
+            frame_lengths,
+            word_bounds,
+            word_lengths)
+        self.count += word_lengths.sum()
 
     def reset(self):
         self.count = 0
@@ -72,10 +87,14 @@ class PearsonCorrelation:
             (self.total / self.count).item())
         return {'pearson_correlation': correlation}
 
-    def update(self, scores, targets, mask):
+    def update(self, scores, targets, word_lengths):
+        # Word resolution sequence mask
+        mask = emphases.model.mask_from_lengths(word_lengths)
+
+        # Update
         self.total += sum(
             (scores[mask] - self.mean) * (targets[mask] - self.target_mean))
-        self.count += mask.sum()
+        self.count += word_lengths.sum()
 
     def reset(self):
         self.count = 0
@@ -93,11 +112,11 @@ class Statistics:
         self.reset()
 
     def __call__(self):
-        variance = self.m2 / (self.count - 1)
-        return self.mean, variance
+        std = math.sqrt(self.m2 / (self.count - 1))
+        return self.mean, std
 
     def update(self, x):
-        for y in x.flatten():
+        for y in x.flatten().tolist():
             self.count += 1
             delta = y - self.mean
             self.mean += delta / self.count

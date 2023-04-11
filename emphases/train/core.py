@@ -1,7 +1,6 @@
 import contextlib
 import functools
 import os
-import json
 
 import torch
 
@@ -121,13 +120,15 @@ def train(
             model,
             device_ids=[rank])
 
-    #################################
-    # Get statistics for evaluation #
-    #################################
+    ########################################
+    # Get target statistics for evaluation #
+    ########################################
 
-    stats = emphases.evaluate.metrics.Statistics()
-    for batch in valid_loader:
-        stats.update(batch[4])
+    if not rank:
+        stats = emphases.evaluate.metrics.Statistics()
+        # TODO - switch to valid loader
+        for batch in train_loader:
+            stats.update(batch[4])
 
     #########
     # Train #
@@ -178,11 +179,17 @@ def train(
                     word_lengths)
 
                 # Compute loss
-                train_loss = loss(scores, targets, word_bounds, mask)
+                train_loss = loss(
+                    scores,
+                    targets,
+                    frame_lengths,
+                    word_bounds,
+                    word_lengths,
+                    training=True)
 
-            ######################
+            ##################
             # Optimize model #
-            ######################
+            ##################
 
             optimizer.zero_grad()
 
@@ -227,25 +234,29 @@ def train(
                         step,
                         output_directory / f'{step:08d}.pt')
 
-            # Update training step count
+            # End training after a certain number of steps
             if step >= emphases.NUM_STEPS:
                 break
-            step += 1
 
-            # Update progress bar
             if not rank:
+
+                # Update training step count
+                step += 1
+
+                # Update progress bar
                 progress.update()
 
-    # Close progress bar
     if not rank:
+
+        # Close progress bar
         progress.close()
 
-    # Save final model
-    emphases.checkpoint.save(
-        model,
-        optimizer,
-        step,
-        output_directory / f'{step:08d}.pt')
+        # Save final model
+        emphases.checkpoint.save(
+            model,
+            optimizer,
+            step,
+            output_directory / f'{step:08d}.pt')
 
 
 ###############################################################################
@@ -286,18 +297,23 @@ def evaluate(directory, step, model, gpu, stats, condition, loader):
             targets = targets.to(device)
 
             # Forward pass
-            scores, mask = model(
+            scores, _ = model(
                 features,
                 frame_lengths,
                 word_bounds,
                 word_lengths)
 
             # Downsample to word resolution for evaluation
-            if emphases.DOWNSAMPLE_LOCATION in ['loss', 'inference']:
-                scores = emphases.downsample(scores, word_lengths, word_bounds)
+            if emphases.DOWNSAMPLE_LOCATION == 'inference':
+                scores = emphases.downsample(scores, word_bounds, word_lengths)
 
             # Update metrics
-            metrics.update(scores, targets, word_bounds, mask)
+            metrics.update(
+                scores,
+                targets,
+                frame_lengths,
+                word_bounds,
+                word_lengths)
 
             # Stop when we exceed some number of batches
             if i + 1 == emphases.LOG_STEPS:
@@ -316,21 +332,46 @@ def evaluate(directory, step, model, gpu, stats, condition, loader):
 ###############################################################################
 
 
-def loss(scores, targets, word_bounds, mask):
+def loss(
+    scores,
+    targets,
+    frame_lengths,
+    word_bounds,
+    word_lengths,
+    training=False):
     """Compute masked loss"""
     # If we are not downsampling the network output before the loss, we must
     # upsample the targets
     if emphases.DOWNSAMPLE_LOCATION == 'inference':
 
-        # Interpolate
-        targets = emphases.upsample(
-            targets,
-            scores.shape[-1],
-            word_bounds)
+        if training:
 
-        # Linear interpolation can cause out-of-range
-        if emphases.UPSAMPLE_METHOD == 'linear':
-            targets = torch.clamp(targets, min=0., max=1.)
+            # Upsample targets
+            targets = emphases.upsample(
+                targets,
+                word_bounds,
+                word_lengths,
+                frame_lengths)
+
+            # Linear interpolation can cause out-of-range
+            if emphases.UPSAMPLE_METHOD == 'linear':
+                targets = torch.clamp(targets, min=0., max=1.)
+
+            # Frame resolution sequence mask
+            mask = emphases.model.mask_from_lengths(frame_lengths)
+
+        else:
+
+            # Downsample scores
+            scores = emphases.downsample(scores, word_bounds, word_lengths)
+
+            # Word resolution sequence mask
+            mask = emphases.model.mask_from_lengths(word_lengths)
+
+    else:
+
+        # Word resolution sequence mask
+        mask = emphases.model.mask_from_lengths(word_lengths)
 
     return emphases.LOSS(scores * mask, targets * mask)
 

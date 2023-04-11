@@ -35,18 +35,18 @@ class Model(torch.nn.Module):
 
     def forward(self, features, frame_lengths, word_bounds, word_lengths):
         # Embed frames
-        activation, _ = self.frame_encoder(
+        activation, mask = self.frame_encoder(
             self.input_layer(features),
             frame_lengths)
 
         # Maybe perform resampling from frame to word resolution within model
-        if emphases.DOWNSAMPLE_LOCATION == 'intermediate':
+        if emphases.DOWNSAMPLE_LOCATION in ['intermediate', 'loss']:
 
             # Downsample from frame to word resolution
             word_embeddings = emphases.downsample(
                 activation,
-                word_lengths,
-                word_bounds)
+                word_bounds,
+                word_lengths)
 
             # Infer emphasis scores from word embeddings
             activation, mask = self.word_decoder(word_embeddings, word_lengths)

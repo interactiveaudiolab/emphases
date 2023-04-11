@@ -16,4 +16,4 @@ def infer(alignment):
         word.duration() / len(word) for word in alignment])
 
     # Zero-center
-    return average_duration_per_word - average_duration
+    return (average_duration_per_word - average_duration)[None]

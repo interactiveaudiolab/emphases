@@ -381,7 +381,7 @@ def preprocess(
 ###############################################################################
 
 
-def downsample(x, word_lengths, word_bounds):
+def downsample(x, word_bounds, word_lengths):
     """Interpolate from frame to word resolution"""
     # Average resampling
     if emphases.DOWNSAMPLE_METHOD in ['average', 'max']:
@@ -418,21 +418,25 @@ def downsample(x, word_lengths, word_bounds):
         f'Interpolation method {emphases.DOWNSAMPLE_METHOD} is not defined')
 
 
-def upsample(xs, frame_lengths, word_bounds):
+def upsample(xs, word_bounds, word_lengths, frame_lengths):
     """Interpolate from word to frame resolution"""
     result = torch.zeros(
         (xs.shape[0], xs.shape[1], frame_lengths.max()),
         dtype=xs.dtype,
         device=xs.device)
-    iterator = enumerate(zip(xs, frame_lengths, word_bounds))
-    for i, (x, frames, word_bound) in iterator:
+    iterator = enumerate(zip(xs, word_bounds, word_lengths, frame_lengths))
+    for i, (x, word_bound, word_length, frame_length) in iterator:
+
+        # Truncate to valid sequence
+        x = x[..., :word_length]
+        word_bound = word_bound[..., :word_length]
 
         # Get center time of each word in frames
         word_times = (
             word_bound[0] + (word_bound[1] - word_bound[0]) / 2.)[None]
 
         # Get frame centers
-        frame_times = .5 + torch.arange(frames)[None]
+        frame_times = .5 + torch.arange(frame_length, device=xs.device)[None]
 
         # Linear interpolation
         if emphases.UPSAMPLE_METHOD == 'linear':
@@ -459,12 +463,12 @@ def upsample(xs, frame_lengths, word_bounds):
             line_idx = line_idx.expand(indices.shape)
 
             # Interpolate
-            result[i, :frames] = (
+            result[i, :, :frame_length] = (
                 slope[line_idx, indices].mul(frame_times) +
                 intercept[line_idx, indices])
 
         # Nearest neighbors interpolation
-        if emphases.UPSAMPLE_METHOD == 'nearest':
+        elif emphases.UPSAMPLE_METHOD == 'nearest':
 
             # Compute indices at which we evaluate points
             indices = torch.sum(
@@ -474,10 +478,13 @@ def upsample(xs, frame_lengths, word_bounds):
             indices = torch.clamp(indices, 0, word_times.shape[-1] - 1)
 
             # Get nearest score
-            result[i, :frames] = torch.index_select(x, 1, indices[0])
+            result[i, :, :frame_length] = torch.index_select(x, 1, indices[0])
 
-        raise ValueError(
-            f'Interpolation method {emphases.UPSAMPLE_METHOD} is not defined')
+        else:
+            raise ValueError(
+                f'Interpolation method {emphases.UPSAMPLE_METHOD} is not defined')
+
+    return result
 
 
 ###############################################################################

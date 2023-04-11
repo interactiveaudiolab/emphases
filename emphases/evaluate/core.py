@@ -19,7 +19,7 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
     predicted_stats = emphases.evaluate.metrics.Statistics()
     # TODO - update dataset and partition
     # for batch in emphases.data.loader('libritts', 'valid', gpu):
-    for batch in emphases.data.loader('buckeye', 'test', gpu):
+    for batch in emphases.data.loader('buckeye', 'train', gpu):
 
         # Unpack
         _, _, _, _, targets, alignments, audio, _ = batch
@@ -67,7 +67,16 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
         for batch in iterator:
 
             # Unpack
-            _, _, word_bounds, _, targets, alignments, audio, stems = batch
+            (
+                _,
+                frame_lengths,
+                word_bounds,
+                word_lengths,
+                targets,
+                alignments,
+                audio,
+                stems
+             ) = batch
 
             # Reset file metrics
             file_metrics.reset()
@@ -82,7 +91,12 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
                 gpu=gpu)[None]
 
             # Update metrics
-            args = (scores, targets.to(device), word_bounds)
+            args = (
+                scores,
+                targets.to(device),
+                frame_lengths.to(device),
+                word_bounds.to(device),
+                word_lengths.to(device))
             file_metrics.update(*args)
             dataset_metrics.update(*args)
             aggregate_metrics.update(*args)
