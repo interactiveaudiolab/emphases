@@ -229,7 +229,10 @@ def from_alignment_and_audio(
         for features, word_bounds in iterator:
 
             # Infer
-            scores.append(infer(features, word_bounds, checkpoint).detach()[0])
+            logits = infer(features, word_bounds, checkpoint).detach()[0]
+
+            # Postprocess
+            scores.append(postprocess(logits))
 
         # Concatenate results
         return torch.cat(scores, 1)
@@ -296,10 +299,17 @@ def infer(features, word_bounds, checkpoint=emphases.DEFAULT_CHECKPOINT):
         return infer.model(features, frame_lengths, word_bounds, word_lengths)
 
 
+def postprocess(logits):
+    """Postprocess network output"""
+    if emphases.LOSS == 'bce':
+        return torch.sigmoid(logits)
+    return logits
+
+
 def preprocess(
     alignment,
     audio,
-    sample_rate,
+    sample_rate=emphases.SAMPLE_RATE,
     hopsize=emphases.HOPSIZE_SECONDS,
     batch_size=None,
     pad=False,

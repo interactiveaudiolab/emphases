@@ -127,6 +127,11 @@ def annotate():
         # Load and resample audio
         audio = emphases.load.audio(audio_file)
 
+        # If audio is too quiet, increase the volume
+        maximum = torch.abs(audio).max()
+        if maximum < .35:
+            audio *= .35 / maximum
+
         # Save to disk
         torchaudio.save(
             cache_directory / 'audio' / f'{save_stem}.wav',
@@ -140,7 +145,7 @@ def annotate():
     # Get corresponding text files
     text_files = [
         file.parent / f"{file.stem}-words.txt" for file in audio_files]
-    
+
     # Align text and audio
     pyfoal.from_files_to_files(
         text_files,
@@ -206,6 +211,8 @@ def buckeye():
                 for phoneme in word:
                     phoneme.phoneme = pypar.SILENCE
 
+        # TODO - Deduplicate silence tokens
+
         # Save alignment
         alignment.save(cache_directory / 'alignment' / f'{file.stem}.TextGrid')
 
@@ -217,6 +224,11 @@ def buckeye():
 
         # Load and resample
         audio = emphases.load.audio(audio_file)
+
+        # If audio is too quiet, increase the volume
+        maximum = torch.abs(audio).max()
+        if maximum < .35:
+            audio *= .35 / maximum
 
         # Save to disk
         torchaudio.save(
@@ -307,6 +319,11 @@ def libritts():
 
         # Load and resample audio
         audio = emphases.load.audio(audio_file)
+
+        # If audio is too quiet, increase the volume
+        maximum = torch.abs(audio).max()
+        if maximum < .35:
+            audio *= .35 / maximum
 
         # Save audio
         stem = audio_file.stem

@@ -1,5 +1,7 @@
 import math
 
+import torch
+
 import emphases
 
 
@@ -27,14 +29,19 @@ class Metrics:
         # Detach from graph
         scores = scores.detach()
 
-        # Update
-        self.correlation.update(scores, targets, word_lengths)
+        # Update loss using raw logits
         self.loss.update(
             scores,
             targets,
             frame_lengths,
             word_bounds,
             word_lengths)
+
+        # Normalize logits
+        if emphases.LOSS == 'bce':
+            scores = torch.sigmoid(scores)
+
+        self.correlation.update(scores, targets, word_lengths)
 
     def reset(self):
         self.correlation.reset()

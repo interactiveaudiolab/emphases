@@ -6,4 +6,4 @@ MODULE = 'emphases'
 CONFIG = 'mse'
 
 # Loss function
-LOSS = torch.nn.functional.mse_loss
+LOSS = 'mse'

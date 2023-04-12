@@ -74,13 +74,27 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
             file_metrics.reset()
 
             # Get predicted scores
-            scores = emphases.from_alignment_and_audio(
+            scores = []
+
+            # Preprocess audio
+            iterator = emphases.preprocess(
                 alignments[0],
                 audio[0],
-                emphases.SAMPLE_RATE,
-                checkpoint=checkpoint,
                 pad=True,
-                gpu=gpu)[None]
+                gpu=gpu)
+            for features, word_bounds in iterator:
+
+                # Infer
+                logits = emphases.infer(
+                    features,
+                    word_bounds,
+                    checkpoint).detach()[0]
+
+                # Skip postprocessing
+                scores.append(logits)
+
+            # Concatenate results
+            scores = torch.cat(scores, 1)
 
             # Update metrics
             args = (

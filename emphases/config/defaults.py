@@ -204,7 +204,7 @@ BUCKETS = 1
 CHECKPOINT_INTERVAL = 500  # steps
 
 # Loss function
-LOSS = torch.nn.functional.binary_cross_entropy_with_logits
+LOSS = 'bce'
 
 # Maximum number of frames in one batch
 MAX_FRAMES = 50000

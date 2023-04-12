@@ -312,7 +312,11 @@ def evaluate(directory, step, model, gpu, condition, loader, stats):
                 word_lengths)
 
             # Add audio and figures
-            if i == 0:
+            if i == 0 and condition == 'valid':
+
+                # Postprocess network output
+                scores = emphases.postprocess(scores)
+
                 iterator = zip(
                     scores[:emphases.PLOT_EXAMPLES].cpu(),
                     targets[:emphases.PLOT_EXAMPLES].cpu(),
@@ -333,10 +337,10 @@ def evaluate(directory, step, model, gpu, condition, loader, stats):
 
                     # Add audio
                     samples = emphases.convert.frames_to_samples(frame_length)
-                    waveforms[f'{condition}/audio/{stem}'] = audio[:, :samples]
+                    waveforms[f'audio/{stem}'] = audio[:, :samples]
 
                     # Add figure
-                    figures[f'{condition}/{stem}'] = emphases.plot.scores(
+                    figures[stem] = emphases.plot.scores(
                         alignment,
                         score[0, :word_length],
                         target[0, :word_length])
@@ -352,6 +356,7 @@ def evaluate(directory, step, model, gpu, condition, loader, stats):
     # Write to tensorboard
     emphases.write.scalars(directory, step, scalars)
     emphases.write.figures(directory, step, figures)
+    emphases.write.audio(directory, step, waveforms)
 
 
 ###############################################################################
@@ -396,7 +401,16 @@ def loss(
         # Word resolution sequence mask
         mask = emphases.model.mask_from_lengths(word_lengths)
 
-    return emphases.LOSS(scores[mask], targets[mask])
+    # Get loss function
+    if emphases.LOSS == 'bce':
+        loss_fn = torch.nn.functional.binary_cross_entropy_with_logits
+    elif emphases.LOSS == 'mse':
+        loss_fn = torch.nn.functional.mse_loss
+    else:
+        raise ValueError(f'Loss {emphases.LOSS} is not recognized')
+
+    # Compute masked loss
+    return loss_fn(scores[mask], targets[mask])
 
 
 ###############################################################################
