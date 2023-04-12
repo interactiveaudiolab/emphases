@@ -125,10 +125,12 @@ def train(
     ########################################
 
     if not rank:
-        stats = emphases.evaluate.metrics.Statistics()
-        # TODO - switch to valid loader
+        train_stats = emphases.evaluate.metrics.Statistics()
+        valid_stats = emphases.evaluate.metrics.Statistics()
         for batch in train_loader:
-            stats.update(batch[4])
+            train_stats.update(batch[4])
+        for batch in valid_loader:
+            valid_stats.update(batch[4])
 
     #########
     # Train #
@@ -218,10 +220,9 @@ def train(
                         log_directory,
                         step,
                         model,
-                        gpu,
-                        stats)
-                    evaluate_fn('train', train_loader)
-                    evaluate_fn('valid', valid_loader)
+                        gpu)
+                    evaluate_fn('train', train_loader, train_stats)
+                    evaluate_fn('valid', valid_loader, valid_stats)
 
                 ###################
                 # Save checkpoint #
@@ -264,13 +265,16 @@ def train(
 ###############################################################################
 
 
-def evaluate(directory, step, model, gpu, stats, condition, loader):
+def evaluate(directory, step, model, gpu, condition, loader, stats):
     """Perform model evaluation"""
     device = 'cpu' if gpu is None else f'cuda:{gpu}'
 
     # Setup evaluation metrics
     # Assumes mean and variance are same as ground truth while training
     metrics = emphases.evaluate.Metrics(stats, stats)
+
+    # Tensorboard audio and figures
+    waveforms, figures = {}, {}
 
     # Prepare model for inference
     with emphases.inference_context(model):
@@ -284,9 +288,9 @@ def evaluate(directory, step, model, gpu, stats, condition, loader):
                 word_bounds,
                 word_lengths,
                 targets,
-                _,           # alignment
-                _,           # audio
-                _            # stems
+                alignments,
+                audios,
+                stems
             ) = batch
 
             # Copy to GPU
@@ -307,6 +311,36 @@ def evaluate(directory, step, model, gpu, stats, condition, loader):
                 word_bounds,
                 word_lengths)
 
+            # Add audio and figures
+            if i == 0:
+                iterator = zip(
+                    scores[:emphases.PLOT_EXAMPLES].cpu(),
+                    targets[:emphases.PLOT_EXAMPLES].cpu(),
+                    frame_lengths[:emphases.PLOT_EXAMPLES],
+                    word_lengths[:emphases.PLOT_EXAMPLES],
+                    alignments[:emphases.PLOT_EXAMPLES],
+                    audios[:emphases.PLOT_EXAMPLES],
+                    stems[:emphases.PLOT_EXAMPLES])
+                for (
+                    score,
+                    target,
+                    frame_length,
+                    word_length,
+                    alignment,
+                    audio,
+                    stem
+                ) in iterator:
+
+                    # Add audio
+                    samples = emphases.convert.frames_to_samples(frame_length)
+                    waveforms[f'{condition}/audio/{stem}'] = audio[:, :samples]
+
+                    # Add figure
+                    figures[f'{condition}/{stem}'] = emphases.plot.scores(
+                        alignment,
+                        score[0, :word_length],
+                        target[0, :word_length])
+
             # Stop when we exceed some number of batches
             if i + 1 == emphases.LOG_STEPS:
                 break
@@ -317,6 +351,7 @@ def evaluate(directory, step, model, gpu, stats, condition, loader):
 
     # Write to tensorboard
     emphases.write.scalars(directory, step, scalars)
+    emphases.write.figures(directory, step, figures)
 
 
 ###############################################################################

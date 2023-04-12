@@ -114,6 +114,9 @@ LOG_INTERVAL = 100  # steps
 # Number of steps to perform for tensorboard logging
 LOG_STEPS = 32
 
+# Number of examples to plot to Tensorboard during training
+PLOT_EXAMPLES = 2
+
 
 ###############################################################################
 # Prominence baseline parameters

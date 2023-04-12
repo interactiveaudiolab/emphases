@@ -62,11 +62,11 @@ python -m emphases.train --config config/first-pass/max-loss.py --gpus $1
 # python -m emphases.data.analyze --dataset annotate
 
 # Plots
-# python -m emphases.plot \
+# python -m emphases.plot.scaling \
 #     --data plots/dataset_scaling.csv \
 #     --x_label "Training data (seconds)" \
 #     --output_file plots/dataset_scaling.jpg
-# python -m emphases.plot \
+# python -m emphases.plot.scaling \
 #     --data plots/num_annotators_scaling.csv \
 #     --x_label "Number of annotators" \
 #     --output_file plots/num_annotators_scaling.jpg

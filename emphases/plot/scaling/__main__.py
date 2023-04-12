@@ -42,4 +42,4 @@ def parse_args():
 
 
 if __name__ == '__main__':
-    emphases.plot.scaling_laws(**vars(parse_args()))
+    emphases.plot.scaling.scaling_laws(**vars(parse_args()))

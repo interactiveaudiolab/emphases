@@ -31,7 +31,6 @@ Official code for the paper _Datasets and Scaling Laws for Automatic Emphasis Pr
 - [Evaluation](#reproducing-results)
     * [Evaluate](#evaluate)
     * [Analyze](#analyze)
-    * [Plot](#plot)
 - [Citation](#citation)
 
 
@@ -261,11 +260,6 @@ using DDP on GPUs `0` and `3`.
 ### Evaluate
 
 `python -m emphases.evaluate --config <config> --checkpoint <checkpoint> --gpu <gpu>`
-
-
-### Plot
-
-**TODO**
 
 
 ### Monitor
