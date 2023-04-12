@@ -50,6 +50,9 @@ FMIN = 40.
 # The number of samples between frames
 HOPSIZE = 160
 
+# Minimum decibel level
+MIN_DB = -100.
+
 # Number of linear frequency channels
 NUM_FFT =  1024
 
@@ -58,6 +61,9 @@ NUM_MELS = 80
 
 # Voiced/unvoiced threshold for pitch estimation
 PENN_VOICED_THRESHOLD = .065
+
+# Reference decibel level
+REF_DB = 20.
 
 # The audio samling rate
 SAMPLE_RATE = 16000

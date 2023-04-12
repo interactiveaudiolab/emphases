@@ -49,7 +49,7 @@ def datasets(datasets, gpu=None):
             gpu=gpu)
 
 
-def from_audio(audio, sample_rate=emphases.SAMPLE_RATE, gpu=None):
+def from_audio(audio, gpu=None):
     """Preprocess one audio file"""
     # Move to device (no-op if devices are the same)
     audio = audio.to('cpu' if gpu is None else f'cuda:{gpu}')
@@ -58,14 +58,13 @@ def from_audio(audio, sample_rate=emphases.SAMPLE_RATE, gpu=None):
 
     # Preprocess mels
     if emphases.MEL_FEATURE:
-        features.append(
-            emphases.data.preprocess.mels.from_audio(audio, sample_rate))
+        features.append(emphases.data.preprocess.mels.from_audio(audio))
 
     # Preprocess pitch and periodicity
     if emphases.PITCH_FEATURE or emphases.PERIODICITY_FEATURE:
         pitch, periodicity = penn.from_audio(
             audio,
-            sample_rate,
+            emphases.SAMPLE_RATE,
             hopsize=emphases.convert.samples_to_seconds(emphases.HOPSIZE),
             fmin=emphases.FMIN,
             fmax=emphases.FMAX,
@@ -83,7 +82,7 @@ def from_audio(audio, sample_rate=emphases.SAMPLE_RATE, gpu=None):
     if emphases.LOUDNESS_FEATURE:
         loudness = emphases.data.preprocess.loudness.from_audio(
             audio,
-            sample_rate)
+            emphases.SAMPLE_RATE)
         features.append(loudness.to(audio.device))
 
     # Concatenate features

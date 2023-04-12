@@ -2,31 +2,55 @@ import multiprocessing as mp
 import os
 
 import librosa
-import numpy as np
 import torch
 
 import emphases
 
 
 ###############################################################################
-# Interface
+# Mel spectrogram
 ###############################################################################
 
 
-def from_audio(audio, sample_rate=emphases.SAMPLE_RATE):
-    """Compute mels from audio"""
-    # Mayble resample
-    audio = emphases.resample(audio, sample_rate)
+def from_audio(audio):
+    """Compute spectrogram from audio"""
+    # Cache hann window
+    if (
+        not hasattr(from_audio, 'window') or
+        from_audio.dtype != audio.dtype or
+        from_audio.device != audio.device
+    ):
+        from_audio.window = torch.hann_window(
+            emphases.WINDOW_SIZE,
+            dtype=audio.dtype,
+            device=audio.device)
+        from_audio.dtype = audio.dtype
+        from_audio.device = audio.device
 
-    # Cache function for computing mels
-    if not hasattr(from_audio, 'mels'):
-        from_audio.mels = MelSpectrogram()
+    # Pad audio
+    size = (emphases.NUM_FFT - emphases.HOPSIZE) // 2
+    audio = torch.nn.functional.pad(
+        audio,
+        (size, size),
+        mode='reflect')
 
-    # Make sure devices match. No-op if devices are the same.
-    from_audio.mels.to(audio.device)
+    # Compute stft
+    stft = torch.stft(
+        audio.squeeze(1),
+        emphases.NUM_FFT,
+        hop_length=emphases.HOPSIZE,
+        window=from_audio.window,
+        center=False,
+        normalized=False,
+        onesided=True,
+        return_complex=True)
+    stft = torch.view_as_real(stft)[0]
 
-    # Compute mels
-    return from_audio.mels(audio)
+    # Compute magnitude
+    spectrogram = torch.sqrt(stft.pow(2).sum(-1) + 1e-6)
+
+    # Convert to mels
+    return linear_to_mel(spectrogram)
 
 
 def from_file(audio_file):
@@ -53,58 +77,23 @@ def from_files_to_files(audio_files, output_files):
 
 
 ###############################################################################
-# Mel spectrogram
+# Utilities
 ###############################################################################
 
 
-class MelSpectrogram(torch.nn.Module):
-
-    def __init__(self):
-        super().__init__()
-        window = torch.hann_window(emphases.NUM_FFT, dtype=torch.float)
-        # TODO - replace with torchaudio
-        mel_basis = librosa.filters.mel(
+def linear_to_mel(spectrogram):
+    # Create mel basis
+    if not hasattr(linear_to_mel, 'mel_basis'):
+        basis = librosa.filters.mel(
             sr=emphases.SAMPLE_RATE,
             n_fft=emphases.NUM_FFT,
-            n_mels=emphases.NUM_MELS
-        ).astype(np.float32)
-        mel_basis = torch.from_numpy(mel_basis)
-        self.register_buffer("mel_basis", mel_basis)
-        self.register_buffer("window", window)
+            n_mels=emphases.NUM_MELS)
+        basis = torch.from_numpy(basis)
+        basis = basis.to(spectrogram.dtype).to(spectrogram.device)
+        linear_to_mel.basis = basis
 
-    @property
-    def device(self):
-        return self.mel_basis.device
+    # Convert to mels
+    melspectrogram = torch.matmul(linear_to_mel.basis, spectrogram)
 
-    def log_mel_spectrogram(self, audio):
-        # Compute STFT
-        stft = torch.stft(
-            audio,
-            n_fft=emphases.NUM_FFT,
-            hop_length=emphases.HOPSIZE,
-            window=self.window,
-            center=False,
-            return_complex=False)
-
-        # Compute magnitude spectrogram
-        spectrogram = torch.sqrt(stft.pow(2).sum(-1) + 1e-9)
-
-        # Compute melspectrogram
-        melspectrogram = torch.matmul(self.mel_basis, spectrogram)
-
-        # Compute logmelspectrogram
-        return torch.log10(torch.clamp(melspectrogram, min=1e-5))
-
-    def forward(self, audio):
-        # Ensure correct shape
-        if audio.dim() == 2:
-            audio = audio[:, None, :]
-        elif audio.dim() == 1:
-            audio = audio[None, None, :]
-
-        # Pad audio
-        p = (emphases.NUM_FFT - emphases.HOPSIZE) // 2
-        audio = torch.nn.functional.pad(audio, (p, p), "reflect").squeeze(1)
-
-        # Compute logmelspectrogram
-        return self.log_mel_spectrogram(audio)[0]
+    # Apply dynamic range compression
+    return torch.log(torch.clamp(melspectrogram, min=1e-5))

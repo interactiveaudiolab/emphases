@@ -50,12 +50,6 @@ def from_files_to_files(audio_files, output_files):
 ###############################################################################
 
 
-# Minimum decibel level
-MIN_DB = -100.
-
-# Reference decibel level
-REF_DB = 20.
-
 def a_weighted(audio, sample_rate, hop_length=None, pad=False):
     """Retrieve the per-frame loudness"""
     # Save device
@@ -96,7 +90,7 @@ def a_weighted(audio, sample_rate, hop_length=None, pad=False):
     weighted = db + a_weighted.weights
 
     # Threshold
-    weighted[weighted < MIN_DB] = MIN_DB
+    weighted[weighted < emphases.MIN_DB] = emphases.MIN_DB
 
     # Average over weighted frequencies
     return torch.from_numpy(weighted.mean(axis=0)).float().to(device)[None]
@@ -112,4 +106,4 @@ def perceptual_weights():
     # defaulting to -100 db. That default is fine for our purposes.
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', RuntimeWarning)
-        return librosa.A_weighting(frequencies)[:, None] - REF_DB
+        return librosa.A_weighting(frequencies)[:, None] - emphases.REF_DB

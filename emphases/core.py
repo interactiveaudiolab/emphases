@@ -278,8 +278,8 @@ def infer(features, word_bounds, checkpoint=emphases.DEFAULT_CHECKPOINT):
         infer.checkpoint = checkpoint
         infer.device_type = features.device.type
 
-        # Move model to correct device (no-op if devices are the same)
-        infer.model = infer.model.to(features.device)
+    # Move model to correct device (no-op if devices are the same)
+    infer.model = infer.model.to(features.device)
 
     # Use full sequence lengths
     frame_lengths = torch.tensor(
@@ -292,7 +292,8 @@ def infer(features, word_bounds, checkpoint=emphases.DEFAULT_CHECKPOINT):
         device=features.device)
 
     # Infer
-    return infer.model(features, frame_lengths, word_bounds, word_lengths)
+    with emphases.inference_context(infer.model):
+        return infer.model(features, frame_lengths, word_bounds, word_lengths)
 
 
 def preprocess(
@@ -365,9 +366,7 @@ def preprocess(
         batch_audio = audio[:, start_sample:end_sample]
 
         # Preprocess audio
-        batch_features = emphases.data.preprocess.from_audio(
-            batch_audio,
-            gpu=gpu)
+        batch_features = emphases.data.preprocess.from_audio(batch_audio, gpu)
 
         # Run inference
         yield batch_features, batch_word_bounds
@@ -415,8 +414,8 @@ def downsample(xs, word_bounds, word_lengths):
 
         # Downsample to words via index selection
         indices = (word_bounds[:, 0] + word_bounds[:, 1]) // 2
-        return x.transpose(1, 2)[
-            torch.arange(x.shape[0])[:, None],
+        return xs.transpose(1, 2)[
+            torch.arange(xs.shape[0])[:, None],
             indices
         ].transpose(1, 2)
 
