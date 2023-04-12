@@ -88,13 +88,13 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
                 logits = emphases.infer(
                     features,
                     word_bounds,
-                    checkpoint).detach()[0]
+                    checkpoint).detach()
 
                 # Skip postprocessing
                 scores.append(logits)
 
             # Concatenate results
-            scores = torch.cat(scores, 1)
+            scores = torch.cat(scores, 2)
 
             # Update metrics
             args = (

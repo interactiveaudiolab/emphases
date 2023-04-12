@@ -208,13 +208,29 @@ def buckeye():
         for word in alignment:
             if str(word) in BUCKEYE_FILTER_LIST:
                 word.word = pypar.SILENCE
-                for phoneme in word:
-                    phoneme.phoneme = pypar.SILENCE
+                word.phonemes = [
+                    pypar.Phoneme(pypar.SILENCE, word.start(), word.end())]
 
-        # TODO - Deduplicate silence tokens
+        # Deduplicate silence tokens
+        i = 0
+        words = alignment.words()
+        prev_silence = False
+        while i < len(words):
+            word = words[i]
+            if str(word) == pypar.SILENCE:
+                if prev_silence:
+                    words[i - 1][-1]._end = word.end()
+                    del words[i]
+                else:
+                    prev_silence = True
+                    i += 1
+            else:
+                prev_silence = False
+                i += 1
 
         # Save alignment
-        alignment.save(cache_directory / 'alignment' / f'{file.stem}.TextGrid')
+        pypar.Alignment(words).save(
+            cache_directory / 'alignment' / f'{file.stem}.TextGrid')
 
     # Get audio files
     audio_files = sorted((data_directory / 'audio').glob('*.wav'))

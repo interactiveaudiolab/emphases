@@ -5,11 +5,11 @@
 #  $1 - the GPU index
 
 # # Download datasets
-# python -m emphases.data.download
+python -m emphases.data.download
 
 # # Setup experiments
-# python -m emphases.data.preprocess --gpu $1
-# python -m emphases.partition
+python -m emphases.data.preprocess --gpu $1
+python -m emphases.partition
 
 # Start with a small, transformer model (intermediate-wordwise + max + mels + prosody) and search loss
 python -m emphases.train --config config/first-pass/base.py --gpus $1
