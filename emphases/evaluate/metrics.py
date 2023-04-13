@@ -38,7 +38,7 @@ class Metrics:
             word_lengths)
 
         # Normalize logits
-        if emphases.LOSS == 'bce':
+        if emphases.METHOD == 'neural' and emphases.LOSS == 'bce':
             scores = torch.sigmoid(scores)
 
         self.correlation.update(scores, targets, word_lengths)

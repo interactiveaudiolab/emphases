@@ -20,10 +20,13 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
     # Evaluate each dataset
     for dataset in datasets:
 
-        # Get mean and variance stats for Pearson Correlation on validation data
+        # Get data loader
+        loader = emphases.data.loader(dataset, 'test', gpu)
+
+        # Get mean and variance for Pearson Correlation
         target_stats = emphases.evaluate.metrics.Statistics()
         predicted_stats = emphases.evaluate.metrics.Statistics()
-        for batch in emphases.data.loader(dataset, 'test', gpu):
+        for batch in loader:
 
             # Unpack
             _, _, _, _, targets, alignments, audio, _ = batch
@@ -52,8 +55,9 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
 
         # Setup test dataset
         iterator = emphases.iterator(
-            emphases.data.loader(dataset, 'test', gpu),
-            f'Evaluating {emphases.CONFIG} on {dataset}')
+            loader,
+            f'Evaluating {emphases.CONFIG} on {dataset}',
+            total=len(loader))
 
         # Iterate over test set
         for batch in iterator:
@@ -73,28 +77,40 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
             # Reset file metrics
             file_metrics.reset()
 
-            # Get predicted scores
-            scores = []
+            if emphases.METHOD == 'neural':
 
-            # Preprocess audio
-            iterator = emphases.preprocess(
-                alignments[0],
-                audio[0],
-                pad=True,
-                gpu=gpu)
-            for features, word_bounds in iterator:
+                # Get predicted scores
+                scores = []
 
-                # Infer
-                logits = emphases.infer(
-                    features,
-                    word_bounds,
-                    checkpoint).detach()
+                # Preprocess audio
+                iterator = emphases.preprocess(
+                    alignments[0],
+                    audio[0],
+                    pad=True,
+                    gpu=gpu)
+                for features, word_bounds in iterator:
 
-                # Skip postprocessing
-                scores.append(logits)
+                    # Infer
+                    logits = emphases.infer(
+                        features,
+                        word_bounds,
+                        checkpoint).detach()
 
-            # Concatenate results
-            scores = torch.cat(scores, 2)
+                    # Skip postprocessing
+                    scores.append(logits)
+
+                # Concatenate results
+                scores = torch.cat(scores, 2)
+
+            else:
+
+                # Baseline method inference
+                scores = emphases.from_alignment_and_audio(
+                    alignments[0],
+                    audio[0],
+                    emphases.SAMPLE_RATE,
+                    pad=True,
+                    gpu=gpu)[None]
 
             # Update metrics
             args = (

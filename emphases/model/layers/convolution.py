@@ -30,4 +30,4 @@ class Convolution(torch.nn.Sequential):
 
     # Ignore sequence length parameter needed for Transformer model
     def forward(self, x, _):
-        return super()(x)
+        return super().forward(x)

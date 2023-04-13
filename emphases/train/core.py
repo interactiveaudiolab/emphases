@@ -270,7 +270,12 @@ def evaluate(directory, step, model, gpu, condition, loader, stats):
     device = 'cpu' if gpu is None else f'cuda:{gpu}'
 
     # Setup evaluation metrics
-    # Assumes mean and variance are same as ground truth while training
+    # These statistics are from ground truth data. We're going to apply
+    # these when computing Pearson Correlation to both the ground truth
+    # and predicted data. This is just during training to avoid the 2x
+    # increase in evaluation cost to compute accurate statistics on the
+    # predicted data. So this is an approximation used for training.
+    # Proper handling of these statistics can be found in evaluate/core.py.
     metrics = emphases.evaluate.Metrics(stats, stats)
 
     # Tensorboard audio and figures
