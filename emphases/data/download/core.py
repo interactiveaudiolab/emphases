@@ -45,19 +45,21 @@ BUCKEYE_FILTER_LIST = [
 # recording duration and manually selecting speakers with more natural,
 # conversational (as opposed to read) prosody
 LIBRITTS_SPEAKERS = [
-    # Female
+    # Top 5 Female
     40,
     669,
     4362,
     5022,
     8123,
 
-    # Male
+    # Top 5 Male
     196,
     460,
     1355,
     3664,
-    7067  # uses character voices
+    7067,  # uses character voices
+
+
 ]
 
 
