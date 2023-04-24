@@ -13,15 +13,18 @@ def parse_args():
     """Parse command-line arguments"""
     parser = argparse.ArgumentParser(description='Perform emphasis annotation')
     parser.add_argument(
+        '--stem_file',
+        required=True,
+        help='File containing which stems to annotate')
+    parser.add_argument(
         '--annotation_config',
         type=Path,
         default=emphases.DEFAULT_ANNOTATION_CONFIG,
         help='The ReSEval configuration file for the annotation task')
     parser.add_argument(
-        '--datasets',
-        nargs='+',
-        default=['libritts'],
-        help='The datasets to annotate')
+        '--dataset',
+        default='libritts',
+        help='The dataset to annotate')
     parser.add_argument(
         '--directory',
         type=Path,
@@ -40,10 +43,6 @@ def parse_args():
         type=int,
         default=120,
         help='The time between monitoring updates in seconds')
-    parser.add_argument(
-        '--fraction',
-        type=float,
-        help='The fraction of data to use')
     return parser.parse_args()
 
 

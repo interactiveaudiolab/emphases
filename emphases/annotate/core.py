@@ -1,3 +1,4 @@
+import json
 import random
 import shutil
 
@@ -13,13 +14,13 @@ import emphases
 
 
 def datasets(
+    stem_file,
     annotation_config=emphases.DEFAULT_ANNOTATION_CONFIG,
-    datasets=['libritts'],
+    dataset='libritts',
     directory=emphases.ANNOTATION_DIR,
     remote=False,
     production=False,
-    interval=120,
-    fraction=None):
+    interval=120):
     """Perform emphasis annotation on datasets"""
     # Create input and output directories
     directory.mkdir(exist_ok=True, parents=True)
@@ -29,40 +30,40 @@ def datasets(
     output_directory = emphases.DATA_DIR / 'annotate' / index
     output_directory.mkdir(exist_ok=True, parents=True)
 
-    # Populate input directory with speech and text files
-    for dataset in datasets:
+    # Get stems
+    with open(stem_file) as file:
+        stems = [
+            key for key, value in json.load(stem_file).items()
+            if value[0] < value[1]]
 
-        # Get audio files
-        cache_directory = emphases.CACHE_DIR / dataset
-        audio_files = sorted((cache_directory / 'audio').glob('*'))
+    # Get audio files
+    cache_directory = emphases.CACHE_DIR / dataset
+    audio_files = sorted(
+        cache_directory / 'audio' / f'{stem}.wav' for stem in stems)
 
-        # Deterministic shuffle
-        random.seed(emphases.RANDOM_SEED)
-        random.shuffle(audio_files)
+    # Deterministic shuffle
+    random.seed(emphases.RANDOM_SEED)
+    random.shuffle(audio_files)
 
-        # Maybe annotate only a fraction
-        if fraction is not None:
-            audio_files = audio_files[:int(len(audio_files) * fraction)]
+    # Iterate over audio files
+    for audio_file in audio_files:
 
-        # Iterate over audio files
-        for audio_file in audio_files:
+        # Save audio
+        shutil.copyfile(audio_file, input_directory / audio_file.name)
 
-            # Save audio
-            shutil.copyfile(audio_file, input_directory / audio_file.name)
+        # Load alignment
+        alignment = pypar.Alignment(
+            cache_directory /
+            'alignment' /
+            f'{audio_file.stem}.TextGrid')
 
-            # Load alignment
-            alignment = pypar.Alignment(
-                cache_directory /
-                'alignment' /
-                f'{audio_file.stem}.TextGrid')
-
-            # Save text
-            text_file = input_directory / f'{audio_file.stem}-words.txt'
-            with open(text_file, 'w') as file:
-                file.write(
-                    ' '.join([
-                        str(word) for word in alignment
-                        if str(word) != pypar.SILENCE]))
+        # Save text
+        text_file = input_directory / f'{audio_file.stem}-words.txt'
+        with open(text_file, 'w') as file:
+            file.write(
+                ' '.join([
+                    str(word) for word in alignment
+                    if str(word) != pypar.SILENCE]))
 
     # Run annotation
     reseval.run(
