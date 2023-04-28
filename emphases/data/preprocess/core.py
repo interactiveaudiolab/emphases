@@ -45,7 +45,7 @@ def datasets(datasets, gpu=None):
             fmin=emphases.FMIN,
             fmax=emphases.FMAX,
             pad=True,
-            interp_unvoiced_at=emphases.PENN_VOICED_THRESHOLD,
+            interp_unvoiced_at=emphases.VOICED_THRESHOLD,
             gpu=gpu)
 
 
@@ -69,7 +69,7 @@ def from_audio(audio, gpu=None):
             fmin=emphases.FMIN,
             fmax=emphases.FMAX,
             pad=True,
-            interp_unvoiced_at=emphases.PENN_VOICED_THRESHOLD,
+            interp_unvoiced_at=emphases.VOICED_THRESHOLD,
             gpu=gpu)
 
         if emphases.PITCH_FEATURE:

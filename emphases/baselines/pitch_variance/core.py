@@ -19,7 +19,7 @@ def infer(alignment, audio, sample_rate, gpu=None):
         fmin=emphases.FMIN,
         fmax=emphases.FMAX,
         pad=True,
-        interp_unvoiced_at=emphases.PENN_VOICED_THRESHOLD,
+        interp_unvoiced_at=emphases.VOICED_THRESHOLD,
         gpu=gpu)
 
     # Compute pitch statistics in base-two log-space

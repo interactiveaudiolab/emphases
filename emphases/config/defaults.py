@@ -60,7 +60,8 @@ NUM_FFT =  1024
 NUM_MELS = 80
 
 # Voiced/unvoiced threshold for pitch estimation
-PENN_VOICED_THRESHOLD = .065
+# TODO - hparam search
+VOICED_THRESHOLD = .15
 
 # Reference decibel level
 REF_DB = 20.
