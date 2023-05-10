@@ -33,7 +33,7 @@ def datasets(
     # Get stems
     with open(stem_file) as file:
         stems = [
-            key for key, value in json.load(stem_file).items()
+            key for key, value in json.load(file).items()
             if value[0] < value[1]]
 
     # Get audio files

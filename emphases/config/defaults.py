@@ -1,5 +1,3 @@
-import torch
-
 from pathlib import Path
 
 
@@ -60,8 +58,7 @@ NUM_FFT =  1024
 NUM_MELS = 80
 
 # Voiced/unvoiced threshold for pitch estimation
-# TODO - hparam search
-VOICED_THRESHOLD = .15
+VOICED_THRESHOLD = .1625
 
 # Reference decibel level
 REF_DB = 20.
