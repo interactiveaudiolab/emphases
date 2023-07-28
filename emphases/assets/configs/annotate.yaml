@@ -71,7 +71,7 @@ crowdsource:
 participants: 9
 
 # The number of evaluations each participant performs
-samples_per_participant: 5
+samples_per_participant: 30
 
 # A seed to use for deterministic random sampling
 random_seed: 0
