@@ -48,6 +48,20 @@ def datasets(datasets, gpu=None):
             interp_unvoiced_at=emphases.VOICED_THRESHOLD,
             gpu=gpu)
 
+        # Pitch and periodicity use floating-point hopsize, while mels and
+        # loudness use an integer hopsize in samples. This results in
+        # single-frame differences when the audio length is within one sample
+        # of a new frame due to floating-point error. We simply remove the last
+        # frame in this rare case.
+        for loudness_file, pitch_file in zip(loudness_files, pitch_files):
+            loudness = torch.load(loudness_file)
+            pitch = torch.load(f'{pitch_file}-pitch.pt')
+            periodicity = torch.load(f'{pitch_file}-periodicity.pt')
+            if pitch.shape[1] == loudness.shape[1] + 1:
+                pitch = pitch[:, :-1]
+                periodicity = periodicity[:, :-1]
+            torch.save(pitch, f'{pitch_file}-pitch.pt')
+            torch.save(periodicity, f'{pitch_file}-periodicity.pt')
 
 def from_audio(audio, gpu=None):
     """Preprocess one audio file"""
@@ -84,6 +98,16 @@ def from_audio(audio, gpu=None):
             audio,
             emphases.SAMPLE_RATE)
         features.append(loudness.to(audio.device))
+
+    # Pitch and periodicity use floating-point hopsize, while mels and
+    # loudness use an integer hopsize in samples. This results in
+    # single-frame differences when the audio length is within one sample
+    # of a new frame due to floating-point error. We simply repeat the last
+    # frame in this rare case.
+    frames = emphases.convert.samples_to_frames(audio.shape[-1])
+    if pitch.shape[1] == frames + 1:
+        pitch = pitch[:, :-1]
+        periodicity = periodicity[:, :-1]
 
     # Concatenate features
     features = features[0] if len(features) == 1 else torch.cat(features)
