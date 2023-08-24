@@ -36,8 +36,7 @@ def parse_args():
     parser.add_argument(
         '--data',
         type=Path,
-        help='CSV file with evaluations and x values'
-    )
+        help='CSV file with evaluations and x values')
     return parser.parse_known_args()[0]
 
 

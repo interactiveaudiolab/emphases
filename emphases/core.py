@@ -301,8 +301,11 @@ def infer(features, word_bounds, checkpoint=emphases.DEFAULT_CHECKPOINT):
 
 def postprocess(logits):
     """Postprocess network output"""
-    if emphases.LOSS == 'bce':
-        return torch.sigmoid(logits)
+    if emphases.METHOD == 'neural':
+        if emphases.LOSS == 'bce':
+            return torch.sigmoid(logits)
+        elif emphases.LOSS == 'mse':
+            return torch.clamp(logits, 0., 1.)
     return logits
 
 
@@ -520,11 +523,7 @@ def inference_context(model):
     with torch.no_grad():
 
         # Automatic mixed precision on GPU
-        if device_type == 'cuda':
-            with torch.autocast(device_type):
-                yield
-
-        else:
+        with torch.autocast(device_type):
             yield
 
     # Prepare model for training

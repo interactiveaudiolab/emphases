@@ -32,9 +32,21 @@ def datasets(
 
     # Get stems
     with open(stem_file) as file:
+        monitor = json.load(file)
+
+        # Remove completed
+        # monitor = {
+        #     key: value for key, value in monitor.items()
+        #     if value[0] < value[1]}
         stems = [
-            key for key, value in json.load(file).items()
+            key for key, value in monitor.items()
             if value[0] < value[1]]
+
+        # TEMPORARY - sort (manual)
+        # stems = [item[0] for item in sorted(monitor.items(), key=lambda x: x[1][1])]
+
+        # TEMPORARY - sort (crowdsource)
+        # stems = [item[0] for item in sorted(monitor.items(), key=lambda x: x[1][1], reverse=True)]
 
     # Get audio files
     cache_directory = emphases.CACHE_DIR / dataset

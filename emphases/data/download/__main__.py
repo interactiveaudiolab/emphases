@@ -16,7 +16,7 @@ def parse_args():
         nargs='+',
         default=emphases.DATASETS,
         help='The datasets to download')
-    return parser.parse_args()
+    return parser.parse_known_args()[0]
 
 
 emphases.data.download.datasets(**vars(parse_args()))

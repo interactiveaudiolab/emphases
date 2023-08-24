@@ -3,11 +3,11 @@
 
 [![PyPI](https://img.shields.io/pypi/v/emphases.svg)](https://pypi.python.org/pypi/emphases)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Downloads](https://pepy.tech/badge/emphases)](https://pepy.tech/project/emphases)
+[![Downloads](https://static.pepy.tech/badge/emphases)](https://pepy.tech/project/emphases)
+
+Official code for the paper [_Datasets and Scaling Laws for Automatic Emphasis Prediction_](https://www.maxrmorrison.com/pdfs/morrison2024datasets.pdf)
 
 </div>
-
-Official code for the paper _Datasets and Scaling Laws for Automatic Emphasis Prediction_
 
 
 ## Table of contents
@@ -37,11 +37,6 @@ Official code for the paper _Datasets and Scaling Laws for Automatic Emphasis Pr
 ## Installation
 
 `pip install -e .`
-
-You must also install
-[Reproducible Subjective Evaluation (ReSEval)](https://github.com/reseval/reseval)
-to perform emphasis annotation.
-
 
 ## Inference
 
@@ -217,6 +212,9 @@ Downloads and uncompresses datasets.
 
 ### Annotate data
 
+Performing annotation requires first installing
+[Reproducible Subjective Evaluation (ReSEval)](https://github.com/reseval/reseval).
+
 `python -m emphases.annotate --datasets <datasets>`
 
 Launches a local web application to perform emphasis annotation, according to
@@ -273,15 +271,15 @@ Tensorboard. This can be done with `ssh -L 6006:localhost:6006
 ## Citation
 
 ### IEEE
-M. Morrison, P. Pawar, N. Pruyne, J. Cole, and B. Pardo, "Datasets and Scaling Laws for Automatic Emphasis Prediction," <TODO - conference>, 2023.
+M. Morrison, P. Pawar, N. Pruyne, J. Cole, and B. Pardo, "Datasets and Scaling Laws for Automatic Emphasis Prediction," International Conference on Acoustics, Speech, & Signal Processing, 2024.
 
 
 ### BibTex
 
 ```
-@inproceedings{morrison2023datasets,
+@inproceedings{morrison2024datasets,
     title={Datasets and Scaling Laws for Automatic Emphasis Prediction},
     author={Morrison, Max and Pawar, Pranav and Pruyne, Nathan and Cole, Jennifer and Pardo, Bryan},
-    booktitle={TODO},
-    year={2023}
+    booktitle={International Conference on Acoustics, Speech, & Signal Processing},
+    year={2024}
 }

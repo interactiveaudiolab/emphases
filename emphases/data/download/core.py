@@ -1,10 +1,10 @@
 import csv
+import json
 import shutil
 import ssl
 import tarfile
 import urllib
 import yaml
-import json
 
 import pyfoal
 import pypar
@@ -98,20 +98,12 @@ def datasets(datasets):
 
 def annotate():
     """Download annotated dataset"""
-    # Extract annotations to data directory
+    # Get annotation config
     with open(emphases.DEFAULT_ANNOTATION_CONFIG, "r") as stream:
-        try:
-            annotation_config = yaml.safe_load(stream)
-        except yaml.YAMLError as exc:
-            print(exc)
+        annotation_config = yaml.safe_load(stream)
 
-    source_directory = emphases.ANNOTATION_DIR
-    data_directory = emphases.DATA_DIR / 'annotate' / '01' / annotation_config['name']
-    response_file = data_directory / 'tables' / 'responses.csv'
-    results_file = data_directory / 'results.json'
-    shutil.copytree(source_directory / 'input', data_directory / 'input', dirs_exist_ok=True)
-
-    # Setup cache directory
+    # Setup directories
+    data_directory = emphases.DATA_DIR / 'annotate'
     cache_directory = emphases.CACHE_DIR / 'annotate'
     cache_directory.mkdir(exist_ok=True, parents=True)
 
@@ -120,61 +112,110 @@ def annotate():
     for feature in features:
         (cache_directory / feature).mkdir(exist_ok=True, parents=True)
 
-    # Read annotation data
-    annotation_data = json.loads(open(results_file, 'r').read())
-    annotated_samples = [stem for stem in annotation_data['scores'].keys()]
+    # Load annotations data
+    annotation_data = {}
+    for directory in data_directory.glob('*'):
 
-    # Get annotated audio files
-    audio_files = sorted((data_directory / 'input').glob('*.wav'))
-    audio_files = [file for file in audio_files if file.stem.replace('libritts-', '') in annotated_samples]
+        # TEMPORARY
+        data = {}
 
-    # Get output alignment files
-    alignment_files = []
+        source_directory =  directory / annotation_config['name']
+        table_directory = source_directory / 'tables'
 
-    # Iterate over files
-    for i, audio_file in enumerate(audio_files):
+        # Participant data
+        participants = {}
+        with open(table_directory / 'participants.csv') as file:
+            for row in csv.DictReader(file):
+                # TEMPORARY
+                try:
+                    participants[row['ID']] = {
+                        'language': row['Language'],
+                        'country': row['Country'],
+                        'annotations': []}
+                except KeyError as error:
+                    participants[row['ID']] = {
+                        'language': 'English',
+                        'country': 'United States',
+                        'annotations': []}
 
-        save_stem = audio_file.stem.replace('libritts-', '')
+        # Response data
+        with open(table_directory / 'responses.csv') as file:
+            for row in csv.DictReader(file):
+                participant = row['Participant']
 
-        # Load and resample audio
-        audio = emphases.load.audio(audio_file)
+                # Add participant
+                if participant not in data:
+                    data[participant] = participants[participant]
 
-        # If audio is too quiet, increase the volume
-        maximum = torch.abs(audio).max()
-        if maximum < .35:
-            audio *= .35 / maximum
+                # Get word start and end times
+                alignment = pypar.Alignment(
+                    emphases.CACHE_DIR /
+                    'libritts' /
+                    'alignment' /
+                    f'{row["Stem"]}.TextGrid')
+                words = [
+                    (str(word).lower(), word.start(), word.end())
+                    for word in alignment
+                    if str(word) != pypar.SILENCE]
 
-        # Save to disk
-        torchaudio.save(
-            cache_directory / 'audio' / f'{save_stem}.wav',
-            audio,
-            emphases.SAMPLE_RATE)
+                # Format annotation
+                entry = {
+                    'stem': row['Stem'],
+                    'score': [float(c) for c in row['Response']],
+                    'words': words}
+                assert len(entry['words']) == len(entry['score'])
 
-        # Save alignment file path
-        alignment_files.append(
-            cache_directory / 'alignment' / f'{save_stem}.TextGrid')
+                # Add annotation
+                data[participant]['annotations'].append(entry)
 
-    # Get corresponding text files
-    text_files = [
-        file.parent / f"{file.stem}-words.txt" for file in audio_files]
+        # TEMPORARY - Save results.json
+        with open(source_directory / 'results.json', 'w') as file:
+            merged = merge_annotations(data)
+            for stem in merged['stems']:
+                for i in range(len(merged['scores'][stem])):
+                    merged['scores'][stem][i] /= merged['stems'][stem]
+            json.dump(merged, file, sort_keys=True, indent=True)
+        annotation_data = annotation_data | data
 
-    # Align text and audio
-    pyfoal.from_files_to_files(
-        text_files,
-        audio_files,
-        alignment_files,
-        'p2fa')
+    # Save annotations in release format
+    with open(cache_directory / 'annotations.json', 'w') as file:
+        json.dump(annotation_data, file, sort_keys=True, indent=True)
 
-    # Extract per-word emphasis scores
-    for file in alignment_files:
+    # Filter and merge annotations
+    annotations = merge_annotations(
+        filter_annotations(annotation_config, annotation_data))
+
+    # Save dictionary containing annotation counts
+    with open(cache_directory / 'counts.json', 'w') as file:
+        json.dump(annotations['stems'], file, sort_keys=True, indent=True)
+
+    # Get annotated stems
+    stems = [
+        file.replace('libritts-', '')
+        for file in annotations['stems'].keys()]
+
+    # Copy from LibriTTS cache to annotation cache
+    for i, stem in enumerate(stems):
+
+        # Get normalized scores
+        count = annotations['stems'][stem]
+        labels = [score / count for score in annotations['scores'][stem]]
+
+        # Copy audio
+        shutil.copyfile(
+            emphases.CACHE_DIR / 'libritts' / 'audio' / f'{stem}.wav',
+            emphases.CACHE_DIR / 'annotate' / 'audio' / f'{stem}.wav')
+
+        # Copy alignment
+        shutil.copyfile(
+            emphases.CACHE_DIR / 'libritts' / 'alignment' / f'{stem}.TextGrid',
+            emphases.CACHE_DIR / 'annotate' / 'alignment' / f'{stem}.TextGrid')
 
         # Load alignment
-        alignment = pypar.Alignment(file)
+        alignment = pypar.Alignment(
+            emphases.CACHE_DIR / 'annotate' / 'alignment' / f'{stem}.TextGrid')
 
-        # Get words from annotation
-        labels = annotation_data['scores'][file.stem]
-
-        # Get per-word emphasis scores
+        # Match alignment and scores (silences get a score of zero)
         j = 0
         scores = torch.zeros(len(alignment))
         for i, word in enumerate(alignment):
@@ -189,7 +230,7 @@ def annotate():
             j += 1
 
         # Save scores
-        torch.save(scores, cache_directory / 'scores' / f'{file.stem}.pt')
+        torch.save(scores, cache_directory / 'scores' / f'{stem}.pt')
 
 
 def buckeye():
@@ -383,3 +424,67 @@ def download_file(url, file):
     with urllib.request.urlopen(url, context=ssl.SSLContext()) as response, \
             open(file, 'wb') as output:
         shutil.copyfileobj(response, output)
+
+
+def filter_annotations(config, annotations):
+    """Filter crowdsourced annotations"""
+    # Filter out where incomplete or > 1/3 examples have > 2/3 words selected
+    def valid(items):
+        sums = [sum(item['score']) for item in items]
+        counts = [len(item['score']) for item in items]
+        invalids = [s > .67 * c for s, c in zip(sums, counts)]
+        return sum(invalids) < .33 * len(invalids)
+    return {
+        participant: response for participant, response in annotations.items()
+        if (
+            (
+                len(response['annotations']) == int(config['samples_per_participant'])
+                # TEMPORARY
+                or len(response['annotations']) == 30
+            )
+            and valid(response['annotations'])
+        )}
+
+def merge_annotations(annotations):
+    """Merge crowdsourced annotations"""
+    merged = {'samples': 0, 'scores': {}, 'stems': {}}
+    for _, responses in annotations.items():
+
+        # Iterate over stems
+        for response in responses['annotations']:
+            stem = response['stem']
+            score = [float(c) for c in list(response['score'])]
+
+            # Merge stem annotations
+            if stem in merged['stems']:
+                for i in range(len(score)):
+
+                    # Maybe cap the number of allowed annotations
+                    if (
+                        emphases.MAX_ANNOTATIONS is not None and
+                        i == emphases.MAX_ANNOTATIONS
+                    ):
+                        continue
+
+                    # Update sums and counts
+                    merged['scores'][stem][i] += score[i]
+                merged['stems'][stem] += 1
+
+            # Add new stem
+            else:
+                merged['scores'][stem] = score
+                merged['stems'][stem] = 1
+
+            # Update total number of samples
+            merged['samples'] += 1
+
+    # Maybe cap the minimum required annotations
+    if emphases.MIN_ANNOTATIONS is not None:
+        merged['stems'] = {
+            stem: count for stem, count in merged['stems'].items()
+            if count == emphases.MIN_ANNOTATIONS}
+        merged['scores'] = {
+            stem: scores for stem, scores in merged['scores'].items()
+            if stem in merged['stems']}
+
+    return merged
