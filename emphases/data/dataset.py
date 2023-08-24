@@ -19,6 +19,17 @@ class Dataset(torch.utils.data.Dataset):
         # Get list of stems
         self.stems = emphases.load.partition(name)[partition]
 
+        # Maybe only use subset for scaling law experiments
+        if (
+            emphases.ONE_EIGHTH_ANNOTATIONS and
+            name == 'annotate' and
+            partition == 'train'
+        ):
+            speakers = [str(s) for s in emphases.data.download.LIBRITTS_SPEAKERS]
+            self.stems = sorted([
+                file.stem for file in (self.cache / 'audio').glob('*.wav')
+                if file.stem.split('_')[0] in speakers])
+
         # Store lengths for bucketing
         audio_files = list([
             self.cache / 'audio' / f'{stem}.wav' for stem in self.stems])
@@ -48,6 +59,9 @@ class Dataset(torch.utils.data.Dataset):
 
             self.stems = stems
             self.lengths = lengths
+
+        # Total number of frames
+        self.frames = sum(self.lengths)
 
     def __getitem__(self, index):
         """Retrieve the indexth item"""

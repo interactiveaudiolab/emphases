@@ -49,6 +49,19 @@ def annotate():
     left = int(emphases.SPLIT_SIZE_TRAIN * len(stems))
     right = left + int(emphases.SPLIT_SIZE_VALID * len(stems))
 
+    # Only train on specified eighth for scaling law experiments
+    if emphases.ONE_EIGHTH_ANNOTATIONS:
+
+        # Get training partition
+        speakers = [str(s) for s in emphases.data.download.LIBRITTS_SPEAKERS]
+        train = [stem for stem in stems if stem.split('_')[0] in speakers]
+
+        # Partition
+        return {
+            'train': train,
+            'valid': [stem for stem in stems[left:right] if stem not in train],
+            'test': [stem for stem in stems[right:] if stem not in train]}
+
     # Partition
     return {
         "train": stems[:left],
@@ -62,22 +75,11 @@ def buckeye():
     directory = emphases.CACHE_DIR / 'buckeye'
     audio_files = directory.rglob('*.wav')
 
-    # Get speakers
+    # Get stems
     stems = [file.stem for file in audio_files]
 
-    # Shuffle stems
-    random.seed(emphases.RANDOM_SEED)
-    random.shuffle(stems)
-
-    # Get split locations
-    left = int(emphases.SPLIT_SIZE_TRAIN * len(stems))
-    right = left + int(emphases.SPLIT_SIZE_VALID * len(stems))
-
     # Partition
-    return {
-        "train": stems[:left],
-        "valid": stems[left:right],
-        "test": stems[right:]}
+    return {"train": [], "valid": [], "test": stems}
 
 
 def libritts():
