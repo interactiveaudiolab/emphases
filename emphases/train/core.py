@@ -78,7 +78,9 @@ def train(
         'train',
         gpu,
         train_limit=emphases.TRAIN_DATA_LIMIT)
-    valid_loader = emphases.data.loader(dataset, 'valid', gpu)
+    # TEMPORARY - use buckeye for validation
+    # valid_loader = emphases.data.loader(dataset, 'valid', gpu)
+    valid_loader = emphases.data.loader('buckeye', 'test', gpu)
 
     ################
     # Create model #
@@ -101,7 +103,7 @@ def train(
     if path is not None:
 
         # Load model
-        model, optimizer, step = emphases.checkpoint.load(
+        model, optimizer, epoch, step = emphases.checkpoint.load(
             path,
             model,
             optimizer)
@@ -109,7 +111,7 @@ def train(
     else:
 
         # Train from scratch
-        step = 0
+        epoch, step = 0, 0
 
     ##################################################
     # Maybe setup distributed data parallelism (DDP) #
@@ -149,7 +151,7 @@ def train(
     while step < emphases.NUM_STEPS:
 
         # Seed sampler
-        train_loader.batch_sampler.set_epoch(step // len(train_loader.dataset))
+        train_loader.batch_sampler.set_epoch(epoch)
 
         for batch in train_loader:
 
@@ -232,6 +234,7 @@ def train(
                     emphases.checkpoint.save(
                         model,
                         optimizer,
+                        epoch,
                         step,
                         output_directory / f'{step:08d}.pt')
 
@@ -247,6 +250,10 @@ def train(
                 # Update progress bar
                 progress.update()
 
+        # Update epoch count
+        if not rank:
+            epoch += 1
+
     if not rank:
 
         # Close progress bar
@@ -256,6 +263,7 @@ def train(
         emphases.checkpoint.save(
             model,
             optimizer,
+            epoch,
             step,
             output_directory / f'{step:08d}.pt')
 
@@ -269,14 +277,43 @@ def evaluate(directory, step, model, gpu, condition, loader, stats):
     """Perform model evaluation"""
     device = 'cpu' if gpu is None else f'cuda:{gpu}'
 
+    # Get mean and variance for Pearson Correlation
+    target_stats = emphases.evaluate.metrics.Statistics()
+    predicted_stats = emphases.evaluate.metrics.Statistics()
+    for i, batch in enumerate(loader):
+
+            # Unpack batch
+            (
+                features,
+                frame_lengths,
+                word_bounds,
+                word_lengths,
+                targets,
+                _,
+                _,
+                _
+            ) = batch
+
+            # Copy to GPU
+            features = features.to(device)
+            frame_lengths = frame_lengths.to(device)
+            word_bounds = word_bounds.to(device)
+            word_lengths = word_lengths.to(device)
+            targets = targets.to(device)
+
+            # Forward pass
+            logits = model(features, frame_lengths, word_bounds, word_lengths)
+
+            # Update statistics
+            target_stats.update(targets)
+            predicted_stats.update(emphases.postprocess(logits))
+
+            # Stop when we exceed some number of batches
+            if i + 1 == emphases.LOG_STEPS:
+                break
+
     # Setup evaluation metrics
-    # These statistics are from ground truth data. We're going to apply
-    # these when computing Pearson Correlation to both the ground truth
-    # and predicted data. This is just during training to avoid the 2x
-    # increase in evaluation cost to compute accurate statistics on the
-    # predicted data. So this is an approximation used for training.
-    # Proper handling of these statistics can be found in evaluate/core.py.
-    metrics = emphases.evaluate.Metrics(stats, stats)
+    metrics = emphases.evaluate.Metrics(predicted_stats, target_stats)
 
     # Tensorboard audio and figures
     waveforms, figures = {}, {}
@@ -306,11 +343,11 @@ def evaluate(directory, step, model, gpu, condition, loader, stats):
             targets = targets.to(device)
 
             # Forward pass
-            scores = model(features, frame_lengths, word_bounds, word_lengths)
+            logits = model(features, frame_lengths, word_bounds, word_lengths)
 
             # Update metrics
             metrics.update(
-                scores,
+                logits,
                 targets,
                 frame_lengths,
                 word_bounds,
@@ -320,7 +357,7 @@ def evaluate(directory, step, model, gpu, condition, loader, stats):
             if i == 0 and condition == 'valid':
 
                 # Postprocess network output
-                scores = emphases.postprocess(scores)
+                scores = emphases.postprocess(logits)
 
                 iterator = zip(
                     scores[:emphases.PLOT_EXAMPLES].cpu(),
@@ -375,7 +412,8 @@ def loss(
     frame_lengths,
     word_bounds,
     word_lengths,
-    training=False):
+    training=False,
+    loss_fn=emphases.LOSS):
     """Compute masked loss"""
     if emphases.DOWNSAMPLE_LOCATION == 'inference':
 
@@ -383,11 +421,16 @@ def loss(
 
             # If we are not downsampling the network output before the loss, we
             # must upsample the targets
-            targets = emphases.upsample(
-                targets,
-                word_bounds,
-                word_lengths,
-                frame_lengths)
+            try:
+                targets = emphases.upsample(
+                    targets,
+                    word_bounds,
+                    word_lengths,
+                    frame_lengths)
+            except IndexError as error:
+                print(error)
+                import pdb; pdb.set_trace()
+                pass
 
             # Linear interpolation can cause out-of-range
             if emphases.UPSAMPLE_METHOD == 'linear':
@@ -406,16 +449,14 @@ def loss(
         # Word resolution sequence mask
         mask = emphases.model.mask_from_lengths(word_lengths)
 
-    # Get loss function
-    if emphases.LOSS == 'bce':
-        loss_fn = torch.nn.functional.binary_cross_entropy_with_logits
-    elif emphases.LOSS == 'mse':
-        loss_fn = torch.nn.functional.mse_loss
-    else:
-        raise ValueError(f'Loss {emphases.LOSS} is not recognized')
-
     # Compute masked loss
-    return loss_fn(scores[mask], targets[mask])
+    if loss_fn == 'bce':
+        return torch.nn.functional.binary_cross_entropy_with_logits(
+            scores[mask],
+            targets[mask])
+    elif loss_fn == 'mse':
+        return torch.nn.functional.mse_loss(scores[mask], targets[mask])
+    raise ValueError(f'Loss {loss_fn} is not recognized')
 
 
 ###############################################################################

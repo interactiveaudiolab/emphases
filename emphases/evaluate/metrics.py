@@ -14,10 +14,62 @@ class Metrics:
 
     def __init__(self, *stats):
         self.correlation = PearsonCorrelation(*stats)
-        self.loss = Loss()
+        self.bce = BinaryCrossEntropy()
+        self.mse = MeanSquaredError()
 
     def __call__(self):
-        return self.correlation() | self.loss()
+        return self.correlation() | self.bce() | self.mse()
+
+    def update(
+        self,
+        logits,
+        targets,
+        frame_lengths,
+        word_bounds,
+        word_lengths):
+        # Detach from graph
+        logits = logits.detach()
+
+        # Update cross entropy
+        self.bce.update(
+            logits,
+            targets,
+            frame_lengths,
+            word_bounds,
+            word_lengths)
+
+        # Update squared error
+        self.mse.update(
+            logits if emphases.LOSS == 'mse' else emphases.postprocess(logits),
+            targets,
+            frame_lengths,
+            word_bounds,
+            word_lengths)
+
+        # Update pearson correlation
+        self.correlation.update(
+            emphases.postprocess(logits),
+            targets,
+            word_lengths)
+
+    def reset(self):
+        self.correlation.reset()
+        self.bce.reset()
+        self.mse.reset()
+
+
+###############################################################################
+# Individual metrics
+###############################################################################
+
+
+class BinaryCrossEntropy:
+
+    def __init__(self):
+        self.reset()
+
+    def __call__(self):
+        return {'bce': (self.total / self.count).item()}
 
     def update(
         self,
@@ -26,40 +78,30 @@ class Metrics:
         frame_lengths,
         word_bounds,
         word_lengths):
-        # Detach from graph
-        scores = scores.detach()
-
-        # Update loss using raw logits
-        self.loss.update(
+        if emphases.LOSS == 'mse':
+            scores = torch.clamp(scores, 1e-4, 1 - 1e-4)
+            scores = torch.log(scores / (1 - scores))
+        self.total += emphases.train.loss(
             scores,
             targets,
             frame_lengths,
             word_bounds,
-            word_lengths)
-
-        # Normalize logits
-        if emphases.METHOD == 'neural' and emphases.LOSS == 'bce':
-            scores = torch.sigmoid(scores)
-
-        self.correlation.update(scores, targets, word_lengths)
+            word_lengths,
+            loss_fn='bce')
+        self.count += word_lengths.sum()
 
     def reset(self):
-        self.correlation.reset()
-        self.loss.reset()
+        self.count = 0
+        self.total = 0.
 
 
-###############################################################################
-# Individual metrics
-###############################################################################
-
-
-class Loss:
+class MeanSquaredError:
 
     def __init__(self):
         self.reset()
 
     def __call__(self):
-        return {'loss': (self.total / self.count).item()}
+        return {'rmse': torch.sqrt(self.total / self.count).item()}
 
     def update(
         self,
@@ -73,7 +115,8 @@ class Loss:
             targets,
             frame_lengths,
             word_bounds,
-            word_lengths)
+            word_lengths,
+            loss_fn='mse')
         self.count += word_lengths.sum()
 
     def reset(self):

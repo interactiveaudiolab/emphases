@@ -76,13 +76,25 @@ WINDOW_SIZE = 1024
 
 
 # List of all datasets
-DATASETS = ['buckeye', 'libritts']
+DATASETS = ['annotate', 'buckeye', 'libritts']
+
+# Datasets to use for evaluation
+EVALUATION_DATASETS = ['annotate', 'buckeye']
 
 # Whether to use mel features
 MEL_FEATURE = True
 
 # Whether to use loudness features
 LOUDNESS_FEATURE = True
+
+# Maximum number of allowed annotations
+MAX_ANNOTATIONS = None
+
+# Minimum number of allowed annotations
+MIN_ANNOTATIONS = None
+
+# Whether to use the specified one-eighth dataset for scaling law experiments
+ONE_EIGHTH_ANNOTATIONS = False
 
 # Whether to use pitch features
 PITCH_FEATURE = True
@@ -152,16 +164,12 @@ VOICED_THRESHOLD = 50
 
 
 # Model architecture. One of ['convolution', 'transformer'].
-ARCHITECTURE = 'transformer'
-
-# Number of heads for multihead attention
-ATTENTION_HEADS = 2
-
-# Window size of attention layers
-ATTENTION_WINDOW_SIZE = 4
+# TEMPORARY
+# ARCHITECTURE = 'transformer'
+ARCHITECTURE = 'convolution'
 
 # Model width
-CHANNELS = 256
+CHANNELS = 512
 
 # Location to perform resampling from frame resolution to word resolution.
 # One of ['inference', 'intermediate', 'loss'].
@@ -175,7 +183,7 @@ DOWNSAMPLE_METHOD = 'max'
 KERNEL_SIZE = 3
 
 # Number of network layers
-LAYERS = 4
+LAYERS = 6
 
 # Method to use for inference. One of
 # ['neural', 'pitch-variance', 'duration-variance', 'prominence].
@@ -192,17 +200,17 @@ UPSAMPLE_METHOD = 'linear'
 
 
 # Number of buckets of data lengths used by the sampler
-# TEMPORARY
-# BUCKETS = 8
-BUCKETS = 1
+BUCKETS = 8
 
 # Number of steps between saving checkpoints
 # TEMPORARY
 # CHECKPOINT_INTERVAL = 25000  # steps
 CHECKPOINT_INTERVAL = 500  # steps
 
-# Loss function
-LOSS = 'bce'
+# Loss function. One of ['bce', 'mse']
+# TEMPORARY
+# LOSS = 'bce'
+LOSS = 'mse'
 
 # Maximum number of frames in one batch
 MAX_FRAMES = 50000
@@ -210,10 +218,10 @@ MAX_FRAMES = 50000
 # Number of training steps
 # TEMPORARY
 # NUM_STEPS = 300000
-NUM_STEPS = 3000
+NUM_STEPS = 4000
 
 # Number of data loading worker threads
-NUM_WORKERS = 2
+NUM_WORKERS = 4
 
 # Number of seconds of data to limit training to
 TRAIN_DATA_LIMIT = None

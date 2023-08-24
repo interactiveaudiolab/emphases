@@ -27,7 +27,7 @@ def main(config, dataset, gpus=None):
         gpus)
 
     # Evaluate
-    emphases.evaluate.datasets([dataset], checkpoint, gpus[0])
+    emphases.evaluate.datasets(emphases.EVALUATION_DATASETS, checkpoint, gpus[0])
 
 
 def parse_args():

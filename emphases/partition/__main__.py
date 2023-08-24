@@ -11,7 +11,7 @@ def parse_args():
         nargs='+',
         default=emphases.DATASETS,
         help='The datasets to partition')
-    return parser.parse_args()
+    return parser.parse_known_args()[0]
 
 
 if __name__ == '__main__':
