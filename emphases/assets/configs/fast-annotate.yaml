@@ -68,7 +68,7 @@ crowdsource:
     autoapprove: 172800
 
 # The number of participants
-participants: 13
+participants: 1
 
 # The number of evaluations each participant performs
 samples_per_participant: 20
