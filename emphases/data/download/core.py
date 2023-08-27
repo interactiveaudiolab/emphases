@@ -457,16 +457,16 @@ def merge_annotations(annotations):
 
             # Merge stem annotations
             if stem in merged['stems']:
+
+                # Maybe cap the number of allowed annotations
+                if (
+                    emphases.MAX_ANNOTATIONS is not None and
+                    merged['stems'][stem] == emphases.MAX_ANNOTATIONS
+                ):
+                    continue
+
+                # Update sums and counts
                 for i in range(len(score)):
-
-                    # Maybe cap the number of allowed annotations
-                    if (
-                        emphases.MAX_ANNOTATIONS is not None and
-                        i == emphases.MAX_ANNOTATIONS
-                    ):
-                        continue
-
-                    # Update sums and counts
                     merged['scores'][stem][i] += score[i]
                 merged['stems'][stem] += 1
 

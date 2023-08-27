@@ -50,23 +50,26 @@ def annotate():
     right = left + int(emphases.SPLIT_SIZE_VALID * len(stems))
 
     # Only train on specified eighth for scaling law experiments
-    if emphases.ONE_EIGHTH_ANNOTATIONS:
-
-        # Get training partition
-        speakers = [str(s) for s in emphases.data.download.LIBRITTS_SPEAKERS]
-        train = [stem for stem in stems if stem.split('_')[0] in speakers]
+    if emphases.ONE_EIGHTH_UTTERANCES:
 
         # Partition
-        return {
-            'train': train,
-            'valid': [stem for stem in stems[left:right] if stem not in train],
-            'test': [stem for stem in stems[right:] if stem not in train]}
+        speakers = [str(s) for s in emphases.data.download.LIBRITTS_SPEAKERS]
+        train = [stem for stem in stems if stem.split('_')[0] in speakers]
+        valid = [stem for stem in stems[left:right] if stem not in train]
+        test = [stem for stem in stems[right:] if stem not in train]
 
-    # Partition
-    return {
-        "train": stems[:left],
-        "valid": stems[left:right],
-        "test": stems[right:]}
+    else:
+
+        # Partition
+        train = stems[:left]
+        valid = stems[left:right]
+        test = stems[right:]
+
+    # Maybe limit training set size
+    if emphases.MAX_TRAINING_UTTERANCES is not None:
+        train = train[:emphases.MAX_TRAINING_UTTERANCES]
+
+    return {'train': train, 'valid': valid, 'test': test}
 
 
 def buckeye():

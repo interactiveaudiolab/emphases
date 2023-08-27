@@ -73,14 +73,23 @@ def train(
     #######################
 
     torch.manual_seed(emphases.RANDOM_SEED)
+
+    # Training data
     train_loader = emphases.data.loader(
         dataset,
         'train',
         gpu,
         train_limit=emphases.TRAIN_DATA_LIMIT)
-    # TEMPORARY - use buckeye for validation
-    # valid_loader = emphases.data.loader(dataset, 'valid', gpu)
-    valid_loader = emphases.data.loader('buckeye', 'test', gpu)
+
+    # Validation data
+    if emphases.VALIDATION_DATASET == 'buckeye':
+
+        # This is just for generating scaling law plots for the paper
+        valid_loader = emphases.data.loader('buckeye', 'test', gpu)
+
+    else:
+
+        valid_loader = emphases.data.loader(dataset, 'valid', gpu)
 
     ################
     # Create model #
@@ -331,7 +340,7 @@ def evaluate(directory, step, model, gpu, condition, loader, stats):
                 word_lengths,
                 targets,
                 alignments,
-                audios,
+                audio,
                 stems
             ) = batch
 
@@ -354,38 +363,20 @@ def evaluate(directory, step, model, gpu, condition, loader, stats):
                 word_lengths)
 
             # Add audio and figures
-            if i == 0 and condition == 'valid':
+            if condition == 'valid' and i < emphases.PLOT_EXAMPLES:
 
                 # Postprocess network output
                 scores = emphases.postprocess(logits)
 
-                iterator = zip(
-                    scores[:emphases.PLOT_EXAMPLES].cpu(),
-                    targets[:emphases.PLOT_EXAMPLES].cpu(),
-                    frame_lengths[:emphases.PLOT_EXAMPLES],
-                    word_lengths[:emphases.PLOT_EXAMPLES],
-                    alignments[:emphases.PLOT_EXAMPLES],
-                    audios[:emphases.PLOT_EXAMPLES],
-                    stems[:emphases.PLOT_EXAMPLES])
-                for (
-                    score,
-                    target,
-                    frame_length,
-                    word_length,
-                    alignment,
-                    audio,
-                    stem
-                ) in iterator:
+                # Add audio
+                samples = emphases.convert.frames_to_samples(frame_lengths[0])
+                waveforms[f'audio/{stems[0]}'] = audio[0, :, :samples]
 
-                    # Add audio
-                    samples = emphases.convert.frames_to_samples(frame_length)
-                    waveforms[f'audio/{stem}'] = audio[:, :samples]
-
-                    # Add figure
-                    figures[stem] = emphases.plot.scores(
-                        alignment,
-                        score[0, :word_length],
-                        target[0, :word_length])
+                # Add figure
+                figures[stems[0]] = emphases.plot.scores(
+                    alignments[0],
+                    scores[0, 0, :word_lengths[0]].cpu(),
+                    targets[0, 0, :word_lengths[0]].cpu())
 
             # Stop when we exceed some number of batches
             if i + 1 == emphases.LOG_STEPS:

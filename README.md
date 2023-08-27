@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Downloads](https://static.pepy.tech/badge/emphases)](https://pepy.tech/project/emphases)
 
-Official code for the paper [_Datasets and Scaling Laws for Automatic Emphasis Prediction_](https://www.maxrmorrison.com/pdfs/morrison2024datasets.pdf)
+Official code for the paper [_Crowdsourced and Automatic Speech Prominence Estimation_](https://www.maxrmorrison.com/pdfs/morrison2024crowdsourced.pdf)
 
 </div>
 
@@ -271,14 +271,14 @@ Tensorboard. This can be done with `ssh -L 6006:localhost:6006
 ## Citation
 
 ### IEEE
-M. Morrison, P. Pawar, N. Pruyne, J. Cole, and B. Pardo, "Datasets and Scaling Laws for Automatic Emphasis Prediction," International Conference on Acoustics, Speech, & Signal Processing, 2024.
+M. Morrison, P. Pawar, N. Pruyne, J. Cole, and B. Pardo, "Crowdsourced and Automatic Speech Prominence Estimation," International Conference on Acoustics, Speech, & Signal Processing, 2024.
 
 
 ### BibTex
 
 ```
-@inproceedings{morrison2024datasets,
-    title={Datasets and Scaling Laws for Automatic Emphasis Prediction},
+@inproceedings{morrison2024crowdsourced,
+    title={Crowdsourced and Automatic Speech Prominence Estimation},
     author={Morrison, Max and Pawar, Pranav and Pruyne, Nathan and Cole, Jennifer and Pardo, Bryan},
     booktitle={International Conference on Acoustics, Speech, & Signal Processing},
     year={2024}

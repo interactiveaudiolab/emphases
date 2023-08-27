@@ -90,17 +90,20 @@ LOUDNESS_FEATURE = True
 # Maximum number of allowed annotations
 MAX_ANNOTATIONS = None
 
+# Maximum number of training utterances
+MAX_TRAINING_UTTERANCES = None
+
 # Minimum number of allowed annotations
 MIN_ANNOTATIONS = None
 
 # Whether to use the specified one-eighth dataset for scaling law experiments
-ONE_EIGHTH_ANNOTATIONS = False
+ONE_EIGHTH_UTTERANCES = False
 
 # Whether to use pitch features
 PITCH_FEATURE = True
 
 # Whether to use periodicity features
-PERIODICITY_FEATURE = True
+PERIODICITY_FEATURE = False
 
 # Seed for all random number generators
 RANDOM_SEED = 1234
@@ -109,6 +112,9 @@ RANDOM_SEED = 1234
 SPLIT_SIZE_TEST = .1
 SPLIT_SIZE_TRAIN = .8
 SPLIT_SIZE_VALID = .1
+
+# Dataset to use for validation
+VALIDATION_DATASET = 'annotate'
 
 
 ###############################################################################
@@ -218,7 +224,7 @@ MAX_FRAMES = 50000
 # Number of training steps
 # TEMPORARY
 # NUM_STEPS = 300000
-NUM_STEPS = 4000
+NUM_STEPS = 10000
 
 # Number of data loading worker threads
 NUM_WORKERS = 4

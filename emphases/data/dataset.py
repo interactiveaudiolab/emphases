@@ -21,7 +21,7 @@ class Dataset(torch.utils.data.Dataset):
 
         # Maybe only use subset for scaling law experiments
         if (
-            emphases.ONE_EIGHTH_ANNOTATIONS and
+            emphases.ONE_EIGHTH_UTTERANCES and
             name == 'annotate' and
             partition == 'train'
         ):
@@ -31,8 +31,8 @@ class Dataset(torch.utils.data.Dataset):
                 if file.stem.split('_')[0] in speakers])
 
         # Store lengths for bucketing
-        audio_files = list([
-            self.cache / 'audio' / f'{stem}.wav' for stem in self.stems])
+        audio_files = [
+            self.cache / 'audio' / f'{stem}.wav' for stem in self.stems]
         self.lengths = [
             emphases.convert.samples_to_frames(
                 torchaudio.info(audio_file).num_frames)

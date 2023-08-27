@@ -133,7 +133,7 @@ class PearsonCorrelation:
 
     def __call__(self):
         correlation = (
-            1. / (self.std * self.target_std) *
+            1. / (self.std * self.target_std + 1e-6) *
             (self.total / self.count).item())
         return {'pearson_correlation': correlation}
 
