@@ -113,12 +113,7 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
                     gpu=gpu)[None]
 
             # Update metrics
-            args = (
-                scores,
-                targets.to(device),
-                frame_lengths.to(device),
-                word_bounds.to(device),
-                word_lengths.to(device))
+            args = (scores, targets.to(device), word_lengths.to(device))
             file_metrics.update(*args)
             dataset_metrics.update(*args)
 

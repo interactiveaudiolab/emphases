@@ -456,8 +456,12 @@ def upsample(xs, word_bounds, word_lengths, frame_lengths):
         # Get frame centers
         frame_times = .5 + torch.arange(frame_length, device=xs.device)[None]
 
+        # Single value edge case
+        if x.shape[1] == 1:
+            result[i, :, :frame_length] = x[0]
+
         # Linear interpolation
-        if emphases.UPSAMPLE_METHOD == 'linear':
+        elif emphases.UPSAMPLE_METHOD == 'linear':
 
             # Compute slope and intercept at original times
             slope = (

@@ -44,7 +44,7 @@ def run(
             None if gpus is None else gpus[0])
 
     # Return path to model checkpoint
-    return emphases.checkpoint.latest_path(output_directory)
+    return emphases.checkpoint.best_path(output_directory)
 
 
 ###############################################################################
@@ -112,7 +112,7 @@ def train(
     if path is not None:
 
         # Load model
-        model, optimizer, epoch, step = emphases.checkpoint.load(
+        model, optimizer, epoch, step, score, best = emphases.checkpoint.load(
             path,
             model,
             optimizer)
@@ -120,7 +120,7 @@ def train(
     else:
 
         # Train from scratch
-        epoch, step = 0, 0
+        epoch, step, score, best = 0, 0, 0., 0.
 
     ##################################################
     # Maybe setup distributed data parallelism (DDP) #
@@ -233,19 +233,22 @@ def train(
                         model,
                         gpu)
                     evaluate_fn('train', train_loader, train_stats)
-                    evaluate_fn('valid', valid_loader, valid_stats)
+                    score = evaluate_fn('valid', valid_loader, valid_stats)
 
                 ###################
                 # Save checkpoint #
                 ###################
 
-                if step and step % emphases.CHECKPOINT_INTERVAL == 0:
+                if step > 500 and score > best:
                     emphases.checkpoint.save(
                         model,
                         optimizer,
                         epoch,
                         step,
+                        score,
+                        best,
                         output_directory / f'{step:08d}.pt')
+                    best = score
 
             # End training after a certain number of steps
             if step >= emphases.NUM_STEPS:
@@ -274,6 +277,8 @@ def train(
             optimizer,
             epoch,
             step,
+            score,
+            best,
             output_directory / f'{step:08d}.pt')
 
 
@@ -355,12 +360,7 @@ def evaluate(directory, step, model, gpu, condition, loader, stats):
             logits = model(features, frame_lengths, word_bounds, word_lengths)
 
             # Update metrics
-            metrics.update(
-                logits,
-                targets,
-                frame_lengths,
-                word_bounds,
-                word_lengths)
+            metrics.update(logits, targets, word_lengths)
 
             # Add audio and figures
             if condition == 'valid' and i < emphases.PLOT_EXAMPLES:
@@ -391,6 +391,9 @@ def evaluate(directory, step, model, gpu, condition, loader, stats):
     emphases.write.figures(directory, step, figures)
     emphases.write.audio(directory, step, waveforms)
 
+    # Return Pearson correlation
+    return scalars[f'pearson_correlation/{condition}']
+
 
 ###############################################################################
 # Loss function
@@ -412,16 +415,11 @@ def loss(
 
             # If we are not downsampling the network output before the loss, we
             # must upsample the targets
-            try:
-                targets = emphases.upsample(
-                    targets,
-                    word_bounds,
-                    word_lengths,
-                    frame_lengths)
-            except IndexError as error:
-                print(error)
-                import pdb; pdb.set_trace()
-                pass
+            targets = emphases.upsample(
+                targets,
+                word_bounds,
+                word_lengths,
+                frame_lengths)
 
             # Linear interpolation can cause out-of-range
             if emphases.UPSAMPLE_METHOD == 'linear':

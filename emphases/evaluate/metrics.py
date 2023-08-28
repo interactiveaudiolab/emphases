@@ -24,26 +24,17 @@ class Metrics:
         self,
         logits,
         targets,
-        frame_lengths,
-        word_bounds,
         word_lengths):
         # Detach from graph
         logits = logits.detach()
 
         # Update cross entropy
-        self.bce.update(
-            logits,
-            targets,
-            frame_lengths,
-            word_bounds,
-            word_lengths)
+        self.bce.update(logits, targets, word_lengths)
 
         # Update squared error
         self.mse.update(
             logits if emphases.LOSS == 'mse' else emphases.postprocess(logits),
             targets,
-            frame_lengths,
-            word_bounds,
             word_lengths)
 
         # Update pearson correlation
@@ -75,19 +66,27 @@ class BinaryCrossEntropy:
         self,
         scores,
         targets,
-        frame_lengths,
-        word_bounds,
         word_lengths):
-        if emphases.LOSS == 'mse':
-            scores = torch.clamp(scores, 1e-4, 1 - 1e-4)
-            scores = torch.log(scores / (1 - scores))
-        self.total += emphases.train.loss(
-            scores,
-            targets,
-            frame_lengths,
-            word_bounds,
-            word_lengths,
-            loss_fn='bce')
+        # Word resolution sequence mask
+        mask = emphases.model.mask_from_lengths(word_lengths)
+
+        if emphases.LOSS == 'bce':
+
+            # Update total from logits
+            self.total += torch.nn.functional.binary_cross_entropy_with_logits(
+                scores[mask],
+                targets[mask],
+                reduction='sum')
+
+        else:
+
+            # Update total from probabilities
+            x, y = torch.clamp(scores[mask], 0., 1.), targets[mask]
+            self.total -= (
+                y * torch.log(x + 1e-6) +
+                (1 - y) * torch.log(1 - x + 1e-6)).sum()
+
+        # Update count
         self.count += word_lengths.sum()
 
     def reset(self):
@@ -107,16 +106,17 @@ class MeanSquaredError:
         self,
         scores,
         targets,
-        frame_lengths,
-        word_bounds,
         word_lengths):
-        self.total += emphases.train.loss(
-            scores,
-            targets,
-            frame_lengths,
-            word_bounds,
-            word_lengths,
-            loss_fn='mse')
+        # Word resolution sequence mask
+        mask = emphases.model.mask_from_lengths(word_lengths)
+
+        # Update MSE
+        self.total += torch.nn.functional.mse_loss(
+            scores[mask],
+            targets[mask],
+            reduction='sum')
+
+        # Update count
         self.count += word_lengths.sum()
 
     def reset(self):
