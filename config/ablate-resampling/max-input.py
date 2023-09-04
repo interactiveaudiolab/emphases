@@ -1,7 +1,7 @@
 MODULE = 'emphases'
 
 # Configuration name
-CONFIG = 'average-intermediate'
+CONFIG = 'max-input'
 
 # Location to perform resampling from frame resolution to word resolution.
 # One of ['inference', 'input', 'intermediate', 'loss'].

@@ -1,10 +1,10 @@
 MODULE = 'emphases'
 
 # Configuration name
-CONFIG = 'convolution-6-256'
+CONFIG = 'convolution-5-64'
 
 # Model width
-CHANNELS = 256
+CHANNELS = 64
 
 # Number of network layers
-LAYERS = 6
+LAYERS = 5

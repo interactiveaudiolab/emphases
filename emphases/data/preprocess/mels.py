@@ -50,7 +50,12 @@ def from_audio(audio):
     spectrogram = torch.sqrt(stft.pow(2).sum(-1) + 1e-6)
 
     # Convert to mels
-    return linear_to_mel(spectrogram)
+    mels = linear_to_mel(spectrogram)
+
+    # Scale to roughly [0, 1]
+    if emphases.NORMALIZE:
+        return (mels + 10.) / 10.
+    return mels
 
 
 def from_file(audio_file):

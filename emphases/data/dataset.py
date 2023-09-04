@@ -13,22 +13,11 @@ import emphases
 
 class Dataset(torch.utils.data.Dataset):
 
-    def __init__(self, name, partition, train_limit=None):
+    def __init__(self, name, partition):
         self.cache = emphases.CACHE_DIR / name
 
         # Get list of stems
         self.stems = emphases.load.partition(name)[partition]
-
-        # Maybe only use subset for scaling law experiments
-        if (
-            emphases.ONE_EIGHTH_UTTERANCES and
-            name == 'annotate' and
-            partition == 'train'
-        ):
-            speakers = [str(s) for s in emphases.data.download.LIBRITTS_SPEAKERS]
-            self.stems = sorted([
-                file.stem for file in (self.cache / 'audio').glob('*.wav')
-                if file.stem.split('_')[0] in speakers])
 
         # Store lengths for bucketing
         audio_files = [
@@ -37,28 +26,6 @@ class Dataset(torch.utils.data.Dataset):
             emphases.convert.samples_to_frames(
                 torchaudio.info(audio_file).num_frames)
             for audio_file in audio_files]
-
-        # Maybe only use a subset of training data
-        if partition == 'train' and emphases.TRAIN_DATA_LIMIT is not None:
-
-            # Get max dataset size in frames
-            frame_limit = emphases.convert.seconds_to_frames(train_limit)
-
-            frames = 0
-            stems, lengths = [], []
-            for stem, length in zip(self.stems, self.lengths):
-
-                # Stop when we reach limit
-                if frames + length > frame_limit:
-                    break
-
-                # Update current length
-                frames += length
-                lengths.append(length)
-                stems.append(stem)
-
-            self.stems = stems
-            self.lengths = lengths
 
         # Total number of frames
         self.frames = sum(self.lengths)
@@ -91,7 +58,12 @@ class Dataset(torch.utils.data.Dataset):
         # Load pitch
         if emphases.PITCH_FEATURE:
             pitch = torch.load(self.cache / 'pitch' / f'{stem}-pitch.pt')
-            features.append(torch.log2(pitch))
+            if emphases.NORMALIZE:
+                features.append(
+                    (torch.log2(pitch) - emphases.LOGFMIN) /
+                    (emphases.LOGFMAX - emphases.LOGFMIN))
+            else:
+                features.append(torch.log2(pitch))
 
         # Load periodicity
         if emphases.PERIODICITY_FEATURE:

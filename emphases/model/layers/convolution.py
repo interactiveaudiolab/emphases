@@ -23,7 +23,11 @@ class Convolution(torch.nn.Sequential):
         layers = []
         channels = emphases.CHANNELS
         for _ in range(emphases.LAYERS):
-            layers.extend((conv_fn(channels, channels), torch.nn.ReLU()))
+            layers.extend((
+                conv_fn(channels, channels),
+                emphases.ACTIVATION_FUNCTION()))
+            if emphases.DROPOUT is not None:
+                layers.append(torch.nn.Dropout(emphases.DROPOUT))
 
         # Register to Module
         super().__init__(*layers)

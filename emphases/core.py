@@ -396,7 +396,7 @@ def preprocess(
 def downsample(xs, word_bounds, word_lengths):
     """Interpolate from frame to word resolution"""
     # Average resampling
-    if emphases.DOWNSAMPLE_METHOD in ['average', 'max']:
+    if emphases.DOWNSAMPLE_METHOD in ['average', 'max', 'sum']:
 
         # Allocate memory for word resolution sequence
         result = torch.zeros(
@@ -415,10 +415,12 @@ def downsample(xs, word_bounds, word_lengths):
                 start, end = bounds[0, j], bounds[1, j]
 
                 # Downsample
-                result[i, :, j] = (
-                    x[:, start:end].mean(dim=1)
-                    if emphases.DOWNSAMPLE_METHOD == 'average'
-                    else x[:, start:end].max(dim=1).values)
+                if emphases.DOWNSAMPLE_METHOD == 'average':
+                    result[i, :, j] = x[:, start:end].mean(dim=1)
+                elif emphases.DOWNSAMPLE_METHOD == 'max':
+                    result[i, :, j] = x[:, start:end].max(dim=1).values
+                elif emphases.DOWNSAMPLE_METHOD == 'sum':
+                    result[i, :, j] = x[:, start:end].sum(dim=1)
 
         return result
 
@@ -508,6 +510,49 @@ def upsample(xs, word_bounds, word_lengths, frame_lengths):
                 'is not defined')
 
     return result
+
+
+###############################################################################
+# Word segmentation
+###############################################################################
+
+
+def segment(xs, word_bounds, word_lengths):
+    """Convert acoustic features to word segments"""
+    # Get maximum word length
+    max_length = (word_bounds[:, 1] - word_bounds[:, 0]).max()
+
+    # Allocate memory
+    batch = word_bounds.shape[0] * word_bounds.shape[2]
+    result = torch.zeros(
+        (batch, xs.shape[1], max_length),
+        dtype=xs.dtype,
+        device=xs.device)
+    result_bounds = torch.zeros(
+        (batch, 2, 1),
+        dtype=torch.long,
+        device=xs.device)
+    result_lengths = torch.zeros((batch,), dtype=torch.long, device=xs.device)
+
+    # Iterate over batch
+    iterator = enumerate(zip(xs, word_bounds, word_lengths))
+    for i, (x, bounds, words) in iterator:
+
+        # Iterate over words
+        for j in range(bounds.shape[1]):
+            k = min(j, words - 1)
+
+            # Get word bounds
+            start, end = bounds[0, k], bounds[1, k]
+
+            # Chunk
+            frames = end - start
+            index = i * bounds.shape[1] + j
+            result[index, :, :frames] = x[:, start:end]
+            result_bounds[index, 1, 0] = frames
+            result_lengths[index] = frames
+
+    return result, result_bounds, result_lengths
 
 
 ###############################################################################

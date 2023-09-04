@@ -15,29 +15,37 @@ def parse_args():
         description='Create scaling law figure')
     parser.add_argument(
         '--evaluations',
-        type=Path,
+        type=str,
         nargs='+',
+        required=True,
         help='The evaluations to plot')
     parser.add_argument(
-        '--x',
-        type=float,
-        nargs='+',
-        help='x values for each evaluation')
+        '--xlabel',
+        type=str,
+        required=True,
+        help='Label for x axis')
     parser.add_argument(
         '--output_file',
         type=Path,
         required=True,
         help='The output jpg file')
     parser.add_argument(
-        '--x_label',
-        type=str,
+        '--yticks',
+        type=float,
+        nargs='+',
         required=True,
-        help='Label for x axis')
+        help='The y axis tick mark locations')
     parser.add_argument(
-        '--data',
-        type=Path,
-        help='CSV file with evaluations and x values')
-    return parser.parse_known_args()[0]
+        '--sizes',
+        type=int,
+        nargs='+',
+        help='The number of utterances used in each evaluation')
+    parser.add_argument(
+        '--text_offset',
+        type=float,
+        default=.011,
+        help='The amount to space the text below the plot point')
+    return parser.parse_args()
 
 
 if __name__ == '__main__':

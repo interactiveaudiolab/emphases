@@ -14,6 +14,7 @@ class Model(torch.nn.Module):
 
     def __init__(self):
         super().__init__()
+
         # Bind common parameters
         conv_fn = functools.partial(
             torch.nn.Conv1d,
@@ -27,45 +28,70 @@ class Model(torch.nn.Module):
         self.frame_encoder = emphases.model.Layers()
 
         # If we are resampling within the model, initialize word decoder
-        if emphases.DOWNSAMPLE_LOCATION == 'intermediate':
+        if emphases.DOWNSAMPLE_LOCATION in ['input', 'intermediate']:
             self.word_decoder = emphases.model.Layers()
 
         # Output projection
         self.output_layer = conv_fn(emphases.CHANNELS, 1)
 
     def forward(self, features, frame_lengths, word_bounds, word_lengths):
-        # Embed frames
-        frame_embeddings = self.frame_encoder(
-            self.input_layer(features),
-            frame_lengths)
 
-        if emphases.DOWNSAMPLE_LOCATION == 'intermediate':
+        if emphases.DOWNSAMPLE_LOCATION == 'input':
 
-            # Downsample activations to word resolution
-            word_embeddings = emphases.downsample(
-                frame_embeddings,
+            # Segment acoustic features into word segments
+            segments, bounds, lengths = emphases.segment(
+                features,
                 word_bounds,
                 word_lengths)
 
-            # Infer emphasis scores from word embeddings
-            word_embeddings = self.word_decoder(word_embeddings, word_lengths)
+            # Embed frames
+            frame_embeddings = self.frame_encoder(
+                self.input_layer(segments),
+                lengths)
 
-        elif emphases.DOWNSAMPLE_LOCATION == 'loss':
-
-            # Downsample activations to word resolution
-            word_embeddings = emphases.downsample(
-                frame_embeddings,
-                word_bounds,
-                word_lengths)
-
-        elif emphases.DOWNSAMPLE_LOCATION == 'inference':
-
-            if self.training:
-
-                # Return frame resolution prominence for framewise loss
-                return self.output_layer(frame_embeddings)
-
+            # Downsample
+            if emphases.DOWNSAMPLE_METHOD == 'average':
+                word_embeddings = frame_embeddings.mean(dim=2, keepdim=True)
+            elif emphases.DOWNSAMPLE_METHOD == 'max':
+                word_embeddings = frame_embeddings.max(
+                    dim=2,
+                    keepdim=True
+                ).values
+            elif emphases.DOWNSAMPLE_METHOD == 'sum':
+                word_embeddings = frame_embeddings.sum(dim=2, keepdim=True)
+            elif emphases.DOWNSAMPLE_METHOD == 'center':
+                word_embeddings = emphases.downsample(
+                    frame_embeddings,
+                    bounds,
+                    torch.ones(
+                        (len(lengths),),
+                        dtype=torch.long,
+                        device=lengths.device))
             else:
+                raise ValueError(
+                    f'Interpolation method {emphases.DOWNSAMPLE_METHOD} is not defined')
+
+            # Stitch together word segment embeddings
+            mask = mask_from_lengths(word_lengths)
+            word_embeddings = word_embeddings.squeeze(2).transpose(0, 1).reshape(
+                word_embeddings.shape[1],
+                word_bounds.shape[0],
+                word_bounds.shape[2]
+            ).permute(1, 0, 2) * mask
+
+            # Decode
+            word_embeddings = self.word_decoder(
+                word_embeddings,
+                word_lengths)
+
+        else:
+
+            # Embed frames
+            frame_embeddings = self.frame_encoder(
+                self.input_layer(features),
+                frame_lengths)
+
+            if emphases.DOWNSAMPLE_LOCATION == 'intermediate':
 
                 # Downsample activations to word resolution
                 word_embeddings = emphases.downsample(
@@ -73,10 +99,38 @@ class Model(torch.nn.Module):
                     word_bounds,
                     word_lengths)
 
-        else:
-            raise ValueError(
-                f'Downsample location {emphases.DOWNSAMPLE_LOCATION} ' +
-                'not recognized')
+                # Infer emphasis scores from word embeddings
+                word_embeddings = self.word_decoder(
+                    word_embeddings,
+                    word_lengths)
+
+            elif emphases.DOWNSAMPLE_LOCATION == 'loss':
+
+                # Downsample activations to word resolution
+                word_embeddings = emphases.downsample(
+                    frame_embeddings,
+                    word_bounds,
+                    word_lengths)
+
+            elif emphases.DOWNSAMPLE_LOCATION == 'inference':
+
+                if self.training:
+
+                    # Return frame resolution prominence for framewise loss
+                    return self.output_layer(frame_embeddings)
+
+                else:
+
+                    # Downsample activations to word resolution
+                    word_embeddings = emphases.downsample(
+                        frame_embeddings,
+                        word_bounds,
+                        word_lengths)
+
+            else:
+                raise ValueError(
+                    f'Downsample location {emphases.DOWNSAMPLE_LOCATION} ' +
+                    'not recognized')
 
         # Project to scalar
         return self.output_layer(word_embeddings)

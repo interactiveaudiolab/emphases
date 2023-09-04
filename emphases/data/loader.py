@@ -8,10 +8,10 @@ import emphases
 ###############################################################################
 
 
-def loader(dataset, partition=None, gpu=None, train_limit=None):
+def loader(dataset, partition=None, gpu=None):
     """Retrieve a data loader"""
     # Get dataset
-    dataset = emphases.data.Dataset(dataset, partition, train_limit=train_limit)
+    dataset = emphases.data.Dataset(dataset, partition)
 
     # Get sampler
     sampler = emphases.data.sampler(dataset, partition)

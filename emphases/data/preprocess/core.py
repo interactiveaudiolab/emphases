@@ -87,7 +87,12 @@ def from_audio(audio, gpu=None):
             gpu=gpu)
 
         if emphases.PITCH_FEATURE:
-            features.append(torch.log2(pitch))
+            if emphases.NORMALIZE:
+                features.append(
+                    (torch.log2(pitch) - emphases.LOGFMIN) /
+                    (emphases.LOGFMAX - emphases.LOGFMIN))
+            else:
+                features.append(torch.log2(pitch))
 
         if emphases.PERIODICITY_FEATURE:
             features.append(periodicity)

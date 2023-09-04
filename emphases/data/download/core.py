@@ -1,5 +1,6 @@
 import csv
 import json
+import random
 import shutil
 import ssl
 import tarfile
@@ -116,9 +117,6 @@ def annotate():
     annotation_data = {}
     for directory in data_directory.glob('*'):
 
-        # TEMPORARY
-        data = {}
-
         source_directory =  directory / annotation_config['name']
         table_directory = source_directory / 'tables'
 
@@ -126,13 +124,17 @@ def annotate():
         participants = {}
         with open(table_directory / 'participants.csv') as file:
             for row in csv.DictReader(file):
-                # TEMPORARY
                 try:
+
+                    # Crowdsourced annotation
                     participants[row['ID']] = {
                         'language': row['Language'],
                         'country': row['Country'],
                         'annotations': []}
+
                 except KeyError as error:
+
+                    # Manual annotation
                     participants[row['ID']] = {
                         'language': 'English',
                         'country': 'United States',
@@ -144,8 +146,8 @@ def annotate():
                 participant = row['Participant']
 
                 # Add participant
-                if participant not in data:
-                    data[participant] = participants[participant]
+                if participant not in annotation_data:
+                    annotation_data[participant] = participants[participant]
 
                 # Get word start and end times
                 alignment = pypar.Alignment(
@@ -166,24 +168,81 @@ def annotate():
                 assert len(entry['words']) == len(entry['score'])
 
                 # Add annotation
-                data[participant]['annotations'].append(entry)
+                annotation_data[participant]['annotations'].append(entry)
 
-        # TEMPORARY - Save results.json
-        with open(source_directory / 'results.json', 'w') as file:
-            merged = merge_annotations(data)
-            for stem in merged['stems']:
-                for i in range(len(merged['scores'][stem])):
-                    merged['scores'][stem][i] /= merged['stems'][stem]
-            json.dump(merged, file, sort_keys=True, indent=True)
-        annotation_data = annotation_data | data
+    # TEMPORARY
+    unmatched = []
+
+    # Get worker ID correspondence
+    correspondence = {}
+    for directory in data_directory.glob('*'):
+        file = (
+            directory /
+            annotation_config['name'] /
+            'crowdsource' /
+            'crowdsource.json')
+        with open(file) as file:
+            contents = json.load(file)
+            for content in contents:
+
+                # TEMPORARY - try
+                try:
+                    correspondence |= {content['ParticipantID']: content['WorkerId']}
+                except KeyError as error:
+                    unmatched.append(content['WorkerId'])
+
+    # Crowdsourced annotation
+    if correspondence or unmatched:
+
+        # Filter out where incomplete or > 1/3 examples have > 2/3 words selected
+        def valid(items):
+            sums = [sum(item['score']) for item in items]
+            counts = [len(item['score']) for item in items]
+            invalids = [s > .67 * c for s, c in zip(sums, counts)]
+            return sum(invalids) < .33 * len(invalids)
+
+        # Join participants with same worker ID
+        joined = {}
+        for participant, contents in annotation_data.items():
+
+            # Filter out bad batches
+            if (
+                len(contents['annotations']) < 20 or
+                len(contents['annotations']) % 10 > 0 or
+                not valid(contents['annotations'])
+            ):
+                continue
+
+            # TEMPORARY - try
+            try:
+                worker = correspondence[participant]
+            except KeyError as error:
+                if unmatched:
+                    worker = unmatched.pop()
+                else:
+                    choice = random.choice(list(correspondence.keys()))
+                    worker = correspondence[choice]
+
+            if worker in joined:
+                joined[worker]['annotations'].extend(contents['annotations'])
+            else:
+                joined[worker] = contents
+
+    # Manual annotation
+    else:
+        joined = annotation_data
+
+    # Anonymize
+    anonymized = {}
+    for i, contents in enumerate(joined.values()):
+        anonymized[f'{i:06d}'] = contents
 
     # Save annotations in release format
     with open(cache_directory / 'annotations.json', 'w') as file:
-        json.dump(annotation_data, file, sort_keys=True, indent=True)
+        json.dump(anonymized, file, sort_keys=True, indent=True)
 
-    # Filter and merge annotations
-    annotations = merge_annotations(
-        filter_annotations(annotation_config, annotation_data))
+    # Merge binary annotations to floats
+    annotations = merge_annotations(anonymized)
 
     # Save dictionary containing annotation counts
     with open(cache_directory / 'counts.json', 'w') as file:
@@ -425,25 +484,6 @@ def download_file(url, file):
             open(file, 'wb') as output:
         shutil.copyfileobj(response, output)
 
-
-def filter_annotations(config, annotations):
-    """Filter crowdsourced annotations"""
-    # Filter out where incomplete or > 1/3 examples have > 2/3 words selected
-    def valid(items):
-        sums = [sum(item['score']) for item in items]
-        counts = [len(item['score']) for item in items]
-        invalids = [s > .67 * c for s, c in zip(sums, counts)]
-        return sum(invalids) < .33 * len(invalids)
-    return {
-        participant: response for participant, response in annotations.items()
-        if (
-            (
-                len(response['annotations']) == int(config['samples_per_participant'])
-                # TEMPORARY
-                or len(response['annotations']) == 30
-            )
-            and valid(response['annotations'])
-        )}
 
 def merge_annotations(annotations):
     """Merge crowdsourced annotations"""

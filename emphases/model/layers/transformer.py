@@ -16,7 +16,10 @@ class Transformer(torch.nn.Module):
         super().__init__()
         self.position = PositionalEncoding(channels, .1)
         self.model = torch.nn.TransformerEncoder(
-            torch.nn.TransformerEncoderLayer(channels, 2),
+            torch.nn.TransformerEncoderLayer(
+                channels,
+                2,
+                dim_feedforward=emphases.CHANNELS),
             num_layers)
 
     def forward(self, x, lengths):

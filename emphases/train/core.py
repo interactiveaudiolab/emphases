@@ -1,5 +1,4 @@
 import contextlib
-import functools
 import os
 
 import torch
@@ -44,7 +43,7 @@ def run(
             None if gpus is None else gpus[0])
 
     # Return path to model checkpoint
-    return emphases.checkpoint.best_path(output_directory)
+    return emphases.checkpoint.best_path(output_directory)[0]
 
 
 ###############################################################################
@@ -75,11 +74,7 @@ def train(
     torch.manual_seed(emphases.RANDOM_SEED)
 
     # Training data
-    train_loader = emphases.data.loader(
-        dataset,
-        'train',
-        gpu,
-        train_limit=emphases.TRAIN_DATA_LIMIT)
+    train_loader = emphases.data.loader(dataset, 'train', gpu)
 
     # Validation data
     if emphases.VALIDATION_DATASET == 'buckeye':
@@ -130,18 +125,6 @@ def train(
         model = torch.nn.parallel.DistributedDataParallel(
             model,
             device_ids=[rank])
-
-    ########################################
-    # Get target statistics for evaluation #
-    ########################################
-
-    if not rank:
-        train_stats = emphases.evaluate.metrics.Statistics()
-        valid_stats = emphases.evaluate.metrics.Statistics()
-        for batch in train_loader:
-            train_stats.update(batch[4])
-        for batch in valid_loader:
-            valid_stats.update(batch[4])
 
     #########
     # Train #
@@ -226,14 +209,13 @@ def train(
                 ############
 
                 if step % emphases.LOG_INTERVAL == 0:
-                    evaluate_fn = functools.partial(
-                        evaluate,
+                    score = evaluate(
                         log_directory,
                         step,
                         model,
-                        gpu)
-                    evaluate_fn('train', train_loader, train_stats)
-                    score = evaluate_fn('valid', valid_loader, valid_stats)
+                        gpu,
+                        'valid',
+                        valid_loader)
 
                 ###################
                 # Save checkpoint #
@@ -287,47 +269,13 @@ def train(
 ###############################################################################
 
 
-def evaluate(directory, step, model, gpu, condition, loader, stats):
+def evaluate(directory, step, model, gpu, condition, loader):
     """Perform model evaluation"""
     device = 'cpu' if gpu is None else f'cuda:{gpu}'
 
-    # Get mean and variance for Pearson Correlation
+    # Setup batch statistics
     target_stats = emphases.evaluate.metrics.Statistics()
     predicted_stats = emphases.evaluate.metrics.Statistics()
-    for i, batch in enumerate(loader):
-
-            # Unpack batch
-            (
-                features,
-                frame_lengths,
-                word_bounds,
-                word_lengths,
-                targets,
-                _,
-                _,
-                _
-            ) = batch
-
-            # Copy to GPU
-            features = features.to(device)
-            frame_lengths = frame_lengths.to(device)
-            word_bounds = word_bounds.to(device)
-            word_lengths = word_lengths.to(device)
-            targets = targets.to(device)
-
-            # Forward pass
-            logits = model(features, frame_lengths, word_bounds, word_lengths)
-
-            # Update statistics
-            target_stats.update(targets)
-            predicted_stats.update(emphases.postprocess(logits))
-
-            # Stop when we exceed some number of batches
-            if i + 1 == emphases.LOG_STEPS:
-                break
-
-    # Setup evaluation metrics
-    metrics = emphases.evaluate.Metrics(predicted_stats, target_stats)
 
     # Tensorboard audio and figures
     waveforms, figures = {}, {}
@@ -335,6 +283,47 @@ def evaluate(directory, step, model, gpu, condition, loader, stats):
     # Prepare model for inference
     with emphases.inference_context(model):
 
+        # Get mean and variance for Pearson Correlation
+        for i, batch in enumerate(loader):
+
+                # Unpack batch
+                (
+                    features,
+                    frame_lengths,
+                    word_bounds,
+                    word_lengths,
+                    targets,
+                    _,
+                    _,
+                    _
+                ) = batch
+
+                # Copy to GPU
+                features = features.to(device)
+                frame_lengths = frame_lengths.to(device)
+                word_bounds = word_bounds.to(device)
+                word_lengths = word_lengths.to(device)
+                targets = targets.to(device)
+
+                # Forward pass
+                logits = model(
+                    features,
+                    frame_lengths,
+                    word_bounds,
+                    word_lengths)
+
+                # Update statistics
+                target_stats.update(targets)
+                predicted_stats.update(emphases.postprocess(logits))
+
+                # Stop when we exceed some number of batches
+                if i + 1 == emphases.LOG_STEPS:
+                    break
+
+        # Setup evaluation metrics
+        metrics = emphases.evaluate.Metrics(predicted_stats, target_stats)
+
+        # Evaluate
         for i, batch in enumerate(loader):
 
             # Unpack batch
@@ -409,29 +398,22 @@ def loss(
     training=False,
     loss_fn=emphases.LOSS):
     """Compute masked loss"""
-    if emphases.DOWNSAMPLE_LOCATION == 'inference':
+    if training and emphases.DOWNSAMPLE_LOCATION == 'inference':
 
-        if training:
+        # If we are not downsampling the network output before the loss, we
+        # must upsample the targets
+        targets = emphases.upsample(
+            targets,
+            word_bounds,
+            word_lengths,
+            frame_lengths)
 
-            # If we are not downsampling the network output before the loss, we
-            # must upsample the targets
-            targets = emphases.upsample(
-                targets,
-                word_bounds,
-                word_lengths,
-                frame_lengths)
+        # Linear interpolation can cause out-of-range
+        if emphases.UPSAMPLE_METHOD == 'linear':
+            targets = torch.clamp(targets, min=0., max=1.)
 
-            # Linear interpolation can cause out-of-range
-            if emphases.UPSAMPLE_METHOD == 'linear':
-                targets = torch.clamp(targets, min=0., max=1.)
-
-            # Frame resolution sequence mask
-            mask = emphases.model.mask_from_lengths(frame_lengths)
-
-        else:
-
-            # Word resolution sequence mask
-            mask = emphases.model.mask_from_lengths(word_lengths)
+        # Frame resolution sequence mask
+        mask = emphases.model.mask_from_lengths(frame_lengths)
 
     else:
 

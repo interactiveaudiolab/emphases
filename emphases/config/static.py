@@ -1,3 +1,5 @@
+import torch
+
 import emphases
 
 
@@ -29,6 +31,12 @@ PARTITION_DIR = emphases.ASSETS_DIR / 'partitions'
 
 # The hopsize in seconds
 HOPSIZE_SECONDS = emphases.HOPSIZE / emphases.SAMPLE_RATE
+
+# The maximum representable frequency in log-hz
+LOGFMAX = torch.log2(torch.tensor(emphases.FMAX))
+
+# The minumum representable frequency in log-hz
+LOGFMIN = torch.log2(torch.tensor(emphases.FMIN))
 
 
 ###############################################################################

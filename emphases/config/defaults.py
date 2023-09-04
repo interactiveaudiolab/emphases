@@ -1,3 +1,4 @@
+import torch
 from pathlib import Path
 
 
@@ -96,22 +97,28 @@ MAX_TRAINING_UTTERANCES = None
 # Minimum number of allowed annotations
 MIN_ANNOTATIONS = None
 
+# Normalize input representations
+NORMALIZE = False
+
 # Whether to use the specified one-eighth dataset for scaling law experiments
 ONE_EIGHTH_UTTERANCES = False
 
 # Whether to use pitch features
-PITCH_FEATURE = True
+PITCH_FEATURE = False
 
 # Whether to use periodicity features
 PERIODICITY_FEATURE = False
 
 # Seed for all random number generators
-RANDOM_SEED = 1234
+RANDOM_SEED = 0
 
 # Size of each partition. Must add to 1.
 SPLIT_SIZE_TEST = .1
 SPLIT_SIZE_TRAIN = .8
 SPLIT_SIZE_VALID = .1
+
+# Dataset to use for training
+TRAINING_DATASET = 'annotate'
 
 # Dataset to use for validation
 VALIDATION_DATASET = 'annotate'
@@ -123,8 +130,6 @@ VALIDATION_DATASET = 'annotate'
 
 
 # Number of steps between logging to Tensorboard
-# TEMPORARY
-# LOG_INTERVAL = 1000  # steps
 LOG_INTERVAL = 100  # steps
 
 # Number of steps to perform for tensorboard logging
@@ -135,7 +140,7 @@ PLOT_EXAMPLES = 2
 
 
 ###############################################################################
-# Prominence baseline parameters
+# Wavelet baseline parameters
 ###############################################################################
 
 
@@ -169,21 +174,25 @@ VOICED_THRESHOLD = 50
 ###############################################################################
 
 
+# Activation function to use in convolution model
+ACTIVATION_FUNCTION = torch.nn.ReLU
+
 # Model architecture. One of ['convolution', 'transformer'].
-# TEMPORARY
-# ARCHITECTURE = 'transformer'
 ARCHITECTURE = 'convolution'
 
 # Model width
-CHANNELS = 512
+CHANNELS = 80
+
+# Dropout probability (or None to not use dropout)
+DROPOUT = None
 
 # Location to perform resampling from frame resolution to word resolution.
-# One of ['inference', 'intermediate', 'loss'].
+# One of ['inference', 'input', 'intermediate', 'loss'].
 DOWNSAMPLE_LOCATION = 'intermediate'
 
 # Method to use for resampling from frame resolution to word resolution.
-# One of ['average', 'center', 'max'].
-DOWNSAMPLE_METHOD = 'max'
+# One of ['average', 'center', 'max', 'sum'].
+DOWNSAMPLE_METHOD = 'sum'
 
 # Convolution kernel size
 KERNEL_SIZE = 3
@@ -197,7 +206,7 @@ METHOD = 'neural'
 
 # Method to use for resampling from word resolution to frame resolution.
 # One of ['linear', 'nearest'].
-UPSAMPLE_METHOD = 'linear'
+UPSAMPLE_METHOD = 'nearest'
 
 
 ###############################################################################
@@ -206,16 +215,9 @@ UPSAMPLE_METHOD = 'linear'
 
 
 # Number of buckets of data lengths used by the sampler
-BUCKETS = 8
-
-# Number of steps between saving checkpoints
-# TEMPORARY
-# CHECKPOINT_INTERVAL = 25000  # steps
-CHECKPOINT_INTERVAL = 500  # steps
+BUCKETS = 2
 
 # Loss function. One of ['bce', 'mse']
-# TEMPORARY
-# LOSS = 'bce'
 LOSS = 'mse'
 
 # Maximum number of frames in one batch
@@ -223,11 +225,8 @@ MAX_FRAMES = 50000
 
 # Number of training steps
 # TEMPORARY
-# NUM_STEPS = 300000
-NUM_STEPS = 10000
+# NUM_STEPS = 10000
+NUM_STEPS = 6000
 
 # Number of data loading worker threads
 NUM_WORKERS = 4
-
-# Number of seconds of data to limit training to
-TRAIN_DATA_LIMIT = None

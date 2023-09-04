@@ -93,7 +93,12 @@ def a_weighted(audio, sample_rate, hop_length=None, pad=False):
     weighted[weighted < emphases.MIN_DB] = emphases.MIN_DB
 
     # Average over weighted frequencies
-    return torch.from_numpy(weighted.mean(axis=0)).float().to(device)[None]
+    loudness = torch.from_numpy(weighted.mean(axis=0)).float().to(device)[None]
+
+    # Scale to roughly [0, 1]
+    if emphases.NORMALIZE:
+        return (loudness + 100.) / 100.
+    return loudness
 
 
 def perceptual_weights():
