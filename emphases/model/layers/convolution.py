@@ -12,11 +12,11 @@ import emphases
 
 class Convolution(torch.nn.Sequential):
 
-    def __init__(self):
+    def __init__(self, kernel_size=emphases.ENCODER_KERNEL_SIZE):
         # Bind common parameters
         conv_fn = functools.partial(
             torch.nn.Conv1d,
-            kernel_size=emphases.KERNEL_SIZE,
+            kernel_size=kernel_size,
             padding='same')
 
         # Layers

@@ -1,5 +1,3 @@
-import functools
-
 import torch
 
 import emphases
@@ -15,24 +13,28 @@ class Model(torch.nn.Module):
     def __init__(self):
         super().__init__()
 
-        # Bind common parameters
-        conv_fn = functools.partial(
-            torch.nn.Conv1d,
-            kernel_size=emphases.KERNEL_SIZE,
+        # Input projection
+        self.input_layer = torch.nn.Conv1d(
+            emphases.NUM_FEATURES,
+            emphases.CHANNELS,
+            kernel_size=emphases.ENCODER_KERNEL_SIZE,
             padding='same')
 
-        # Input projection
-        self.input_layer = conv_fn(emphases.NUM_FEATURES, emphases.CHANNELS)
-
         # Frame encoder
-        self.frame_encoder = emphases.model.Layers()
+        self.frame_encoder = emphases.model.Layers(
+            kernel_size=emphases.ENCODER_KERNEL_SIZE)
 
         # If we are resampling within the model, initialize word decoder
         if emphases.DOWNSAMPLE_LOCATION in ['input', 'intermediate']:
-            self.word_decoder = emphases.model.Layers()
+            self.word_decoder = emphases.model.Layers(
+            kernel_size=emphases.DECODER_KERNEL_SIZE)
 
         # Output projection
-        self.output_layer = conv_fn(emphases.CHANNELS, 1)
+        self.output_layer = torch.nn.Conv1d(
+            emphases.CHANNELS,
+            1,
+            kernel_size=emphases.DECODER_KERNEL_SIZE,
+            padding='same')
 
     def forward(self, features, frame_lengths, word_bounds, word_lengths):
 

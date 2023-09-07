@@ -31,8 +31,8 @@ import matplotlib.pyplot as plt
 
 def analysis(datasets):
     for dataset in datasets:
-        if dataset == "annotate":
-            annotate()
+        if dataset == 'crowdsource':
+            crowdsource()
         else:
             raise ValueError(f'Dataset {dataset} is not defined')
 
@@ -45,7 +45,7 @@ def analysis(datasets):
 class AnnotateStats():
     def __init__(self, stem):
         self.stem = stem
-        self.cache_directory = emphases.CACHE_DIR / 'annotate'
+        self.cache_directory = emphases.CACHE_DIR / 'crowdsource'
         self.alignment = pypar.Alignment(self.cache_directory / 'alignment' / f'{stem}.TextGrid')
 
     def duration(self):
@@ -60,7 +60,7 @@ class AnnotateStats():
             word_durations[idx] for idx, mark in enumerate(response)
             if int(mark)]
 
-def annotate():
+def crowdsource():
     stats_data = {}
 
     # Extract annotations to data directory
@@ -70,11 +70,11 @@ def annotate():
         except yaml.YAMLError as exc:
             print(exc)
 
-    data_directory = emphases.DATA_DIR / 'annotate' / annotation_config['name']
+    data_directory = emphases.DATA_DIR / 'crowdsource' / annotation_config['name']
 
     response_file = data_directory / 'tables' / 'responses.csv'
 
-    analysis_dir = emphases.EVAL_DIR / 'annotate'
+    analysis_dir = emphases.EVAL_DIR / 'crowdsource'
     analysis_dir.mkdir(exist_ok=True, parents=True)
 
     # Load the responses

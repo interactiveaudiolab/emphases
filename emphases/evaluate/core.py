@@ -29,7 +29,7 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
         for batch in loader:
 
             # Unpack
-            _, _, _, _, targets, alignments, audio, _ = batch
+            _, _, _, word_lengths, targets, alignments, audio, _ = batch
 
             # Get predicted scores
             scores = emphases.from_alignment_and_audio(
@@ -41,8 +41,8 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
                 gpu=gpu)
 
             # Update statistics
-            target_stats.update(targets)
-            predicted_stats.update(scores)
+            target_stats.update(targets, word_lengths)
+            predicted_stats.update(scores[None], word_lengths)
 
         # Get metric class
         metric_fn = emphases.evaluate.Metrics

@@ -33,7 +33,7 @@ class Metrics:
 
         # Update squared error
         self.mse.update(
-            logits if emphases.LOSS == 'mse' else emphases.postprocess(logits),
+            emphases.postprocess(logits),
             targets,
             word_lengths)
 
@@ -165,8 +165,12 @@ class Statistics:
         std = math.sqrt(self.m2 / (self.count - 1))
         return self.mean, std
 
-    def update(self, x):
-        for y in x.flatten().tolist():
+    def update(self, x, lengths):
+        # Sequence mask
+        mask = emphases.model.mask_from_lengths(lengths)
+
+        # Update stats
+        for y in x[mask].flatten().tolist():
             self.count += 1
             delta = y - self.mean
             self.mean += delta / self.count

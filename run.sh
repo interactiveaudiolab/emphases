@@ -6,52 +6,64 @@
 
 
 ####################################
+# Large-scale automatic annotation #
+####################################
+
+
+# python -m emphases.data.download --datasets automatic --gpu $1
+# python -m emphases.partition --datasets automatic
+# python -m emphases.data.preprocess --datasets automatic --gpu $1
+# python -m emphases.train --config config/base-automatic-128.py --dataset automatic --gpus $1
+
+
+####################################
 # Annotator redundancy experiments #
 ####################################
 
 
-# ## 1/64; 8 annotations
-# rm -rf data/cache/annotate/*
-# python -m emphases.data.download --datasets annotate --config config/scaling/64-8.py
-# python -m emphases.data.preprocess --datasets annotate --gpu $1
-# python -m emphases.partition --datasets annotate --config config/scaling/64-8.py
-# python -m emphases.train --config config/scaling/64-8.py --gpus $1
+# 1/64; 8 annotations
+rm -rf data/cache/crowdsource/*
+python -m emphases.data.download --datasets crowdsource --config config/scaling/64-8.py
+python -m emphases.data.preprocess --datasets crowdsource --gpu $1
+python -m emphases.partition --datasets crowdsource --config config/scaling/64-8.py
+python -m emphases.train --config config/scaling/64-8.py --gpus $1
 
-# ## 1/32; 4 annotations
-# rm -rf data/cache/annotate/*
-# python -m emphases.data.download --datasets annotate --config config/scaling/32-4.py
-# python -m emphases.data.preprocess --datasets annotate --gpu $1
-# python -m emphases.partition --datasets annotate --config config/scaling/32-4.py
-# python -m emphases.train --config config/scaling/32-4.py --gpus $1
+# 1/32; 4 annotations
+rm -rf data/cache/crowdsource/*
+python -m emphases.data.download --datasets crowdsource --config config/scaling/32-4.py
+python -m emphases.data.preprocess --datasets crowdsource --gpu $1
+python -m emphases.partition --datasets crowdsource --config config/scaling/32-4.py
+python -m emphases.train --config config/scaling/32-4.py --gpus $1
 
-# ## 1/16; 2 annotations
-# rm -rf data/cache/annotate/*
-# python -m emphases.data.download --datasets annotate --config config/scaling/16-2.py
-# python -m emphases.data.preprocess --datasets annotate --gpu $1
-# python -m emphases.partition --datasets annotate --config config/scaling/16-2.py
+# 1/16; 2 annotations
+# rm -rf data/cache/crowdsource/*
+# python -m emphases.data.download --datasets crowdsource --config config/scaling/16-2.py
+# python -m emphases.data.preprocess --datasets crowdsource --gpu $1
+# python -m emphases.partition --datasets crowdsource --config config/scaling/16-2.py
 # python -m emphases.train --config config/scaling/16-2.py --gpus $1
 
-# ## 1/8; 1 annotations
-# rm -rf data/cache/annotate/*
-# python -m emphases.data.download --datasets annotate --config config/scaling/8-1.py
-# python -m emphases.data.preprocess --datasets annotate --gpu $1
-# python -m emphases.partition --datasets annotate --config config/scaling/8-1.py
+# 1/8; 1 annotations
+# rm -rf data/cache/crowdsource/*
+# python -m emphases.data.download --datasets crowdsource --config config/scaling/8-1.py
+# python -m emphases.data.preprocess --datasets crowdsource --gpu $1
+# python -m emphases.partition --datasets crowdsource --config config/scaling/8-1.py
 # python -m emphases.train --config config/scaling/8-1.py --gpus $1
 
-# ## > 1 annotations
-# rm -rf data/cache/annotate/*
-# python -m emphases.data.download --datasets annotate --config config/scaling/min-2.py
-# python -m emphases.data.preprocess --datasets annotate --gpu $1
-# python -m emphases.partition --datasets annotate --config config/scaling/min-2.py
+# > 1 annotations
+# rm -rf data/cache/crowdsource/*
+# python -m emphases.data.download --datasets crowdsource --config config/scaling/min-2.py
+# python -m emphases.data.preprocess --datasets crowdsource --gpu $1
+# python -m emphases.partition --datasets crowdsource --config config/scaling/min-2.py
 # python -m emphases.train --config config/scaling/min-2.py --gpus $1
 
-# # Plot results
-# python -m emphases.plot.scaling \
-#     --evaluations 8-1 16-2 32-4 64-8 \
-#     --xlabel "Annotators per utterance" \
-#     --output_file results/scaling-annotators.pdf \
-#     --sizes 3200 1600 800 400 \
-#     --yticks 0.67 0.68 0.69
+# Plot results
+python -m emphases.plot.scaling \
+    --evaluations 8-1 16-2 32-4 64-8 \
+    --xlabel "Annotators per utterance" \
+    --output_file results/scaling-annotators.pdf \
+    --sizes 3200 1600 800 400 \
+    --yticks 0.67 0.68 0.69 0.70 \
+    --text_offset .005
 
 
 ####################################
@@ -59,40 +71,41 @@
 ####################################
 
 
-# ## 400 utterances
-# rm -rf data/cache/annotate/*
-# python -m emphases.data.download --datasets annotate --config config/scaling/400.py
-# python -m emphases.data.preprocess --datasets annotate --gpu $1
-# python -m emphases.partition --datasets annotate --config config/scaling/400.py
-# python -m emphases.train --config config/scaling/400.py --gpus $1
+## 400 utterances
+rm -rf data/cache/crowdsource/*
+python -m emphases.data.download --datasets crowdsource --config config/scaling/400.py
+python -m emphases.data.preprocess --datasets crowdsource --gpu $1
+python -m emphases.partition --datasets crowdsource --config config/scaling/400.py
+python -m emphases.train --config config/scaling/400.py --gpus $1
 
 # ## 800 utterances
-# rm -rf data/cache/annotate/*
-# python -m emphases.data.download --datasets annotate --config config/scaling/800.py
-# python -m emphases.data.preprocess --datasets annotate --gpu $1
-# python -m emphases.partition --datasets annotate --config config/scaling/800.py
+# rm -rf data/cache/crowdsource/*
+# python -m emphases.data.download --datasets crowdsource --config config/scaling/800.py
+# python -m emphases.data.preprocess --datasets crowdsource --gpu $1
+# python -m emphases.partition --datasets crowdsource --config config/scaling/800.py
 # python -m emphases.train --config config/scaling/800.py --gpus $1
 
 # ## 1600 utterances
-# rm -rf data/cache/annotate/*
-# python -m emphases.data.download --datasets annotate --config config/scaling/1600.py
-# python -m emphases.data.preprocess --datasets annotate --gpu $1
-# python -m emphases.partition --datasets annotate --config config/scaling/1600.py
+# rm -rf data/cache/crowdsource/*
+# python -m emphases.data.download --datasets crowdsource --config config/scaling/1600.py
+# python -m emphases.data.preprocess --datasets crowdsource --gpu $1
+# python -m emphases.partition --datasets crowdsource --config config/scaling/1600.py
 # python -m emphases.train --config config/scaling/1600.py --gpus $1
 
 # ## 3200 utterances
-# rm -rf data/cache/annotate/*
-# python -m emphases.data.download --datasets annotate --config config/scaling/3200.py
-# python -m emphases.data.preprocess --datasets annotate --gpu $1
-# python -m emphases.partition --datasets annotate --config config/scaling/3200.py
+# rm -rf data/cache/crowdsource/*
+# python -m emphases.data.download --datasets crowdsource --config config/scaling/3200.py
+# python -m emphases.data.preprocess --datasets crowdsource --gpu $1
+# python -m emphases.partition --datasets crowdsource --config config/scaling/3200.py
 # python -m emphases.train --config config/scaling/3200.py --gpus $1
 
-# # Plot results
-# python -m emphases.plot.scaling \
-#     --evaluations 400 800 1600 3200 \
-#     --xlabel Utterances \
-#     --output_file results/scaling-data.pdf \
-#     --yticks 0.55 0.60 0.65 0.70 0.75
+# Plot results
+python -m emphases.plot.scaling \
+    --evaluations 400 800 1600 3200 \
+    --xlabel Utterances \
+    --output_file results/scaling-data.pdf \
+    --yticks 0.55 0.60 0.65 0.70 0.75 \
+    --text_offset 0.02
 
 
 ##########################
@@ -100,11 +113,11 @@
 ##########################
 
 
-rm -rf data/cache/annotate/*
-python -m emphases.data.download --datasets annotate --config config/ablate-features/normalize.py
-python -m emphases.data.preprocess --datasets annotate --gpu $1 --config config/ablate-features/normalize.py
-python -m emphases.partition --datasets annotate --config config/ablate-features/normalize.py
-python -m emphases.train --config config/ablate-features/normalize.py --gpus $1
+# rm -rf data/cache/crowdsource/*
+# python -m emphases.data.download --datasets crowdsource --config config/ablate-features/normalize.py
+# python -m emphases.data.preprocess --datasets crowdsource --gpu $1 --config config/ablate-features/normalize.py
+# python -m emphases.partition --datasets crowdsource --config config/ablate-features/normalize.py
+# python -m emphases.train --config config/ablate-features/normalize.py --gpus $1
 
 
 #############
@@ -113,25 +126,19 @@ python -m emphases.train --config config/ablate-features/normalize.py --gpus $1
 
 
 # Setup data
-python -m emphases.data.download --datasets annotate
-python -m emphases.data.preprocess --datasets annotate --gpu $1
-python -m emphases.partition --datasets annotate
+# python -m emphases.data.download --datasets crowdsource
+# python -m emphases.data.preprocess --datasets crowdsource --gpu $1
+# python -m emphases.partition --datasets crowdsource
 
-# TEMPORARY
-python -m emphases.train --config config/hparam-search/buckets-1.py --gpus $1
-python -m emphases.train --config config/hparam-search/buckets-2.py --gpus $1
-python -m emphases.train --config config/hparam-search/dropout-05.py --gpus $1
-python -m emphases.train --config config/hparam-search/dropout-10.py --gpus $1
+# Start with a small, transformer model (intermediate-wordwise + max + mels + prosody) and search loss
+# python -m emphases.train --config config/base.py --gpus $1
+# python -m emphases.train --config config/bce.py --gpus $1
 
-# # Start with a small, transformer model (intermediate-wordwise + max + mels + prosody) and search loss
-python -m emphases.train --config config/base.py --gpus $1
-python -m emphases.train --config config/bce.py --gpus $1
-
-# # Next, search features
+# Next, search features
 # python -m emphases.train --config config/ablate-features/no-loudness.py --gpus $1
 # python -m emphases.train --config config/ablate-features/no-mels.py --gpus $1
 
-# # Next, search combinations of downsampling method and location
+# Next, search combinations of downsampling method and location
 # python -m emphases.train --config config/ablate-resampling/average-inference.py --gpus $1
 # python -m emphases.train --config config/ablate-resampling/average-intermediate.py --gpus $1
 # python -m emphases.train --config config/ablate-resampling/average-input.py --gpus $1
@@ -165,10 +172,7 @@ python -m emphases.train --config config/bce.py --gpus $1
 #############
 
 
-# Evaluate baselines
-# python -m emphases.evaluate --config config/prominence.py
-# python -m emphases.evaluate --config config/pitch-variance.py --gpu $1
-# python -m emphases.evaluate --config config/duration-variance.py
+python -m emphases.evaluate --config config/prominence.py
 
 
 ############

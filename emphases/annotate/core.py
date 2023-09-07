@@ -27,7 +27,7 @@ def datasets(
     index = f'{len(list(directory.glob("*"))):02}'
     input_directory = directory / index
     input_directory.mkdir(exist_ok=True, parents=True)
-    output_directory = emphases.DATA_DIR / 'annotate' / index
+    output_directory = emphases.DATA_DIR / 'crowdsource' / index
     output_directory.mkdir(exist_ok=True, parents=True)
 
     # Get stems

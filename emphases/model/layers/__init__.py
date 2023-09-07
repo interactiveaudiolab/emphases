@@ -4,9 +4,9 @@ from .transformer import Transformer
 import emphases
 
 
-def Layers():
+def Layers(**kwargs):
     if emphases.ARCHITECTURE == 'convolution':
-        return Convolution()
+        return Convolution(**kwargs)
     elif emphases.ARCHITECTURE == 'transformer':
         return Transformer()
     else:

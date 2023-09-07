@@ -77,10 +77,10 @@ WINDOW_SIZE = 1024
 
 
 # List of all datasets
-DATASETS = ['annotate', 'buckeye', 'libritts']
+DATASETS = ['crowdsource', 'buckeye', 'libritts']
 
 # Datasets to use for evaluation
-EVALUATION_DATASETS = ['annotate', 'buckeye']
+EVALUATION_DATASETS = ['crowdsource', 'buckeye']
 
 # Whether to use mel features
 MEL_FEATURE = True
@@ -110,7 +110,7 @@ PITCH_FEATURE = False
 PERIODICITY_FEATURE = False
 
 # Seed for all random number generators
-RANDOM_SEED = 0
+RANDOM_SEED = 2
 
 # Size of each partition. Must add to 1.
 SPLIT_SIZE_TEST = .1
@@ -118,10 +118,10 @@ SPLIT_SIZE_TRAIN = .8
 SPLIT_SIZE_VALID = .1
 
 # Dataset to use for training
-TRAINING_DATASET = 'annotate'
+TRAINING_DATASET = 'crowdsource'
 
 # Dataset to use for validation
-VALIDATION_DATASET = 'annotate'
+VALIDATION_DATASET = 'crowdsource'
 
 
 ###############################################################################
@@ -183,6 +183,9 @@ ARCHITECTURE = 'convolution'
 # Model width
 CHANNELS = 80
 
+# Decoder convolution kernel size
+DECODER_KERNEL_SIZE = 3
+
 # Dropout probability (or None to not use dropout)
 DROPOUT = None
 
@@ -194,8 +197,8 @@ DOWNSAMPLE_LOCATION = 'intermediate'
 # One of ['average', 'center', 'max', 'sum'].
 DOWNSAMPLE_METHOD = 'sum'
 
-# Convolution kernel size
-KERNEL_SIZE = 3
+# Encoder convolution kernel size
+ENCODER_KERNEL_SIZE = 3
 
 # Number of network layers
 LAYERS = 6
@@ -221,7 +224,7 @@ BUCKETS = 2
 LOSS = 'mse'
 
 # Maximum number of frames in one batch
-MAX_FRAMES = 50000
+MAX_FRAMES = 75000
 
 # Number of training steps
 # TEMPORARY

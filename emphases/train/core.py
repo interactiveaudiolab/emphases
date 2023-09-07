@@ -221,7 +221,7 @@ def train(
                 # Save checkpoint #
                 ###################
 
-                if step > 500 and score > best:
+                if step >= 300 and score > best:
                     emphases.checkpoint.save(
                         model,
                         optimizer,
@@ -273,57 +273,14 @@ def evaluate(directory, step, model, gpu, condition, loader):
     """Perform model evaluation"""
     device = 'cpu' if gpu is None else f'cuda:{gpu}'
 
-    # Setup batch statistics
-    target_stats = emphases.evaluate.metrics.Statistics()
-    predicted_stats = emphases.evaluate.metrics.Statistics()
-
     # Tensorboard audio and figures
     waveforms, figures = {}, {}
 
     # Prepare model for inference
     with emphases.inference_context(model):
 
-        # Get mean and variance for Pearson Correlation
-        for i, batch in enumerate(loader):
-
-                # Unpack batch
-                (
-                    features,
-                    frame_lengths,
-                    word_bounds,
-                    word_lengths,
-                    targets,
-                    _,
-                    _,
-                    _
-                ) = batch
-
-                # Copy to GPU
-                features = features.to(device)
-                frame_lengths = frame_lengths.to(device)
-                word_bounds = word_bounds.to(device)
-                word_lengths = word_lengths.to(device)
-                targets = targets.to(device)
-
-                # Forward pass
-                logits = model(
-                    features,
-                    frame_lengths,
-                    word_bounds,
-                    word_lengths)
-
-                # Update statistics
-                target_stats.update(targets)
-                predicted_stats.update(emphases.postprocess(logits))
-
-                # Stop when we exceed some number of batches
-                if i + 1 == emphases.LOG_STEPS:
-                    break
-
-        # Setup evaluation metrics
-        metrics = emphases.evaluate.Metrics(predicted_stats, target_stats)
-
-        # Evaluate
+        # Cache results to evaluate
+        results = []
         for i, batch in enumerate(loader):
 
             # Unpack batch
@@ -346,10 +303,17 @@ def evaluate(directory, step, model, gpu, condition, loader):
             targets = targets.to(device)
 
             # Forward pass
-            logits = model(features, frame_lengths, word_bounds, word_lengths)
+            logits = model(
+                features,
+                frame_lengths,
+                word_bounds,
+                word_lengths)
 
-            # Update metrics
-            metrics.update(logits, targets, word_lengths)
+            # Cache results
+            results.append((
+                logits.detach().cpu(),
+                targets.detach().cpu(),
+                word_lengths.detach().cpu()))
 
             # Add audio and figures
             if condition == 'valid' and i < emphases.PLOT_EXAMPLES:
@@ -370,6 +334,29 @@ def evaluate(directory, step, model, gpu, condition, loader):
             # Stop when we exceed some number of batches
             if i + 1 == emphases.LOG_STEPS:
                 break
+
+        # Setup batch statistics
+        target_stats = emphases.evaluate.metrics.Statistics()
+        predicted_stats = emphases.evaluate.metrics.Statistics()
+
+        # Update statistics
+        for logits, targets, word_lengths in results:
+            target_stats.update(
+                targets.to(device),
+                word_lengths.to(device))
+            predicted_stats.update(
+                emphases.postprocess(logits.to(device)),
+                word_lengths.to(device))
+
+        # Setup evaluation metrics
+        metrics = emphases.evaluate.Metrics(predicted_stats, target_stats)
+
+        # Update metrics
+        for logits, targets, word_lengths in results:
+            metrics.update(
+                logits.to(device),
+                targets.to(device),
+                word_lengths.to(device))
 
     # Format results
     scalars = {

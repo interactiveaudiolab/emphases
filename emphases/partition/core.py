@@ -19,12 +19,16 @@ def datasets(datasets):
         random.seed(emphases.RANDOM_SEED)
 
         # Make partition
-        if dataset == 'buckeye':
+        if dataset == 'automatic':
+            partition = automatic()
+        elif dataset == 'buckeye':
             partition = buckeye()
         elif dataset == 'libritts':
             partition = libritts()
-        elif dataset == 'annotate':
-            partition = annotate()
+        elif dataset == 'crowdsource':
+            partition = crowdsource()
+        else:
+            raise ValueError(f'Dataset {dataset} is not defined')
 
         # Save to disk
         file.parent.mkdir(exist_ok=True, parents=True)
@@ -32,13 +36,66 @@ def datasets(datasets):
             json.dump(partition, file, ensure_ascii=False, indent=4)
 
 
-def annotate():
-    """Partition Annotated dataset"""
+###############################################################################
+# Existing datasets
+###############################################################################
+
+
+def buckeye():
+    """Partition buckeye dataset"""
     # Get audio files
-    directory = emphases.CACHE_DIR / 'annotate'
+    directory = emphases.CACHE_DIR / 'buckeye'
     audio_files = directory.rglob('*.wav')
 
-    # Get speakers
+    # Get stems
+    stems = [file.stem for file in audio_files]
+
+    # Partition
+    return {'train': [], 'valid': [], 'test': stems}
+
+
+def libritts():
+    """Partition libritts dataset"""
+    # TODO
+    pass
+
+
+###############################################################################
+# Dataset creation
+###############################################################################
+
+
+def automatic():
+    """Partition dataset created from trained model"""
+    # Get audio files
+    directory = emphases.CACHE_DIR / 'automatic'
+    audio_files = directory.rglob('*.wav')
+
+    # Get stems
+    stems = [file.stem for file in audio_files]
+
+    # Shuffle stems
+    random.seed(emphases.RANDOM_SEED)
+    random.shuffle(stems)
+
+    # Get split locations
+    left = int(emphases.SPLIT_SIZE_TRAIN * len(stems))
+    right = left + int(emphases.SPLIT_SIZE_VALID * len(stems))
+
+    # Partition
+    return {
+        'train': stems[:left],
+        'valid': stems[left:right],
+        'test': stems[right:]}
+
+
+def crowdsource():
+    """Partition crowdsourced dataset"""
+    # Get audio files
+    directory = emphases.CACHE_DIR / 'crowdsource'
+    audio_files = directory.rglob('*.wav')
+
+    # Get stems
     stems = [file.stem for file in audio_files]
 
     # Shuffle stems
@@ -70,22 +127,3 @@ def annotate():
         train = train[:emphases.MAX_TRAINING_UTTERANCES]
 
     return {'train': train, 'valid': valid, 'test': test}
-
-
-def buckeye():
-    """Partition buckeye dataset"""
-    # Get audio files
-    directory = emphases.CACHE_DIR / 'buckeye'
-    audio_files = directory.rglob('*.wav')
-
-    # Get stems
-    stems = [file.stem for file in audio_files]
-
-    # Partition
-    return {"train": [], "valid": [], "test": stems}
-
-
-def libritts():
-    """Partition libritts dataset"""
-    # TODO
-    pass

@@ -1,5 +1,4 @@
-import math
-
+import matplotlib
 import matplotlib.pyplot as plt
 import torch
 
@@ -45,6 +44,12 @@ def scaling_laws(
     axis.set_xlim([0, max(x) + 0.1 * x_range])
     axis.get_xaxis().set_ticks(x)
     axis.set_xlabel(xlabel)
+    axis.xaxis.set_ticks(x) #set the ticks to be a
+    axis.xaxis.set_ticklabels(x) # change the ticks' names to x
+    # axis.set_xscale('log')
+    # axis.set_xlim(min(x), max(x))
+    # axis.xaxis.set_major_formatter(matplotlib.ticker.ScalarFormatter())
+    # axis.ticklabel_format(useOffset=False, style='plain')
 
     # Format y axis
     axis.get_yaxis().set_ticks(yticks)

@@ -1,4 +1,11 @@
-
-python -m emphases.train --config config/hparam-search/batch-025000.py --gpus $1
-python -m emphases.train --config config/hparam-search/batch-075000.py --gpus $1
-python -m emphases.train --config config/hparam-search/batch-100000.py --gpus $1
+python -m emphases.train --config config/ablate-resampling/average-inference.py --gpus $1
+python -m emphases.train --config config/ablate-resampling/average-intermediate.py --gpus $1
+python -m emphases.train --config config/ablate-resampling/average-input.py --gpus $1
+python -m emphases.train --config config/ablate-resampling/average-loss.py --gpus $1
+python -m emphases.train --config config/ablate-resampling/center-inference.py --gpus $1
+python -m emphases.train --config config/ablate-resampling/center-intermediate.py --gpus $1
+python -m emphases.train --config config/ablate-resampling/center-input.py --gpus $1
+python -m emphases.train --config config/ablate-resampling/center-loss.py --gpus $1
+python -m emphases.train --config config/ablate-resampling/max-inference.py --gpus $1
+python -m emphases.train --config config/ablate-resampling/max-input.py --gpus $1
+python -m emphases.train --config config/ablate-resampling/max-loss.py --gpus $1

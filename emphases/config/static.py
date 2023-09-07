@@ -9,13 +9,13 @@ import emphases
 
 
 # Directory to save annotation artifacts
-ANNOTATION_DIR = emphases.SOURCE_DIR / 'annotate'
+ANNOTATION_DIR = emphases.SOURCE_DIR / 'crowdsource'
 
 # Default configuration file for emphasis annotation
 DEFAULT_ANNOTATION_CONFIG = emphases.ASSETS_DIR / 'configs' / 'annotate.yaml'
 
 # Default checkpoint for generation
-DEFAULT_CHECKPOINT = emphases.ASSETS_DIR / 'checkpoints'
+DEFAULT_CHECKPOINT = emphases.ASSETS_DIR / 'checkpoints' / 'checkpoint.pt'
 
 # Default configuration file
 DEFAULT_CONFIGURATION = emphases.ASSETS_DIR / 'configs' / 'emphases.py'

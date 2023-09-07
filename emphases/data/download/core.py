@@ -79,15 +79,17 @@ LIBRITTS_SPEAKERS = [
 ###############################################################################
 
 
-def datasets(datasets):
+def datasets(datasets, gpu=None):
     """Download datasets"""
     for dataset in datasets:
-        if dataset == 'libritts':
-            libritts()
+        if dataset == 'automatic':
+            automatic(gpu=gpu)
         elif dataset == 'buckeye':
             buckeye()
-        elif dataset == 'annotate':
-            annotate()
+        elif dataset == 'crowdsource':
+            crowdsource()
+        elif dataset == 'libritts':
+            libritts()
         else:
             raise ValueError(f'Dataset {dataset} is not defined')
 
@@ -97,15 +99,65 @@ def datasets(datasets):
 ###############################################################################
 
 
-def annotate():
-    """Download annotated dataset"""
+def automatic(gpu=None):
+    """Create dataset from trained model"""
+    # Setup directories
+    cache_directory = emphases.CACHE_DIR / 'automatic'
+    cache_directory.mkdir(exist_ok=True, parents=True)
+
+    # Create subdirectories
+    features = ['alignment', 'audio', 'scores']
+    for feature in features:
+        (cache_directory / feature).mkdir(exist_ok=True, parents=True)
+
+    # Get files
+    audio_files = list(
+        (emphases.CACHE_DIR / 'libritts' / 'audio').rglob('*.wav'))
+    stems = [file.stem for file in audio_files]
+
+    # Copy from LibriTTS cache to annotation cache
+    for stem in stems:
+
+        # Copy audio
+        audio_file = (
+            emphases.CACHE_DIR / 'automatic' / 'audio' / f'{stem}.wav')
+        shutil.copyfile(
+            emphases.CACHE_DIR / 'libritts' / 'audio' / f'{stem}.wav',
+            audio_file)
+
+        # Copy alignment
+        shutil.copyfile(
+            emphases.CACHE_DIR / 'libritts' / 'alignment' / f'{stem}.TextGrid',
+            emphases.CACHE_DIR / 'automatic' / 'alignment' / f'{stem}.TextGrid')
+
+        # Load alignment
+        alignment = pypar.Alignment(
+            emphases.CACHE_DIR / 'automatic' / 'alignment' / f'{stem}.TextGrid')
+
+        # Load audio
+        audio, _ = torchaudio.load(audio_file)
+
+        # Infer scores
+        scores = emphases.from_alignment_and_audio(
+            alignment,
+            audio,
+            emphases.SAMPLE_RATE,
+            pad=True,
+            gpu=gpu).detach().cpu()
+
+        # Save scores
+        torch.save(scores, cache_directory / 'scores' / f'{stem}.pt')
+
+
+def crowdsource():
+    """Prepare crowdsourced dataset"""
     # Get annotation config
     with open(emphases.DEFAULT_ANNOTATION_CONFIG, "r") as stream:
         annotation_config = yaml.safe_load(stream)
 
     # Setup directories
-    data_directory = emphases.DATA_DIR / 'annotate'
-    cache_directory = emphases.CACHE_DIR / 'annotate'
+    data_directory = emphases.DATA_DIR / 'crowdsource'
+    cache_directory = emphases.CACHE_DIR / 'crowdsource'
     cache_directory.mkdir(exist_ok=True, parents=True)
 
     # Create subdirectories
@@ -263,16 +315,16 @@ def annotate():
         # Copy audio
         shutil.copyfile(
             emphases.CACHE_DIR / 'libritts' / 'audio' / f'{stem}.wav',
-            emphases.CACHE_DIR / 'annotate' / 'audio' / f'{stem}.wav')
+            emphases.CACHE_DIR / 'crowdsource' / 'audio' / f'{stem}.wav')
 
         # Copy alignment
         shutil.copyfile(
             emphases.CACHE_DIR / 'libritts' / 'alignment' / f'{stem}.TextGrid',
-            emphases.CACHE_DIR / 'annotate' / 'alignment' / f'{stem}.TextGrid')
+            emphases.CACHE_DIR / 'crowdsource' / 'alignment' / f'{stem}.TextGrid')
 
         # Load alignment
         alignment = pypar.Alignment(
-            emphases.CACHE_DIR / 'annotate' / 'alignment' / f'{stem}.TextGrid')
+            emphases.CACHE_DIR / 'crowdsource' / 'alignment' / f'{stem}.TextGrid')
 
         # Match alignment and scores (silences get a score of zero)
         j = 0
