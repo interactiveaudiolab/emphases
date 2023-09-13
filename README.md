@@ -53,6 +53,7 @@ audio_file = 'example.wav'
 alignment, results = emphases.from_file(text_file, audio_file)
 
 # Check which words were emphasized
+# TODO - handle silences
 for word, result in zip(alignment, results):
     if result:
         print(f'{word} was emphasized')

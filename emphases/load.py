@@ -1,5 +1,3 @@
-import json
-
 import torchaudio
 
 import emphases
@@ -17,9 +15,3 @@ def audio(file):
 
     # Maybe resample
     return emphases.resample(audio, sample_rate)
-
-
-def partition(dataset):
-    """Load partitions for dataset"""
-    with open(emphases.PARTITION_DIR / f'{dataset}.json') as file:
-        return json.load(file)

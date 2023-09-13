@@ -1,6 +1,5 @@
 import csv
 import json
-import random
 import shutil
 import ssl
 import tarfile
@@ -222,9 +221,6 @@ def crowdsource():
                 # Add annotation
                 annotation_data[participant]['annotations'].append(entry)
 
-    # TEMPORARY
-    unmatched = []
-
     # Get worker ID correspondence
     correspondence = {}
     for directory in data_directory.glob('*'):
@@ -236,22 +232,21 @@ def crowdsource():
         with open(file) as file:
             contents = json.load(file)
             for content in contents:
-
-                # TEMPORARY - try
-                try:
-                    correspondence |= {content['ParticipantID']: content['WorkerId']}
-                except KeyError as error:
-                    unmatched.append(content['WorkerId'])
+                correspondence |= {content['ParticipantID']: content['WorkerId']}
 
     # Crowdsourced annotation
-    if correspondence or unmatched:
+    if correspondence:
 
         # Filter out where incomplete or > 1/3 examples have > 2/3 words selected
         def valid(items):
+            if not hasattr(valid, 'count'):
+                valid.count = 0
             sums = [sum(item['score']) for item in items]
             counts = [len(item['score']) for item in items]
             invalids = [s > .67 * c for s, c in zip(sums, counts)]
-            return sum(invalids) < .33 * len(invalids)
+            is_valid = sum(invalids) < .33 * len(invalids)
+            valid.count += 1 - int(is_valid)
+            return is_valid
 
         # Join participants with same worker ID
         joined = {}
@@ -265,16 +260,7 @@ def crowdsource():
             ):
                 continue
 
-            # TEMPORARY - try
-            try:
-                worker = correspondence[participant]
-            except KeyError as error:
-                if unmatched:
-                    worker = unmatched.pop()
-                else:
-                    choice = random.choice(list(correspondence.keys()))
-                    worker = correspondence[choice]
-
+            worker = correspondence[participant]
             if worker in joined:
                 joined[worker]['annotations'].extend(contents['annotations'])
             else:
@@ -283,6 +269,9 @@ def crowdsource():
     # Manual annotation
     else:
         joined = annotation_data
+
+    # if hasattr(valid, 'count'):
+    #     print(f'{valid.count} annotators failed the bot filter')
 
     # Anonymize
     anonymized = {}

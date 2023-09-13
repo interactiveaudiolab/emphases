@@ -273,7 +273,7 @@ def infer(features, word_bounds, checkpoint=emphases.DEFAULT_CHECKPOINT):
         infer.checkpoint != checkpoint or
         infer.device_type != features.device.type
     ):
-        # Maybe initialize model
+        # Initialize model
         model = emphases.Model()
 
         # Load from disk

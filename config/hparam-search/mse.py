@@ -1,7 +1,7 @@
 MODULE = 'emphases'
 
 # Configuration name
-CONFIG = 'bce'
+CONFIG = 'mse'
 
 # Loss function. One of ['bce', 'mse']
-LOSS = 'bce'
+LOSS = 'mse'

@@ -77,16 +77,16 @@ WINDOW_SIZE = 1024
 
 
 # List of all datasets
-DATASETS = ['crowdsource', 'buckeye', 'libritts']
+DATASETS = ['buckeye', 'libritts']
 
 # Datasets to use for evaluation
-EVALUATION_DATASETS = ['crowdsource', 'buckeye']
+EVALUATION_DATASETS = ['buckeye', 'libritts']
 
 # Whether to use mel features
 MEL_FEATURE = True
 
 # Whether to use loudness features
-LOUDNESS_FEATURE = True
+LOUDNESS_FEATURE = False
 
 # Maximum number of allowed annotations
 MAX_ANNOTATIONS = None
@@ -110,7 +110,7 @@ PITCH_FEATURE = False
 PERIODICITY_FEATURE = False
 
 # Seed for all random number generators
-RANDOM_SEED = 2
+RANDOM_SEED = 0
 
 # Size of each partition. Must add to 1.
 SPLIT_SIZE_TEST = .1
@@ -118,10 +118,10 @@ SPLIT_SIZE_TRAIN = .8
 SPLIT_SIZE_VALID = .1
 
 # Dataset to use for training
-TRAINING_DATASET = 'crowdsource'
+TRAINING_DATASET = 'libritts'
 
 # Dataset to use for validation
-VALIDATION_DATASET = 'crowdsource'
+VALIDATION_DATASET = 'libritts'
 
 
 ###############################################################################
@@ -209,7 +209,7 @@ METHOD = 'neural'
 
 # Method to use for resampling from word resolution to frame resolution.
 # One of ['linear', 'nearest'].
-UPSAMPLE_METHOD = 'nearest'
+UPSAMPLE_METHOD = 'linear'
 
 
 ###############################################################################
@@ -221,14 +221,12 @@ UPSAMPLE_METHOD = 'nearest'
 BUCKETS = 2
 
 # Loss function. One of ['bce', 'mse']
-LOSS = 'mse'
+LOSS = 'bce'
 
 # Maximum number of frames in one batch
 MAX_FRAMES = 75000
 
 # Number of training steps
-# TEMPORARY
-# NUM_STEPS = 10000
 NUM_STEPS = 6000
 
 # Number of data loading worker threads

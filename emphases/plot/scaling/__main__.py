@@ -41,9 +41,19 @@ def parse_args():
         nargs='+',
         help='The number of utterances used in each evaluation')
     parser.add_argument(
-        '--text_offset',
+        '--scores',
         type=float,
-        default=.011,
+        nargs='+',
+        help='The Pearson Correlation y values')
+    parser.add_argument(
+        '--steps',
+        type=int,
+        nargs='+',
+        help='The number of training steps')
+    parser.add_argument(
+        '--text_offsets',
+        type=float,
+        nargs='+',
         help='The amount to space the text below the plot point')
     return parser.parse_args()
 

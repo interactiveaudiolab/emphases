@@ -15,17 +15,20 @@ def scaling_laws(
     xlabel,
     output_file,
     yticks,
+    scores=None,
+    steps=None,
     sizes=None,
-    text_offset=.011):
+    text_offsets=None):
     """Plot scaling laws"""
     # Load evaluation results
-    scores, steps = [], []
-    for evaluation in evaluations:
-        path, score = emphases.checkpoint.best_path(
-            emphases.RUNS_DIR / evaluation)
-        checkpoint = torch.load(path, map_location='cpu')
-        scores.append(score)
-        steps.append(checkpoint['step'])
+    if scores is None or steps is None:
+        scores, steps = [], []
+        for evaluation in evaluations:
+            path, score = emphases.checkpoint.best_path(
+                emphases.RUNS_DIR / evaluation)
+            checkpoint = torch.load(path, map_location='cpu')
+            scores.append(score)
+            steps.append(checkpoint['step'])
 
     # Get x values
     x = [int(eval.split('-')[-1]) for eval in evaluations]
@@ -44,12 +47,8 @@ def scaling_laws(
     axis.set_xlim([0, max(x) + 0.1 * x_range])
     axis.get_xaxis().set_ticks(x)
     axis.set_xlabel(xlabel)
-    axis.xaxis.set_ticks(x) #set the ticks to be a
-    axis.xaxis.set_ticklabels(x) # change the ticks' names to x
-    # axis.set_xscale('log')
-    # axis.set_xlim(min(x), max(x))
-    # axis.xaxis.set_major_formatter(matplotlib.ticker.ScalarFormatter())
-    # axis.ticklabel_format(useOffset=False, style='plain')
+    axis.xaxis.set_ticks(x)
+    axis.xaxis.set_ticklabels(x)
 
     # Format y axis
     axis.get_yaxis().set_ticks(yticks)
@@ -66,6 +65,10 @@ def scaling_laws(
     for i in range(len(x)):
         axis.scatter(x[i], scores[i], color=colors[i])
 
+    # Default text offset
+    if text_offsets is None:
+        text_offsets = [0.011] * len(evaluations)
+
     # Annotate
     for i in range(len(evaluations)):
         text = f'steps={steps[i]}'
@@ -73,7 +76,7 @@ def scaling_laws(
             text += f'\nutterances={sizes[i]}'
         axis.text(
             x[i],
-            scores[i] - text_offset,
+            scores[i] - text_offsets[i],
             text,
             horizontalalignment='center')
 

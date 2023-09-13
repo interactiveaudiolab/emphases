@@ -13,10 +13,6 @@ def parse_args():
     """Parse command-line arguments"""
     parser = argparse.ArgumentParser(description='Perform emphasis annotation')
     parser.add_argument(
-        '--stem_file',
-        required=True,
-        help='File containing which stems to annotate')
-    parser.add_argument(
         '--annotation_config',
         type=Path,
         default=emphases.DEFAULT_ANNOTATION_CONFIG,

@@ -1,11 +1,4 @@
-python -m emphases.train --config config/ablate-resampling/average-inference.py --gpus $1
-python -m emphases.train --config config/ablate-resampling/average-intermediate.py --gpus $1
-python -m emphases.train --config config/ablate-resampling/average-input.py --gpus $1
-python -m emphases.train --config config/ablate-resampling/average-loss.py --gpus $1
-python -m emphases.train --config config/ablate-resampling/center-inference.py --gpus $1
-python -m emphases.train --config config/ablate-resampling/center-intermediate.py --gpus $1
-python -m emphases.train --config config/ablate-resampling/center-input.py --gpus $1
-python -m emphases.train --config config/ablate-resampling/center-loss.py --gpus $1
-python -m emphases.train --config config/ablate-resampling/max-inference.py --gpus $1
-python -m emphases.train --config config/ablate-resampling/max-input.py --gpus $1
-python -m emphases.train --config config/ablate-resampling/max-loss.py --gpus $1
+python -m emphases.train --config config/downsample/sum-inference.py --gpus $1
+python -m emphases.train --config config/downsample/sum-intermediate.py --gpus $1
+python -m emphases.train --config config/downsample/sum-input.py --gpus $1
+python -m emphases.train --config config/downsample/sum-loss.py --gpus $1

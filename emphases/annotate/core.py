@@ -14,7 +14,6 @@ import emphases
 
 
 def datasets(
-    stem_file,
     annotation_config=emphases.DEFAULT_ANNOTATION_CONFIG,
     dataset='libritts',
     directory=emphases.ANNOTATION_DIR,
@@ -30,17 +29,9 @@ def datasets(
     output_directory = emphases.DATA_DIR / 'crowdsource' / index
     output_directory.mkdir(exist_ok=True, parents=True)
 
-    # Get stems
-    with open(stem_file) as file:
-        monitor = json.load(file)
-
-        # Remove completed
-        stems = [key for key, value in monitor.items() if value[0] < value[1]]
-
     # Get audio files
     cache_directory = emphases.CACHE_DIR / dataset
-    audio_files = sorted(
-        cache_directory / 'audio' / f'{stem}.wav' for stem in stems)
+    audio_files = sorted(list(cache_directory.rglob('*.wav')))
 
     # Deterministic shuffle
     random.seed(emphases.RANDOM_SEED)

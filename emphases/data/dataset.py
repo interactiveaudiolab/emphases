@@ -1,3 +1,5 @@
+import json
+
 import numpy as np
 import pypar
 import torch
@@ -17,7 +19,8 @@ class Dataset(torch.utils.data.Dataset):
         self.cache = emphases.CACHE_DIR / name
 
         # Get list of stems
-        self.stems = emphases.load.partition(name)[partition]
+        with open(emphases.PARTITION_DIR / f'{name}.json') as file:
+            self.stems = json.load(file)[partition]
 
         # Store lengths for bucketing
         audio_files = [
