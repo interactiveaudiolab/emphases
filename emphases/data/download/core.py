@@ -467,8 +467,27 @@ def libritts():
     shutil.rmtree(directory, ignore_errors=True)
     shutil.move(emphases.DATA_DIR / 'LibriTTS', directory)
 
+    # TEMPORARY - manually move annotations to data/sources/libritts/annotations.json
+    # Download annotations from zenodo
+    # url = 'https://zenodo.org/record/TODO/files/TODO?download=1'
+    # file = source_directory / 'annotations.tar.gz'
+    # download_file(url, file)
+
+    # # Unzip
+    # with tarfile.open(file, 'r:gz') as tfile:
+    #     tfile.extractall(directory)
+
+    # Load annotations
+    with open(source_directory / 'annotations.json') as file:
+        annotations = json.load(file)
+
+    # Merge annotations to floats
+    annotations = merge_annotations(annotations)
+
     # Get list of audio files
     audio_files = list(directory.rglob('*.wav'))
+    audio_files = [
+        file for file in audio_files if file.stem in annotations['stems']]
 
     # Setup cache directory
     cache_directory = emphases.CACHE_DIR / 'libritts'
@@ -512,6 +531,33 @@ def libritts():
         audio_files,
         alignment_files,
         'p2fa')
+
+    for i, stem in enumerate([file.stem for file in audio_files]):
+
+        # Load alignment
+        alignment = pypar.Alignment(
+            cache_directory / 'alignment' / f'{stem}.TextGrid')
+
+        # Get ground truth
+        count = annotations['stems'][stem]
+        labels = [score / count for score in annotations['scores'][stem]]
+
+        # Match alignment and scores (silences get a score of zero)
+        j = 0
+        scores = torch.zeros(len(alignment))
+        for i, word in enumerate(alignment):
+
+            # Keep silences as zero
+            if str(word) == pypar.SILENCE:
+                continue
+
+            # Update scores
+            scores[i] = float(labels[j])
+
+            j += 1
+
+        # Save scores
+        torch.save(scores, cache_directory / 'scores' / f'{stem}.pt')
 
 
 ###############################################################################

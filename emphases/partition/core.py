@@ -56,8 +56,42 @@ def buckeye():
 
 def libritts():
     """Partition libritts dataset"""
-    # TODO
-    pass
+    # Get audio files
+    directory = emphases.CACHE_DIR / 'libritts'
+    audio_files = directory.rglob('*.wav')
+
+    # Get stems
+    stems = [file.stem for file in audio_files]
+
+    # Shuffle stems
+    random.seed(emphases.RANDOM_SEED)
+    random.shuffle(stems)
+
+    # Get split locations
+    left = int(emphases.SPLIT_SIZE_TRAIN * len(stems))
+    right = left + int(emphases.SPLIT_SIZE_VALID * len(stems))
+
+    # Only train on specified eighth for scaling law experiments
+    if emphases.ONE_EIGHTH_UTTERANCES:
+
+        # Partition
+        speakers = [str(s) for s in emphases.data.download.LIBRITTS_SPEAKERS]
+        train = [stem for stem in stems if stem.split('_')[0] in speakers]
+        valid = [stem for stem in stems[left:right] if stem not in train]
+        test = [stem for stem in stems[right:] if stem not in train]
+
+    else:
+
+        # Partition
+        train = stems[:left]
+        valid = stems[left:right]
+        test = stems[right:]
+
+    # Maybe limit training set size
+    if emphases.MAX_TRAINING_UTTERANCES is not None:
+        train = train[:emphases.MAX_TRAINING_UTTERANCES]
+
+    return {'train': train, 'valid': valid, 'test': test}
 
 
 ###############################################################################

@@ -7,7 +7,7 @@ with open('README.md', encoding='utf8') as file:
 
 setup(
     name='emphases',
-    description='Datasets and Scaling Laws for Neural Emphasis Prediction',
+    description='Crowdsourced and Automatic Speech Prominence Estimation',
     version='0.0.1',
     author='Interactive Audio Lab',
     author_email='interactiveaudiolab@gmail.com',
@@ -15,6 +15,7 @@ setup(
     install_requires=[
         'librosa',
         'matplotlib',
+        'numpy',
         'pandas',
         'penn',
         'pycwt',
@@ -32,6 +33,6 @@ setup(
     package_data={'emphases': ['assets/*', 'assets/*/*']},
     long_description=long_description,
     long_description_content_type='text/markdown',
-    keywords=['audio', 'loudness', 'pitch', 'prosody', 'speech'],
+    keywords=['annotatation', 'audio', 'emphasis', 'prominence', 'speech'],
     classifiers=['License :: OSI Approved :: MIT License'],
     license='MIT')
