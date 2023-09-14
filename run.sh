@@ -38,16 +38,16 @@ python -m emphases.data.preprocess --gpu $1
 python -m emphases.partition --config config/scaling/8-1.py
 python -m emphases.train --config config/scaling/8-1.py --gpus $1
 
-# # Plot results
-# python -m emphases.plot.scaling \
-#     --evaluations 8-1 16-2 32-4 64-8 \
-#     --xlabel "Annotators per utterance" \
-#     --output_file results/scaling-annotators.pdf \
-#     --sizes 3200 1600 800 400 \
-#     --scores 0.686 0.683 0.667 0.664 \
-#     --steps 967 933 567 467 \
-#     --yticks 0.66 0.67 0.68 0.69 \
-#     --text_offsets 0.007 0.01 0.007 0.007
+# Plot results
+python -m emphases.plot.scaling \
+    --evaluations 8-1 16-2 32-4 64-8 \
+    --xlabel "Annotators per utterance" \
+    --output_file results/scaling-annotators.pdf \
+    --sizes 3200 1600 800 400 \
+    --scores 0.686 0.683 0.667 0.664 \
+    --steps 967 933 567 467 \
+    --yticks 0.66 0.67 0.68 0.69 \
+    --text_offsets 0.007 0.01 0.007 0.007
 
 
 ####################################
@@ -83,15 +83,15 @@ python -m emphases.data.preprocess --gpu $1
 python -m emphases.partition --config config/scaling/3200.py
 python -m emphases.train --config config/scaling/3200.py --gpus $1
 
-# # Plot results
-# python -m emphases.plot.scaling \
-#     --evaluations 400 800 1600 3200 \
-#     --xlabel Utterances \
-#     --output_file results/scaling-data.pdf \
-#     --yticks 0.63 0.65 0.67 0.69 \
-#     --scores 0.633 0.657 0.678 0.687 \
-#     --steps 400 500 767 1433 \
-#     --text_offsets 0.007 0.007 0.007 0.007
+# Plot results
+python -m emphases.plot.scaling \
+    --evaluations 400 800 1600 3200 \
+    --xlabel Utterances \
+    --output_file results/scaling-data.pdf \
+    --yticks 0.63 0.65 0.67 0.69 \
+    --scores 0.633 0.657 0.678 0.687 \
+    --steps 400 500 767 1433 \
+    --text_offsets 0.007 0.007 0.007 0.007
 
 
 ##############

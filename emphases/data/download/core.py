@@ -494,7 +494,7 @@ def libritts():
     cache_directory.mkdir(exist_ok=True, parents=True)
 
     # Create subdirectories
-    features = ['alignment', 'audio']
+    features = ['alignment', 'audio', 'scores']
     for feature in features:
         (cache_directory / feature).mkdir(exist_ok=True, parents=True)
 
