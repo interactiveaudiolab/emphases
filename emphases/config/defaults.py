@@ -77,10 +77,10 @@ WINDOW_SIZE = 1024
 
 
 # List of all datasets
-DATASETS = ['buckeye', 'libritts']
+DATASETS = ['libritts']
 
 # Datasets to use for evaluation
-EVALUATION_DATASETS = ['buckeye', 'libritts']
+EVALUATION_DATASETS = ['libritts']
 
 # Whether to use mel features
 MEL_FEATURE = True
