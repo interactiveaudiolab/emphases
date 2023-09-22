@@ -206,9 +206,17 @@ options:
 
 ### Download data
 
-`python -m emphases.download`.
+`python -m emphases.download --datasets <datasets>`.
 
 Downloads and uncompresses datasets.
+
+**N.B.** We omit Buckeye for public release. This evaluation dataset can be
+made by [downloading Buckeye](https://buckeyecorpus.osu.edu/) and matching
+the files to the
+[annotations](https://github.com/ProSD-Lab/Prominence-perception-in-English-French-Spanish/).
+The process of matching the files to the annotations was done for us and is
+tricky to replicate exactly. However, due to licensing restrictions on
+Buckeye, we cannot legally distribute our private, aligned annotations.
 
 
 ### Annotate data

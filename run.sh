@@ -10,6 +10,9 @@
 ####################################
 
 
+# N.B. - These experiments require Buckeye for evaluation and are therefore
+#        commented out (see note in README).
+
 # # 1/64; 8 annotations
 # rm -rf data/cache/crowdsource/*
 # python -m emphases.data.download --config config/scaling/64-8.py
@@ -54,6 +57,9 @@
 # # Dataset size scaling experiments #
 # ####################################
 
+
+# N.B. - These experiments require Buckeye for evaluation and are therefore
+#        commented out (see note in README).
 
 # # 400 utterances
 # rm -rf data/cache/crowdsource/*

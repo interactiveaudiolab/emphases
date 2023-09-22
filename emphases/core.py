@@ -1,8 +1,9 @@
 import contextlib
 import functools
-import json
+import os
+import tempfile
 from pathlib import Path
-from typing import List, Optional, Tuple, Type
+from typing import List, Optional, Tuple, Type, Union
 
 import pyfoal
 import pypar
@@ -19,10 +20,10 @@ import emphases
 
 
 def from_file(
-    text_file: List[Path],
-    audio_file: List[Path],
+    text_file: Union[str, bytes, os.PathLike],
+    audio_file: Union[str, bytes, os.PathLike],
     hopsize: float = emphases.HOPSIZE_SECONDS,
-    checkpoint: Path = emphases.DEFAULT_CHECKPOINT,
+    checkpoint: Union[str, bytes, os.PathLike] = emphases.DEFAULT_CHECKPOINT,
     batch_size: Optional[int] = None,
     pad: bool = False,
     gpu: Optional[int] = None
@@ -30,7 +31,7 @@ def from_file(
     """Produce emphasis scores for each word for files on disk
 
     Args:
-        text_file: The speech transcript text file
+        text_file: The speech transcript (.txt) or alignment (.TextGrid) file
         audio_file: The speech waveform audio file
         hopsize: The hopsize in seconds
         checkpoint: The model checkpoint to use for inference
@@ -42,40 +43,57 @@ def from_file(
         alignment: The forced phoneme alignment
         scores: The float-valued emphasis scores for each word
     """
-    # Load text
-    with open(text_file, encoding='utf-8') as file:
-        text = file.read()
-
     # Load audio
     audio = emphases.load.audio(audio_file)
 
-    # Detect emphases
-    return from_text_and_audio(
-        text,
-        audio,
-        emphases.SAMPLE_RATE,
-        hopsize,
-        checkpoint,
-        batch_size,
-        pad,
-        gpu)
+    if str(text_file).endswith('.TextGrid'):
+
+        # Load alignment
+        alignment = pypar.Alignment(text_file)
+
+        # Detect emphases
+        return from_alignment_and_audio(
+            alignment,
+            audio,
+            emphases.SAMPLE_RATE,
+            hopsize,
+            checkpoint,
+            batch_size,
+            pad,
+            gpu)
+
+    else:
+        # Load text
+        with open(text_file, encoding='utf-8') as file:
+            text = file.read()
+
+        # Detect emphases
+        return from_text_and_audio(
+            text,
+            audio,
+            emphases.SAMPLE_RATE,
+            hopsize,
+            checkpoint,
+            batch_size,
+            pad,
+            gpu)
 
 
 def from_file_to_file(
-    text_file: List[Path],
-    audio_file: List[Path],
-    output_file: Optional[List[Path]] = None,
+    text_file: List[Union[str, bytes, os.PathLike]],
+    audio_file: List[Union[str, bytes, os.PathLike]],
+    output_prefix: Optional[List[Union[str, bytes, os.PathLike]]] = None,
     hopsize: float = emphases.HOPSIZE_SECONDS,
-    checkpoint: Path = emphases.DEFAULT_CHECKPOINT,
+    checkpoint: Union[str, bytes, os.PathLike] = emphases.DEFAULT_CHECKPOINT,
     batch_size: Optional[int] = None,
     pad: bool = False,
     gpu: Optional[int] = None) -> None:
     """Produce emphasis scores for each word for files on disk and save to disk
 
     Args:
-        text_file: The speech transcript text file
+        text_file: The speech transcript (.txt) or alignment (.TextGrid) file
         audio_file: The speech waveform audio file
-        output_file: The output file. Defaults to text file with json suffix.
+        output_prefix: The output prefix. Defaults to text file stem.
         hopsize: The hopsize in seconds
         checkpoint: The model checkpoint to use for inference
         batch_size: The maximum number of frames per batch
@@ -83,7 +101,7 @@ def from_file_to_file(
         gpu: The index of the gpu to run inference on
     """
     if output_file is None:
-        output_file = text_file.with_suffix('.json')
+        output_file = text_file.stem
 
     # Detect emphases
     alignment, results = from_file(
@@ -95,31 +113,26 @@ def from_file_to_file(
         pad,
         gpu)
 
-    # Format results
-    results_list = [
-        (str(word), word.start(), word.end(), result)
-        for word, result in zip(alignment.words(), results)]
-
     # Save results
-    with open(output_file, 'w') as file:
-        json.dump(results_list, file, indent=4)
+    alignment.save(f'{output_prefix}.TextGrid')
+    torch.save(results, f'{output_prefix}.pt')
 
 
 def from_files_to_files(
-        text_files: List[Path],
-        audio_files: List[Path],
-        output_files: Optional[List[Path]] = None,
+        text_files: List[Union[str, bytes, os.PathLike]],
+        audio_files: List[Union[str, bytes, os.PathLike]],
+        output_prefixes: Optional[List[Union[str, bytes, os.PathLike]]] = None,
         hopsize: float = emphases.HOPSIZE_SECONDS,
-        checkpoint: Path = emphases.DEFAULT_CHECKPOINT,
+        checkpoint: Union[str, bytes, os.PathLike] = emphases.DEFAULT_CHECKPOINT,
         batch_size: Optional[int] = None,
         pad: bool = False,
         gpu: Optional[int] = None) -> None:
     """Produce emphasis scores for each word for many files and save to disk
 
     Args:
-        text_files: The speech transcript text files
+        text_file: The speech transcript (.txt) or alignment (.TextGrid) files
         audio_files: The corresponding speech audio files
-        output_files: The output files. Default is text files with json suffix.
+        output_prefixes: The output files. Default is text files with json suffix.
         hopsize: The hopsize in seconds
         checkpoint: The model checkpoint to use for inference
         batch_size: The maximum number of frames per batch
@@ -127,23 +140,50 @@ def from_files_to_files(
         gpu: The index of the gpu to run inference on
     """
     # Set default output path
-    if output_files is None:
-        output_files = [file.with_suffix('.json') for file in text_files]
+    if output_prefixes is None:
+        output_prefixes = [file.stem for file in text_files]
 
-    # Detect emphases
-    annotation_fn = functools.partial(
-        from_file_to_file,
-        hopsize=hopsize,
-        checkpoint=checkpoint,
-        batch_size=batch_size,
-        pad=pad,
-        gpu=gpu)
-    for files in iterator(
-        zip(text_files, audio_files, output_files),
-        emphases.CONFIG,
-        len(text_files)
-    ):
-        annotation_fn(*files)
+    # Batch forced alignments to improve performance via multiprocessing
+    with tempfile.TemporaryDirectory() as directory:
+        directory = Path(directory)
+
+        # Get files to force-align
+        text_filtered, audio_filtered = zip(*[
+            (text, audio) for text, audio in zip(text_files, audio_files)
+            if str(text).endswith('.txt')])
+
+        # Get location to save files
+        output_filtered = [
+            directory / Path(file).with_suffix('.TextGrid')
+            for file in text_filtered]
+
+        # Force align
+        pyfoal.from_files_to_files(
+            text_filtered,
+            audio_filtered,
+            output_filtered,
+            aligner='p2fa')
+
+        # Update filenames for emphasis detection
+        text_files, audio_files = zip(*[
+            (text, audio) if str(text).endswith('TextGrid')
+            else (directory / Path(text).with_suffix('.TextGrid'), audio)
+            for text, audio in zip(text_files, audio_files)])
+
+        # Detect emphases
+        annotation_fn = functools.partial(
+            from_file_to_file,
+            hopsize=hopsize,
+            checkpoint=checkpoint,
+            batch_size=batch_size,
+            pad=pad,
+            gpu=gpu)
+        for files in iterator(
+            zip(text_files, audio_files, output_prefixes),
+            emphases.CONFIG,
+            total=len(text_files)
+        ):
+            annotation_fn(*files)
 
 
 def from_text_and_audio(
@@ -151,7 +191,7 @@ def from_text_and_audio(
     audio: torch.Tensor,
     sample_rate: int,
     hopsize: float = emphases.HOPSIZE_SECONDS,
-    checkpoint: Path = emphases.DEFAULT_CHECKPOINT,
+    checkpoint: Union[str, bytes, os.PathLike] = emphases.DEFAULT_CHECKPOINT,
     batch_size: Optional[int] = None,
     pad: bool = False,
     gpu: Optional[int] = None) -> Tuple[Type[pypar.Alignment], torch.Tensor]:
@@ -172,7 +212,11 @@ def from_text_and_audio(
         scores: The float-valued emphasis scores for each word
     """
     # Get word alignment
-    alignment = pyfoal.align(text, audio, sample_rate, 'p2fa')
+    alignment = pyfoal.from_text_and_audio(
+        text,
+        audio,
+        sample_rate,
+        aligner='p2fa')
 
     # Infer
     scores = from_alignment_and_audio(
@@ -193,7 +237,7 @@ def from_alignment_and_audio(
     audio: torch.Tensor,
     sample_rate: int,
     hopsize: float = emphases.HOPSIZE_SECONDS,
-    checkpoint: Path = emphases.DEFAULT_CHECKPOINT,
+    checkpoint: Union[str, bytes, os.PathLike] = emphases.DEFAULT_CHECKPOINT,
     batch_size: Optional[int] = None,
     pad: bool = False,
     gpu: Optional[int] = None) -> Tuple[Type[pypar.Alignment], torch.Tensor]:
@@ -341,19 +385,16 @@ def preprocess(
     while start < len(alignment):
 
         # Accumulate enough frames for this batch
-        frames = 0
+        frames = 0.
         end = start + 1
         while end < len(alignment):
 
-            # Get duration of this word in frames
-            duration = int(emphases.convert.seconds_to_frames(
-                alignment[end - 1].duration()))
-
             # Update frames
-            frames += duration
+            frames += emphases.convert.seconds_to_frames(
+                alignment[end - 1].duration())
 
             # Stop if we've accumulated enough frames
-            if frames > batch_size:
+            if int(frames) > batch_size:
                 break
 
             end += 1
@@ -378,11 +419,17 @@ def preprocess(
                 alignment[end - 1].end()))))
         batch_audio = audio[:, start_sample:end_sample]
 
-        # Preprocess audio
-        batch_features = emphases.data.preprocess.from_audio(batch_audio, gpu)
+        try:
 
-        # Run inference
-        yield batch_features, batch_word_bounds
+            # Preprocess audio
+            batch_features = emphases.data.preprocess.from_audio(batch_audio, gpu)
+
+            # Run inference
+            yield batch_features, batch_word_bounds
+
+        # Handle residual frame
+        except RuntimeError:
+            pass
 
         # Update start word
         start = end

@@ -18,7 +18,7 @@ def parse_args():
         type=Path,
         nargs='+',
         required=True,
-        help='The speech transcript text files')
+        help='The speech transcript (.txt) or alignment (.TextGrid) files')
     parser.add_argument(
         '--audio_files',
         type=Path,
