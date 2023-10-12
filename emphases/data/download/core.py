@@ -9,6 +9,7 @@ import yaml
 import pyfoal
 import pypar
 import torch
+import torchutil
 import torchaudio
 
 import emphases
@@ -78,6 +79,7 @@ LIBRITTS_SPEAKERS = [
 ###############################################################################
 
 
+@torchutil.notify.on_return('download')
 def datasets(datasets, gpu=None):
     """Download datasets"""
     for dataset in datasets:

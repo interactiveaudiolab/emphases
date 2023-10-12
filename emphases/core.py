@@ -8,6 +8,7 @@ from typing import List, Optional, Tuple, Type, Union
 import pyfoal
 import pypar
 import torch
+import torchutil
 import torchaudio
 import tqdm
 
@@ -132,7 +133,7 @@ def from_files_to_files(
     Args:
         text_file: The speech transcript (.txt) or alignment (.TextGrid) files
         audio_files: The corresponding speech audio files
-        output_prefixes: The output files. Default is text files with json suffix.
+        output_prefixes: The output files. Defaults to text file stems.
         hopsize: The hopsize in seconds
         checkpoint: The model checkpoint to use for inference
         batch_size: The maximum number of frames per batch
@@ -321,7 +322,7 @@ def infer(features, word_bounds, checkpoint=emphases.DEFAULT_CHECKPOINT):
         model = emphases.Model()
 
         # Load from disk
-        infer.model, *_ = emphases.checkpoint.load(checkpoint, model)
+        infer.model, *_ = torchutil.checkpoint.load(checkpoint, model)
         infer.checkpoint = checkpoint
         infer.device_type = features.device.type
 
@@ -422,7 +423,9 @@ def preprocess(
         try:
 
             # Preprocess audio
-            batch_features = emphases.data.preprocess.from_audio(batch_audio, gpu)
+            batch_features = emphases.data.preprocess.from_audio(
+                batch_audio,
+                gpu)
 
             # Run inference
             yield batch_features, batch_word_bounds

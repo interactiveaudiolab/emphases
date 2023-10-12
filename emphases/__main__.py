@@ -26,11 +26,11 @@ def parse_args():
         required=True,
         help='The corresponding speech audio files')
     parser.add_argument(
-        '--output_files',
+        '--output_prefixes',
         type=Path,
         nargs='+',
         required=False,
-        help='The output files. Default is text files with json suffix.')
+        help='output_prefixes: The output files. Defaults to text files stems.')
     parser.add_argument(
         '--hopsize',
         type=float,

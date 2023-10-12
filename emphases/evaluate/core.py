@@ -1,6 +1,7 @@
 import json
 
 import torch
+import torchutil
 
 import emphases
 
@@ -10,6 +11,7 @@ import emphases
 ###############################################################################
 
 
+@torchutil.notify.on_return('evaluate')
 def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
     """Perform evaluation"""
     device = torch.device('cpu' if gpu is None else f'cuda:{gpu}')

@@ -1,5 +1,6 @@
 import penn
 import torch
+import torchutil
 
 import emphases
 
@@ -9,6 +10,7 @@ import emphases
 ###############################################################################
 
 
+@torchutil.notify.on_return('preprocess')
 def datasets(datasets, gpu=None):
     """Preprocess datasets"""
     for dataset in datasets:
@@ -62,6 +64,7 @@ def datasets(datasets, gpu=None):
                 periodicity = periodicity[:, :-1]
             torch.save(pitch, f'{pitch_file}-pitch.pt')
             torch.save(periodicity, f'{pitch_file}-periodicity.pt')
+
 
 def from_audio(audio, gpu=None):
     """Preprocess one audio file"""

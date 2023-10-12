@@ -2,6 +2,8 @@ import argparse
 import shutil
 from pathlib import Path
 
+import torchutil
+
 import emphases
 
 
@@ -10,7 +12,7 @@ import emphases
 ###############################################################################
 
 
-def main(config, dataset, gpus=None):
+def main(config, dataset, gpu=None):
     # Create output directory
     directory = emphases.RUNS_DIR / config.stem
     directory.mkdir(parents=True, exist_ok=True)
@@ -19,15 +21,13 @@ def main(config, dataset, gpus=None):
     shutil.copyfile(config, directory / config.name)
 
     # Train
-    checkpoint = emphases.train.run(
-        dataset,
-        directory,
-        directory,
-        directory,
-        gpus)
+    emphases.train(dataset, directory, gpu)
+
+    # Get best checkpoint
+    checkpoint = torchutil.checkpoint.best_path(directory)[0]
 
     # Evaluate
-    emphases.evaluate.datasets(emphases.EVALUATION_DATASETS, checkpoint, gpus[0])
+    emphases.evaluate.datasets(emphases.EVALUATION_DATASETS, checkpoint, gpu)
 
 
 def parse_args():
@@ -43,10 +43,9 @@ def parse_args():
         default=emphases.TRAINING_DATASET,
         help='The dataset to train on')
     parser.add_argument(
-        '--gpus',
+        '--gpu',
         type=int,
-        nargs='+',
-        help='The gpus to run training on')
+        help='The gpu to run training on')
     return parser.parse_args()
 
 

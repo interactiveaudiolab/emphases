@@ -1,49 +1,7 @@
-import contextlib
-import os
-
 import torch
+import torchutil
 
 import emphases
-
-
-###############################################################################
-# Training interface
-###############################################################################
-
-
-def run(
-    dataset,
-    checkpoint_directory,
-    output_directory,
-    log_directory,
-    gpus=None):
-    """Run model training"""
-    # Distributed data parallelism
-    if gpus and len(gpus) > 1:
-        args = (
-            dataset,
-            checkpoint_directory,
-            output_directory,
-            log_directory,
-            gpus)
-        torch.multiprocessing.spawn(
-            train_ddp,
-            args=args,
-            nprocs=len(gpus),
-            join=True)
-
-    else:
-
-        # Single GPU or CPU training
-        train(
-            dataset,
-            checkpoint_directory,
-            output_directory,
-            log_directory,
-            None if gpus is None else gpus[0])
-
-    # Return path to model checkpoint
-    return emphases.checkpoint.best_path(output_directory)[0]
 
 
 ###############################################################################
@@ -51,18 +9,9 @@ def run(
 ###############################################################################
 
 
-def train(
-    dataset,
-    checkpoint_directory,
-    output_directory,
-    log_directory,
-    gpu=None):
+@torchutil.notify.on_return('train')
+def train(dataset, directory, gpu=None):
     """Train a model"""
-    # Get DDP rank
-    if torch.distributed.is_initialized():
-        rank = torch.distributed.get_rank()
-    else:
-        rank = None
 
     # Get torch device
     device = torch.device('cpu' if gpu is None else f'cuda:{gpu}')
@@ -102,29 +51,24 @@ def train(
     # Maybe load from checkpoint #
     ##############################
 
-    path = emphases.checkpoint.latest_path(checkpoint_directory)
+    path = torchutil.checkpoint.latest_path(directory)
 
     if path is not None:
 
         # Load model
-        model, optimizer, epoch, step, score, best = emphases.checkpoint.load(
+        model, optimizer, state = torchutil.checkpoint.load(
             path,
             model,
             optimizer)
+        epoch = state['epoch']
+        step = state['step']
+        score = state['score']
+        best = state['best']
 
     else:
 
         # Train from scratch
         epoch, step, score, best = 0, 0, 0., 0.
-
-    ##################################################
-    # Maybe setup distributed data parallelism (DDP) #
-    ##################################################
-
-    if rank is not None:
-        model = torch.nn.parallel.DistributedDataParallel(
-            model,
-            device_ids=[rank])
 
     #########
     # Train #
@@ -134,12 +78,11 @@ def train(
     scaler = torch.cuda.amp.GradScaler()
 
     # Setup progress bar
-    if not rank:
-        progress = emphases.iterator(
-            range(step, emphases.NUM_STEPS),
-            f'Training {emphases.CONFIG}',
-            step,
-            emphases.NUM_STEPS)
+    progress = emphases.iterator(
+        range(step, emphases.NUM_STEPS),
+        f'Training {emphases.CONFIG}',
+        step,
+        emphases.NUM_STEPS)
     while step < emphases.NUM_STEPS:
 
         # Seed sampler
@@ -198,70 +141,59 @@ def train(
             # Update gradient scaler
             scaler.update()
 
-            ###########
-            # Logging #
-            ###########
+            ############
+            # Evaluate #
+            ############
 
-            if not rank:
+            if step % emphases.LOG_INTERVAL == 0:
+                score = evaluate(
+                    directory,
+                    step,
+                    model,
+                    gpu,
+                    'valid',
+                    valid_loader)
 
-                ############
-                # Evaluate #
-                ############
+            ###################
+            # Save checkpoint #
+            ###################
 
-                if step % emphases.LOG_INTERVAL == 0:
-                    score = evaluate(
-                        log_directory,
-                        step,
-                        model,
-                        gpu,
-                        'valid',
-                        valid_loader)
-
-                ###################
-                # Save checkpoint #
-                ###################
-
-                if step >= 300 and score > best:
-                    emphases.checkpoint.save(
-                        model,
-                        optimizer,
-                        epoch,
-                        step,
-                        score,
-                        best,
-                        output_directory / f'{step:08d}.pt')
-                    best = score
+            if step >= 300 and score > best:
+                torchutil.checkpoint.save(
+                    directory / f'{step:08d}.pt',
+                    model,
+                    optimizer,
+                    epoch=epoch,
+                    step=step,
+                    score=score,
+                    best=best)
+                best = score
 
             # End training after a certain number of steps
             if step >= emphases.NUM_STEPS:
                 break
 
-            if not rank:
+            # Update training step count
+            step += 1
 
-                # Update training step count
-                step += 1
-
-                # Update progress bar
-                progress.update()
+            # Update progress bar
+            progress.update()
 
         # Update epoch count
-        if not rank:
-            epoch += 1
+        epoch += 1
 
-    if not rank:
+    # Close progress bar
+    progress.close()
 
-        # Close progress bar
-        progress.close()
-
-        # Save final model
-        emphases.checkpoint.save(
-            model,
-            optimizer,
-            epoch,
-            step,
-            score,
-            best,
-            output_directory / f'{step:08d}.pt')
+    # Save final model
+    torchutil.checkpoint.save(
+        directory / f'{step:08d}.pt',
+        model,
+        optimizer,
+        epoch=epoch,
+        step=step,
+        score=score,
+        best=best)
 
 
 ###############################################################################
@@ -363,9 +295,13 @@ def evaluate(directory, step, model, gpu, condition, loader):
         f'{key}/{condition}': value for key, value in metrics().items()}
 
     # Write to tensorboard
-    emphases.write.scalars(directory, step, scalars)
-    emphases.write.figures(directory, step, figures)
-    emphases.write.audio(directory, step, waveforms)
+    torchutil.tensorboard.update(
+        directory,
+        step,
+        scalars=scalars,
+        figures=figures,
+        audio=waveforms,
+        sample_rate=emphases.SAMPLE_RATE)
 
     # Return Pearson correlation
     return scalars[f'pearson_correlation/{condition}']
@@ -415,48 +351,3 @@ def loss(
     elif loss_fn == 'mse':
         return torch.nn.functional.mse_loss(scores[mask], targets[mask])
     raise ValueError(f'Loss {loss_fn} is not recognized')
-
-
-###############################################################################
-# Distributed data parallelism
-###############################################################################
-
-
-def train_ddp(
-    rank,
-    dataset,
-    checkpoint_directory,
-    output_directory,
-    log_directory,
-    gpus):
-    """Train with distributed data parallelism"""
-    with ddp_context(rank, len(gpus)):
-        train(
-            dataset,
-            checkpoint_directory,
-            output_directory,
-            log_directory,
-            gpus[rank])
-
-
-@contextlib.contextmanager
-def ddp_context(rank, world_size):
-    """Context manager for distributed data parallelism"""
-    # Setup ddp
-    os.environ['MASTER_ADDR']='localhost'
-    os.environ['MASTER_PORT']='12355'
-    torch.distributed.init_process_group(
-        'nccl',
-        init_method='env://',
-        world_size=world_size,
-        rank=rank)
-
-    try:
-
-        # Execute user code
-        yield
-
-    finally:
-
-        # Close ddp
-        torch.distributed.destroy_process_group()

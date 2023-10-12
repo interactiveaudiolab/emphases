@@ -12,15 +12,8 @@ import emphases
 
 def sampler(dataset, partition):
     """Create batch sampler"""
-    # Maybe use distributed sampler for training
-    if partition == 'train':
-        if torch.distributed.is_initialized():
-            return DistributedSampler(dataset)
-        else:
-            return Sampler(dataset)
-
-    # Deterministic random sampler for validation
-    elif partition == 'valid':
+    # Deterministic random sampler for train and validation
+    if partition in ['train', 'valid']:
         return Sampler(dataset)
 
     # Sample test data sequentially
@@ -79,16 +72,3 @@ class Sampler:
 
     def set_epoch(self, epoch):
         self.epoch = epoch
-
-class DistributedSampler(Sampler):
-
-    def __init__(self, dataset):
-        super().__init__()
-        self.rank = torch.distributed.get_rank()
-        self.num_replicas = torch.distributed.get_world_size()
-        self.length = math.ceil(len(dataset) / self.num_replicas)
-        self.total_size = self.length * self.num_replicas
-
-    def __iter__(self):
-        # Divide among GPUs
-        return iter(self.batch()[self.rank:self.total_size:self.num_replicas])
