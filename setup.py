@@ -26,6 +26,7 @@ setup(
         'scipy',
         'tensorboard',
         'torch<2.0.0',
+        'torchutil',
         'torchaudio<2.0.0',
         'tqdm',
         'yapecs'],

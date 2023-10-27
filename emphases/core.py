@@ -241,7 +241,8 @@ def from_alignment_and_audio(
     checkpoint: Union[str, bytes, os.PathLike] = emphases.DEFAULT_CHECKPOINT,
     batch_size: Optional[int] = None,
     pad: bool = False,
-    gpu: Optional[int] = None) -> Tuple[Type[pypar.Alignment], torch.Tensor]:
+    gpu: Optional[int] = None
+) -> Tuple[Type[pypar.Alignment], torch.Tensor]:
     """Produce emphasis scores for each word
 
     Args:
