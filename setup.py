@@ -24,7 +24,6 @@ setup(
         'pyyaml',
         'reseval',
         'scipy',
-        'tensorboard',
         'torch',
         'torchutil',
         'torchaudio',
