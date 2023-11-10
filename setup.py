@@ -27,7 +27,6 @@ setup(
         'torch',
         'torchutil',
         'torchaudio',
-        'tqdm',
         'yapecs'],
     packages=find_packages(),
     package_data={'emphases': ['assets/*', 'assets/*/*']},
