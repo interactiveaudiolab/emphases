@@ -10,7 +10,6 @@ import pypar
 import torch
 import torchutil
 import torchaudio
-import tqdm
 
 import emphases
 
@@ -64,6 +63,7 @@ def from_file(
             gpu)
 
     else:
+
         # Load text
         with open(text_file, encoding='utf-8') as file:
             text = file.read()
@@ -179,7 +179,7 @@ def from_files_to_files(
             batch_size=batch_size,
             pad=pad,
             gpu=gpu)
-        for files in iterator(
+        for files in torchutil.iterator(
             zip(text_files, audio_files, output_prefixes),
             emphases.CONFIG,
             total=len(text_files)
@@ -264,15 +264,15 @@ def from_alignment_and_audio(
         scores = []
 
         # Preprocess audio
-        iterator = preprocess(
+        for features, word_bounds in preprocess(
             alignment,
             audio,
             sample_rate,
             hopsize,
             batch_size,
             pad,
-            gpu)
-        for features, word_bounds in iterator:
+            gpu
+        ):
 
             # Infer
             logits = infer(features, word_bounds, checkpoint).detach()[0]
@@ -456,8 +456,9 @@ def downsample(xs, word_bounds, word_lengths):
             device=xs.device)
 
         # Iterate over batch
-        iterator = enumerate(zip(xs, word_bounds, word_lengths))
-        for i, (x, bounds, length) in iterator:
+        for i, (x, bounds, length) in enumerate(
+            zip(xs, word_bounds, word_lengths)
+        ):
 
             # Iterate over words
             for j in range(length):
@@ -495,8 +496,9 @@ def upsample(xs, word_bounds, word_lengths, frame_lengths):
         (xs.shape[0], xs.shape[1], frame_lengths.max()),
         dtype=xs.dtype,
         device=xs.device)
-    iterator = enumerate(zip(xs, word_bounds, word_lengths, frame_lengths))
-    for i, (x, word_bound, word_length, frame_length) in iterator:
+    for i, (x, word_bound, word_length, frame_length) in enumerate(
+        zip(xs, word_bounds, word_lengths, frame_lengths)
+    ):
 
         # Truncate to valid sequence
         x = x[..., :word_length]
@@ -586,8 +588,7 @@ def segment(xs, word_bounds, word_lengths):
     result_lengths = torch.zeros((batch,), dtype=torch.long, device=xs.device)
 
     # Iterate over batch
-    iterator = enumerate(zip(xs, word_bounds, word_lengths))
-    for i, (x, bounds, words) in iterator:
+    for i, (x, bounds, words) in enumerate(zip(xs, word_bounds, word_lengths)):
 
         # Iterate over words
         for j in range(bounds.shape[1]):
@@ -628,17 +629,6 @@ def inference_context(model):
 
     # Prepare model for training
     model.train()
-
-
-def iterator(iterable, message, initial=0, total=None):
-    """Create a tqdm iterator"""
-    total = len(iterable) if total is None else total
-    return tqdm.tqdm(
-        iterable,
-        desc=message,
-        dynamic_ncols=True,
-        initial=initial,
-        total=total)
 
 
 def resample(audio, sample_rate, target_rate=emphases.SAMPLE_RATE):

@@ -40,7 +40,10 @@ def collate(batch):
         (len(audios), 1, max_frame_length * emphases.HOPSIZE))
 
     # Place batch in padded tensors
-    iterator = enumerate(
+    for (
+        i,
+        (bounds, audio, feat, score, frame_length, word_length, output_length)
+    ) in enumerate(
         zip(
             word_bounds,
             audios,
@@ -48,11 +51,8 @@ def collate(batch):
             scores,
             frame_lengths,
             word_lengths,
-            output_lengths))
-    for (
-        i,
-        (bounds, audio, feat, score, frame_length, word_length, output_length)
-    ) in iterator:
+            output_lengths)
+    ):
 
         # Pad features
         padded_features[i, :, :frame_length] = feat

@@ -501,11 +501,11 @@ def libritts():
         (cache_directory / feature).mkdir(exist_ok=True, parents=True)
 
     # Iterate over files
-    iterator = emphases.iterator(
+    for audio_file in torchutil.iterator(
         audio_files,
         'Formatting libritts',
-        total=len(audio_files))
-    for audio_file in iterator:
+        total=len(audio_files)
+    ):
 
         # Load and resample audio
         audio = emphases.load.audio(audio_file)

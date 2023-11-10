@@ -78,7 +78,7 @@ def train(dataset, directory, gpu=None):
     scaler = torch.cuda.amp.GradScaler()
 
     # Setup progress bar
-    progress = emphases.iterator(
+    progress = torchutil.iterator(
         range(step, emphases.NUM_STEPS),
         f'Training {emphases.CONFIG}',
         step,

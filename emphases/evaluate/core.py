@@ -55,14 +55,12 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
         # Per-dataset metrics
         dataset_metrics = metric_fn(predicted_stats, target_stats)
 
-        # Setup test dataset
-        iterator = emphases.iterator(
+        # Iterate over test set
+        for batch in torchutil.iterator(
             loader,
             f'Evaluating {emphases.CONFIG} on {dataset}',
-            total=len(loader))
-
-        # Iterate over test set
-        for batch in iterator:
+            total=len(loader)
+        ):
 
             # Unpack
             (
@@ -85,12 +83,12 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
                 scores = []
 
                 # Preprocess audio
-                iterator = emphases.preprocess(
+                for features, word_bounds in emphases.preprocess(
                     alignments[0],
                     audio[0],
                     pad=True,
-                    gpu=gpu)
-                for features, word_bounds in iterator:
+                    gpu=gpu
+                ):
 
                     # Infer
                     logits = emphases.infer(

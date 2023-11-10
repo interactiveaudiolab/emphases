@@ -1,6 +1,5 @@
-import math
-
 import torch
+import torchutil
 
 import emphases
 
@@ -12,13 +11,18 @@ import emphases
 
 class Metrics:
 
-    def __init__(self, *stats):
-        self.correlation = PearsonCorrelation(*stats)
+    def __init__(self, predicted_stats, target_stats):
+        self.correlation = torchutil.metrics.PearsonCorrelation(
+            *predicted_stats(),
+            *target_stats())
         self.bce = BinaryCrossEntropy()
         self.mse = MeanSquaredError()
 
     def __call__(self):
-        return self.correlation() | self.bce() | self.mse()
+        return {
+            'pearson_correlation': self.correlation(),
+            'bce': self.bce(),
+            'mse': self.mse()}
 
     def update(
         self,
@@ -28,20 +32,18 @@ class Metrics:
         # Detach from graph
         logits = logits.detach()
 
+        # Word resolution sequence mask
+        mask = emphases.model.mask_from_lengths(word_lengths)
+        logits, targets = logits[mask], targets[mask]
+
         # Update cross entropy
-        self.bce.update(logits, targets, word_lengths)
+        self.bce.update(logits, targets)
 
         # Update squared error
-        self.mse.update(
-            emphases.postprocess(logits),
-            targets,
-            word_lengths)
+        self.mse.update(emphases.postprocess(logits), targets)
 
         # Update pearson correlation
-        self.correlation.update(
-            emphases.postprocess(logits),
-            targets,
-            word_lengths)
+        self.correlation.update(emphases.postprocess(logits), targets)
 
     def reset(self):
         self.correlation.reset()
@@ -54,101 +56,43 @@ class Metrics:
 ###############################################################################
 
 
-class BinaryCrossEntropy:
+class BinaryCrossEntropy(torchutil.metrics.Average):
 
-    def __init__(self):
-        self.reset()
-
-    def __call__(self):
-        return {'bce': (self.total / self.count).item()}
-
-    def update(
-        self,
-        scores,
-        targets,
-        word_lengths):
-        # Word resolution sequence mask
-        mask = emphases.model.mask_from_lengths(word_lengths)
-
+    def update(self, scores, targets):
         if emphases.LOSS == 'bce':
 
-            # Update total from logits
-            self.total += torch.nn.functional.binary_cross_entropy_with_logits(
-                scores[mask],
-                targets[mask],
+            # Get values from logits
+            values = torch.nn.functional.binary_cross_entropy_with_logits(
+                scores,
+                targets,
                 reduction='sum')
 
         else:
 
-            # Update total from probabilities
-            x, y = torch.clamp(scores[mask], 0., 1.), targets[mask]
-            self.total -= (
+            # Get values from probabilities
+            x, y = torch.clamp(scores, 0., 1.), targets
+            values = -(
                 y * torch.log(x + 1e-6) +
                 (1 - y) * torch.log(1 - x + 1e-6)).sum()
 
-        # Update count
-        self.count += word_lengths.sum()
-
-    def reset(self):
-        self.count = 0
-        self.total = 0.
+        # Update
+        super.update(values, values.numel())
 
 
-class MeanSquaredError:
-
-    def __init__(self):
-        self.reset()
-
-    def __call__(self):
-        return {'rmse': torch.sqrt(self.total / self.count).item()}
+class MeanSquaredError(torchutil.metrics.Average):
 
     def update(
         self,
         scores,
-        targets,
-        word_lengths):
-        # Word resolution sequence mask
-        mask = emphases.model.mask_from_lengths(word_lengths)
-
-        # Update MSE
-        self.total += torch.nn.functional.mse_loss(
-            scores[mask],
-            targets[mask],
+        targets):
+        # Compute sum of MSE
+        values = torch.nn.functional.mse_loss(
+            scores,
+            targets,
             reduction='sum')
 
-        # Update count
-        self.count += word_lengths.sum()
-
-    def reset(self):
-        self.count = 0
-        self.total = 0.
-
-
-class PearsonCorrelation:
-
-    def __init__(self, predicted_stats, target_stats):
-        self.reset()
-        self.mean, self.std = predicted_stats()
-        self.target_mean, self.target_std = target_stats()
-
-    def __call__(self):
-        correlation = (
-            1. / (self.std * self.target_std + 1e-6) *
-            (self.total / self.count).item())
-        return {'pearson_correlation': correlation}
-
-    def update(self, scores, targets, word_lengths):
-        # Word resolution sequence mask
-        mask = emphases.model.mask_from_lengths(word_lengths)
-
         # Update
-        self.total += sum(
-            (scores[mask] - self.mean) * (targets[mask] - self.target_mean))
-        self.count += word_lengths.sum()
-
-    def reset(self):
-        self.count = 0
-        self.total = 0.
+        super.update(values, values.numel())
 
 
 ###############################################################################
@@ -156,28 +100,11 @@ class PearsonCorrelation:
 ###############################################################################
 
 
-class Statistics:
+class Statistics(torchutil.metrics.MeanStd):
 
-    def __init__(self):
-        self.reset()
-
-    def __call__(self):
-        std = math.sqrt(self.m2 / (self.count - 1))
-        return self.mean, std
-
-    def update(self, x, lengths):
+    def update(self, values, lengths):
         # Sequence mask
         mask = emphases.model.mask_from_lengths(lengths)
 
-        # Update stats
-        for y in x[mask].flatten().tolist():
-            self.count += 1
-            delta = y - self.mean
-            self.mean += delta / self.count
-            delta2 = y - self.mean
-            self.m2 += delta * delta2
-
-    def reset(self):
-        self.m2 = 0.
-        self.mean = 0.
-        self.count = 0
+        # Update
+        super().update(values[mask].flatten().tolist())
