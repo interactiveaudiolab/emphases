@@ -79,7 +79,7 @@ LIBRITTS_SPEAKERS = [
 ###############################################################################
 
 
-@torchutil.notify.on_return('download')
+@torchutil.notify('download')
 def datasets(datasets, gpu=None):
     """Download datasets"""
     for dataset in datasets:

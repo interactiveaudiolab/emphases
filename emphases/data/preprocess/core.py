@@ -10,7 +10,7 @@ import emphases
 ###############################################################################
 
 
-@torchutil.notify.on_return('preprocess')
+@torchutil.notify('preprocess')
 def datasets(datasets, gpu=None):
     """Preprocess datasets"""
     for dataset in datasets:

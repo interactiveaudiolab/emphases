@@ -9,7 +9,7 @@ import emphases
 ###############################################################################
 
 
-@torchutil.notify.on_return('train')
+@torchutil.notify('train')
 def train(dataset, directory, gpu=None):
     """Train a model"""
 
