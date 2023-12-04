@@ -31,6 +31,7 @@ def sampler(dataset, partition):
 # Samplers
 ###############################################################################
 
+
 class Sampler:
 
     def __init__(self, dataset):
@@ -42,7 +43,7 @@ class Sampler:
         return iter(self.batch())
 
     def __len__(self):
-        return self.length
+        return len(self.batch())
 
     def batch(self):
         """Produces batch indices for one epoch"""
