@@ -101,11 +101,11 @@ def from_file_to_file(
         pad: If true, centers frames at hopsize / 2, 3 * hopsize / 2, 5 * ...
         gpu: The index of the gpu to run inference on
     """
-    if output_file is None:
-        output_file = text_file.stem
+    if output_prefix is None:
+        output_prefix = text_file.stem
 
     # Detect emphases
-    alignment, results = from_file(
+    results = from_file(
         text_file,
         audio_file,
         hopsize,
@@ -113,6 +113,11 @@ def from_file_to_file(
         batch_size,
         pad,
         gpu)
+    if text_file.name.endswith('.txt'):
+        alignment, prominence = results
+    else:
+        alignment = pypar.Alignment(text_file)
+        prominence = results
 
     # Save results
     alignment.save(f'{output_prefix}.TextGrid')
@@ -149,21 +154,25 @@ def from_files_to_files(
         directory = Path(directory)
 
         # Get files to force-align
-        text_filtered, audio_filtered = zip(*[
-            (text, audio) for text, audio in zip(text_files, audio_files)
-            if str(text).endswith('.txt')])
+        try:
+            text_filtered, audio_filtered = zip(*[
+                (text, audio) for text, audio in zip(text_files, audio_files)
+                if str(text).endswith('.txt')])
 
-        # Get location to save files
-        output_filtered = [
-            directory / Path(file).with_suffix('.TextGrid')
-            for file in text_filtered]
+            # Get location to save files
+            output_filtered = [
+                directory / Path(file).with_suffix('.TextGrid')
+                for file in text_filtered]
 
-        # Force align
-        pyfoal.from_files_to_files(
-            text_filtered,
-            audio_filtered,
-            output_filtered,
-            aligner='p2fa')
+            # Force align
+            pyfoal.from_files_to_files(
+                text_filtered,
+                audio_filtered,
+                output_filtered,
+                aligner='p2fa')
+
+        except ValueError:
+            pass
 
         # Update filenames for emphasis detection
         text_files, audio_files = zip(*[

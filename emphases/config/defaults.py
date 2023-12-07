@@ -1,5 +1,7 @@
-import torch
+import os
 from pathlib import Path
+
+import torch
 
 
 ###############################################################################
@@ -230,4 +232,9 @@ MAX_FRAMES = 75000
 NUM_STEPS = 6000
 
 # Number of data loading worker threads
-NUM_WORKERS = 4
+# TEMPORARY
+# try:
+#     NUM_WORKERS = int(os.cpu_count() / max(1, len(GPUtil.getGPUs())))
+# except ValueError:
+#     NUM_WORKERS = os.cpu_count()
+NUM_WORKERS = 12
