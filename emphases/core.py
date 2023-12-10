@@ -121,7 +121,7 @@ def from_file_to_file(
 
     # Save results
     alignment.save(f'{output_prefix}.TextGrid')
-    torch.save(results, f'{output_prefix}.pt')
+    torch.save(results.cpu(), f'{output_prefix}.pt')
 
 
 def from_files_to_files(
