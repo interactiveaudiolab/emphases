@@ -32,11 +32,6 @@ def parse_args():
         required=False,
         help='output_prefixes: The output files. Defaults to text files stems.')
     parser.add_argument(
-        '--hopsize',
-        type=float,
-        default=emphases.HOPSIZE_SECONDS,
-        help='The hopsize in seconds')
-    parser.add_argument(
         '--checkpoint',
         type=Path,
         default=emphases.DEFAULT_CHECKPOINT,
@@ -45,12 +40,6 @@ def parse_args():
         '--batch_size',
         type=int,
         help='The maximum number of frames per batch')
-    parser.add_argument(
-        '--pad',
-        action='store_true',
-        help=(
-            'If true, centers frames at '
-            'hopsize / 2, 3 * hopsize / 2, 5 * ...'))
     parser.add_argument(
         '--gpu',
         type=int,

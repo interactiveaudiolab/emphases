@@ -143,7 +143,6 @@ def automatic(gpu=None):
             alignment,
             audio,
             emphases.SAMPLE_RATE,
-            pad=True,
             gpu=gpu).detach().cpu()
 
         # Save scores

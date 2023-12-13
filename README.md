@@ -49,12 +49,11 @@ text_file = 'example.txt'
 audio_file = 'example.wav'
 
 # Detect emphases
-alignment, results = emphases.from_file(text_file, audio_file)
+alignment, prominence = emphases.from_file(text_file, audio_file)
 
 # Check which words were emphasized
-for word, result in zip(alignment, results):
-    if result:
-        print(f'{word} was emphasized')
+for word, score in zip(alignment, prominence[0]):
+    print(f'{word} has a prominence of {score}')
 ```
 
 The `alignment` is a [`pypar.Alignment`](https://github.com/maxrmorrison/pypar)
@@ -70,10 +69,8 @@ def from_alignment_and_audio(
     alignment: pypar.Alignment,
     audio: torch.Tensor,
     sample_rate: int,
-    hopsize: float = emphases.HOPSIZE_SECONDS,
     checkpoint: Union[str, bytes, os.PathLike] = emphases.DEFAULT_CHECKPOINT,
     batch_size: Optional[int] = None,
-    pad: bool = False,
     gpu: Optional[int] = None) -> Tuple[Type[pypar.Alignment], torch.Tensor]:
     """Produce emphasis scores for each word
 
@@ -81,10 +78,8 @@ def from_alignment_and_audio(
         alignment: The forced phoneme alignment
         audio: The speech waveform
         sample_rate: The audio sampling rate
-        hopsize: The hopsize in seconds
         checkpoint: The model checkpoint to use for inference
         batch_size: The maximum number of frames per batch
-        pad: If true, centers frames at hopsize / 2, 3 * hopsize / 2, 5 * ...
         gpu: The index of the gpu to run inference on
 
     Returns:
@@ -99,10 +94,8 @@ def from_text_and_audio(
     text: str,
     audio: torch.Tensor,
     sample_rate: int,
-    hopsize: float = emphases.HOPSIZE_SECONDS,
     checkpoint: Union[str, bytes, os.PathLike] = emphases.DEFAULT_CHECKPOINT,
     batch_size: Optional[int] = None,
-    pad: bool = False,
     gpu: Optional[int] = None) -> Tuple[Type[pypar.Alignment], torch.Tensor]:
     """Produce emphasis scores for each word
 
@@ -110,10 +103,8 @@ def from_text_and_audio(
         text: The speech transcript
         audio: The speech waveform
         sample_rate: The audio sampling rate
-        hopsize: The hopsize in seconds
         checkpoint: The model checkpoint to use for inference
         batch_size: The maximum number of frames per batch
-        pad: If true, centers frames at hopsize / 2, 3 * hopsize / 2, 5 * ...
         gpu: The index of the gpu to run inference on
 
     Returns:
@@ -129,10 +120,8 @@ def from_text_and_audio(
 def from_file(
     text_file: Union[str, bytes, os.PathLike],
     audio_file: Union[str, bytes, os.PathLike],
-    hopsize: float = emphases.HOPSIZE_SECONDS,
     checkpoint: Union[str, bytes, os.PathLike] = emphases.DEFAULT_CHECKPOINT,
     batch_size: Optional[int] = None,
-    pad: bool = False,
     gpu: Optional[int] = None
 ) -> Tuple[Type[pypar.Alignment], torch.Tensor]:
     """Produce emphasis scores for each word for files on disk
@@ -140,10 +129,8 @@ def from_file(
     Args:
         text_file: The speech transcript (.txt) or alignment (.TextGrid) file
         audio_file: The speech waveform audio file
-        hopsize: The hopsize in seconds
         checkpoint: The model checkpoint to use for inference
         batch_size: The maximum number of frames per batch
-        pad: If true, centers frames at hopsize / 2, 3 * hopsize / 2, 5 * ...
         gpu: The index of the gpu to run inference on
 
     Returns:
@@ -160,10 +147,8 @@ def from_file_to_file(
     text_file: List[Union[str, bytes, os.PathLike]],
     audio_file: List[Union[str, bytes, os.PathLike]],
     output_prefix: Optional[List[Union[str, bytes, os.PathLike]]] = None,
-    hopsize: float = emphases.HOPSIZE_SECONDS,
     checkpoint: Union[str, bytes, os.PathLike] = emphases.DEFAULT_CHECKPOINT,
     batch_size: Optional[int] = None,
-    pad: bool = False,
     gpu: Optional[int] = None) -> None:
     """Produce emphasis scores for each word for files on disk and save to disk
 
@@ -171,10 +156,8 @@ def from_file_to_file(
         text_file: The speech transcript (.txt) or alignment (.TextGrid) file
         audio_file: The speech waveform audio file
         output_prefix: The output prefix. Defaults to text file stem.
-        hopsize: The hopsize in seconds
         checkpoint: The model checkpoint to use for inference
         batch_size: The maximum number of frames per batch
-        pad: If true, centers frames at hopsize / 2, 3 * hopsize / 2, 5 * ...
         gpu: The index of the gpu to run inference on
     """
 ```
@@ -191,10 +174,8 @@ def from_files_to_files(
         text_files: List[Union[str, bytes, os.PathLike]],
         audio_files: List[Union[str, bytes, os.PathLike]],
         output_prefixes: Optional[List[Union[str, bytes, os.PathLike]]] = None,
-        hopsize: float = emphases.HOPSIZE_SECONDS,
         checkpoint: Union[str, bytes, os.PathLike] = emphases.DEFAULT_CHECKPOINT,
         batch_size: Optional[int] = None,
-        pad: bool = False,
         gpu: Optional[int] = None) -> None:
     """Produce emphasis scores for each word for many files and save to disk
 
@@ -202,10 +183,8 @@ def from_files_to_files(
         text_file: The speech transcript (.txt) or alignment (.TextGrid) files
         audio_files: The corresponding speech audio files
         output_prefixes: The output files. Default is text files with json suffix.
-        hopsize: The hopsize in seconds
         checkpoint: The model checkpoint to use for inference
         batch_size: The maximum number of frames per batch
-        pad: If true, centers frames at hopsize / 2, 3 * hopsize / 2, 5 * ...
         gpu: The index of the gpu to run inference on
     """
 ```
@@ -219,10 +198,8 @@ python -m emphases
     --text_files TEXT_FILES [TEXT_FILES ...]
     --audio_files AUDIO_FILES [AUDIO_FILES ...]
     [--output_files OUTPUT_FILES [OUTPUT_FILES ...]]
-    [--hopsize HOPSIZE]
     [--checkpoint CHECKPOINT]
     [--batch_size BATCH_SIZE]
-    [--pad]
     [--gpu GPU]
 
 Determine which words in a speech file are emphasized
@@ -235,12 +212,10 @@ options:
                         The corresponding speech audio files
   --output_files OUTPUT_FILES [OUTPUT_FILES ...]
                         The output files. Default is text files with json suffix.
-  --hopsize HOPSIZE     The hopsize in seconds
   --checkpoint CHECKPOINT
                         The model checkpoint to use for inference
   --batch_size BATCH_SIZE
                         The maximum number of frames per batch
-  --pad                 If true, centers frames at hopsize / 2, 3 * hopsize / 2, 5 * ...
   --gpu GPU             The index of the gpu to run inference on
 ```
 

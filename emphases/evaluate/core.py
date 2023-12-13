@@ -39,7 +39,6 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
                 audio[0],
                 emphases.SAMPLE_RATE,
                 checkpoint=checkpoint,
-                pad=True,
                 gpu=gpu)
 
             # Update statistics
@@ -109,7 +108,6 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
                     alignments[0],
                     audio[0],
                     emphases.SAMPLE_RATE,
-                    pad=True,
                     gpu=gpu)[None]
 
             # Update metrics

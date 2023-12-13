@@ -22,10 +22,8 @@ import emphases
 def from_file(
     text_file: Union[str, bytes, os.PathLike],
     audio_file: Union[str, bytes, os.PathLike],
-    hopsize: float = emphases.HOPSIZE_SECONDS,
     checkpoint: Union[str, bytes, os.PathLike] = emphases.DEFAULT_CHECKPOINT,
     batch_size: Optional[int] = None,
-    pad: bool = False,
     gpu: Optional[int] = None
 ) -> Tuple[Type[pypar.Alignment], torch.Tensor]:
     """Produce emphasis scores for each word for files on disk
@@ -33,10 +31,8 @@ def from_file(
     Args:
         text_file: The speech transcript (.txt) or alignment (.TextGrid) file
         audio_file: The speech waveform audio file
-        hopsize: The hopsize in seconds
         checkpoint: The model checkpoint to use for inference
         batch_size: The maximum number of frames per batch
-        pad: If true, centers frames at hopsize / 2, 3 * hopsize / 2, 5 * ...
         gpu: The index of the gpu to run inference on
 
     Returns:
@@ -56,10 +52,8 @@ def from_file(
             alignment,
             audio,
             emphases.SAMPLE_RATE,
-            hopsize,
             checkpoint,
             batch_size,
-            pad,
             gpu)
 
     else:
@@ -73,10 +67,8 @@ def from_file(
             text,
             audio,
             emphases.SAMPLE_RATE,
-            hopsize,
             checkpoint,
             batch_size,
-            pad,
             gpu)
 
 
@@ -84,10 +76,8 @@ def from_file_to_file(
     text_file: List[Union[str, bytes, os.PathLike]],
     audio_file: List[Union[str, bytes, os.PathLike]],
     output_prefix: Optional[List[Union[str, bytes, os.PathLike]]] = None,
-    hopsize: float = emphases.HOPSIZE_SECONDS,
     checkpoint: Union[str, bytes, os.PathLike] = emphases.DEFAULT_CHECKPOINT,
     batch_size: Optional[int] = None,
-    pad: bool = False,
     gpu: Optional[int] = None) -> None:
     """Produce emphasis scores for each word for files on disk and save to disk
 
@@ -95,10 +85,8 @@ def from_file_to_file(
         text_file: The speech transcript (.txt) or alignment (.TextGrid) file
         audio_file: The speech waveform audio file
         output_prefix: The output prefix. Defaults to text file stem.
-        hopsize: The hopsize in seconds
         checkpoint: The model checkpoint to use for inference
         batch_size: The maximum number of frames per batch
-        pad: If true, centers frames at hopsize / 2, 3 * hopsize / 2, 5 * ...
         gpu: The index of the gpu to run inference on
     """
     if output_prefix is None:
@@ -108,10 +96,8 @@ def from_file_to_file(
     results = from_file(
         text_file,
         audio_file,
-        hopsize,
         checkpoint,
         batch_size,
-        pad,
         gpu)
     if text_file.name.endswith('.txt'):
         alignment, prominence = results
@@ -128,10 +114,8 @@ def from_files_to_files(
         text_files: List[Union[str, bytes, os.PathLike]],
         audio_files: List[Union[str, bytes, os.PathLike]],
         output_prefixes: Optional[List[Union[str, bytes, os.PathLike]]] = None,
-        hopsize: float = emphases.HOPSIZE_SECONDS,
         checkpoint: Union[str, bytes, os.PathLike] = emphases.DEFAULT_CHECKPOINT,
         batch_size: Optional[int] = None,
-        pad: bool = False,
         gpu: Optional[int] = None) -> None:
     """Produce emphasis scores for each word for many files and save to disk
 
@@ -139,10 +123,8 @@ def from_files_to_files(
         text_file: The speech transcript (.txt) or alignment (.TextGrid) files
         audio_files: The corresponding speech audio files
         output_prefixes: The output files. Defaults to text file stems.
-        hopsize: The hopsize in seconds
         checkpoint: The model checkpoint to use for inference
         batch_size: The maximum number of frames per batch
-        pad: If true, centers frames at hopsize / 2, 3 * hopsize / 2, 5 * ...
         gpu: The index of the gpu to run inference on
     """
     # Set default output path
@@ -183,10 +165,8 @@ def from_files_to_files(
         # Detect emphases
         annotation_fn = functools.partial(
             from_file_to_file,
-            hopsize=hopsize,
             checkpoint=checkpoint,
             batch_size=batch_size,
-            pad=pad,
             gpu=gpu)
         for files in torchutil.iterator(
             zip(text_files, audio_files, output_prefixes),
@@ -200,10 +180,8 @@ def from_text_and_audio(
     text: str,
     audio: torch.Tensor,
     sample_rate: int,
-    hopsize: float = emphases.HOPSIZE_SECONDS,
     checkpoint: Union[str, bytes, os.PathLike] = emphases.DEFAULT_CHECKPOINT,
     batch_size: Optional[int] = None,
-    pad: bool = False,
     gpu: Optional[int] = None) -> Tuple[Type[pypar.Alignment], torch.Tensor]:
     """Produce emphasis scores for each word
 
@@ -211,10 +189,8 @@ def from_text_and_audio(
         text: The speech transcript
         audio: The speech waveform
         sample_rate: The audio sampling rate
-        hopsize: The hopsize in seconds
         checkpoint: The model checkpoint to use for inference
         batch_size: The maximum number of frames per batch
-        pad: If true, centers frames at hopsize / 2, 3 * hopsize / 2, 5 * ...
         gpu: The index of the gpu to run inference on
 
     Returns:
@@ -233,10 +209,8 @@ def from_text_and_audio(
         alignment,
         audio,
         sample_rate,
-        hopsize,
         checkpoint,
         batch_size,
-        pad,
         gpu)
 
     return alignment, scores
@@ -246,10 +220,8 @@ def from_alignment_and_audio(
     alignment: pypar.Alignment,
     audio: torch.Tensor,
     sample_rate: int,
-    hopsize: float = emphases.HOPSIZE_SECONDS,
     checkpoint: Union[str, bytes, os.PathLike] = emphases.DEFAULT_CHECKPOINT,
     batch_size: Optional[int] = None,
-    pad: bool = False,
     gpu: Optional[int] = None
 ) -> Tuple[Type[pypar.Alignment], torch.Tensor]:
     """Produce emphasis scores for each word
@@ -258,10 +230,8 @@ def from_alignment_and_audio(
         alignment: The forced phoneme alignment
         audio: The speech waveform
         sample_rate: The audio sampling rate
-        hopsize: The hopsize in seconds
         checkpoint: The model checkpoint to use for inference
         batch_size: The maximum number of frames per batch
-        pad: If true, centers frames at hopsize / 2, 3 * hopsize / 2, 5 * ...
         gpu: The index of the gpu to run inference on
 
     Returns:
@@ -277,9 +247,7 @@ def from_alignment_and_audio(
             alignment,
             audio,
             sample_rate,
-            hopsize,
             batch_size,
-            pad,
             gpu
         ):
 
@@ -368,25 +336,17 @@ def preprocess(
     alignment,
     audio,
     sample_rate=emphases.SAMPLE_RATE,
-    hopsize=emphases.HOPSIZE_SECONDS,
     batch_size=None,
-    pad=False,
     gpu=None):
     """Convert audio to model input"""
-    # Convert hopsize to samples
-    hopsize = int(emphases.convert.seconds_to_samples(hopsize))
-
     # Resample
     if sample_rate != emphases.SAMPLE_RATE:
         audio = resample(audio, sample_rate)
 
     # Pad audio and get total number of frames
-    padding = int((emphases.WINDOW_SIZE - hopsize) / 2)
-    if pad:
-        audio = torch.nn.functional.pad(audio, (padding, padding))
-        total_frames = int(audio.shape[-1] / hopsize)
-    else:
-        total_frames = int((audio.shape[-1] - 2 * padding) / hopsize)
+    padding = int((emphases.WINDOW_SIZE - emphases.HOPSIZE) / 2)
+    audio = torch.nn.functional.pad(audio, (padding, padding))
+    total_frames = int(audio.shape[-1] / emphases.HOPSIZE)
 
     # Default to running all frames in a single batch
     batch_size = total_frames if batch_size is None else batch_size
