@@ -1,5 +1,3 @@
-import math
-
 import torch
 
 import emphases
@@ -12,12 +10,12 @@ import emphases
 
 def sampler(dataset, partition):
     """Create batch sampler"""
-    # Deterministic random sampler for train and validation
-    if partition in ['train', 'valid']:
+    # Deterministic random sampler for training
+    if partitionin ['train', 'valid']:
         return Sampler(dataset)
 
-    # Sample test data sequentially
-    elif partition == 'test':
+    # Sample validation and test data sequentially
+    elif partition.startswith('test'):
         return torch.utils.data.BatchSampler(
             torch.utils.data.SequentialSampler(dataset),
             1,
@@ -34,7 +32,8 @@ def sampler(dataset, partition):
 
 class Sampler:
 
-    def __init__(self, dataset):
+    def __init__(self, dataset, max_frames=emphases.MAX_TRAINING_FRAMES):
+        self.max_frames = max_frames
         self.epoch = 0
         self.length = len(dataset)
         self.buckets = dataset.buckets()
@@ -51,20 +50,28 @@ class Sampler:
         generator = torch.Generator()
         generator.manual_seed(emphases.RANDOM_SEED + self.epoch)
 
-        # Make variable-length batches with roughly equal number of frames
+        # Iterate over length-partitioned buckets
         batches = []
-        for max_length, bucket in self.buckets:
+        for bucket in self.buckets:
 
             # Shuffle bucket
             bucket = bucket[
                 torch.randperm(len(bucket), generator=generator).tolist()]
 
-            # Get current batch size
-            size = emphases.MAX_FRAMES // max_length
-
-            # Make batches
-            batches.extend(
-                [bucket[i:i + size] for i in range(0, len(bucket), size)])
+            # Variable batch size
+            batch = []
+            max_length = 0
+            for index, length in bucket:
+                max_length = max(max_length, length)
+                if (
+                    batch and
+                    (len(batch) + 1) * max_length > self.max_frames
+                ):
+                    batches.append(batch)
+                    max_length = length
+                    batch = [index]
+                else:
+                    batch.append(index)
 
         # Shuffle
         return [

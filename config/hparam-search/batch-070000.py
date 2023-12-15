@@ -4,4 +4,4 @@ MODULE = 'emphases'
 CONFIG = 'batch-070000'
 
 # Maximum number of frames in one batch
-MAX_FRAMES = 70000
+MAX_TRAINING_FRAMES = 70000

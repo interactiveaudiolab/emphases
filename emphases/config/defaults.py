@@ -226,7 +226,7 @@ BUCKETS = 2
 LOSS = 'bce'
 
 # Maximum number of frames in one batch
-MAX_FRAMES = 75000
+MAX_TRAINING_FRAMES = 75000
 
 # Number of training steps
 NUM_STEPS = 6000
