@@ -271,9 +271,6 @@ def crowdsource():
     else:
         joined = annotation_data
 
-    # if hasattr(valid, 'count'):
-    #     print(f'{valid.count} annotators failed the bot filter')
-
     # Anonymize
     anonymized = {}
     for i, contents in enumerate(joined.values()):
@@ -457,7 +454,7 @@ def libritts():
     # Download
     url = 'https://us.openslr.org/resources/60/train-clean-100.tar.gz'
     file = source_directory / 'libritts-train-clean-100.tar.gz'
-    download_file(url, file)
+    torchutil.download.file(url, file)
 
     # Unzip
     with tarfile.open(file, 'r:gz') as tfile:
@@ -468,15 +465,10 @@ def libritts():
     shutil.rmtree(directory, ignore_errors=True)
     shutil.move(emphases.DATA_DIR / 'LibriTTS', directory)
 
-    # TEMPORARY - manually move annotations to data/sources/libritts/annotations.json
     # Download annotations from zenodo
-    # url = 'https://zenodo.org/record/TODO/files/TODO?download=1'
-    # file = source_directory / 'annotations.tar.gz'
-    # download_file(url, file)
-
-    # # Unzip
-    # with tarfile.open(file, 'r:gz') as tfile:
-    #     tfile.extractall(directory)
+    url = 'https://zenodo.org/records/10402793/files/libritts-emphasis-annotations.json?download=1'
+    file = source_directory / 'annotations.json'
+    torchutil.download.file(url, file)
 
     # Load annotations
     with open(source_directory / 'annotations.json') as file:
