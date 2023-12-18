@@ -16,7 +16,6 @@ setup(
         'librosa',
         'matplotlib',
         'numpy',
-        'pandas',
         'penn',
         'pycwt',
         'pyfoal',

@@ -98,9 +98,16 @@ class Dataset(torch.utils.data.Dataset):
 
         # Get indices in order of length
         indices = np.argsort(self.lengths)
+        lengths = np.sort(self.lengths)
 
         # Split into buckets based on length
-        buckets = [indices[i:i + size] for i in range(0, len(self), size)]
+        buckets = [
+            np.stack((indices[i:i + size], lengths[i:i + size])).T
+            for i in range(0, len(self), size)]
 
-        # Add max length of each bucket
-        return [(self.lengths[bucket[-1]], bucket) for bucket in buckets]
+        # Concatenate partial bucket
+        if len(buckets) == emphases.BUCKETS + 1:
+            residual = buckets.pop()
+            buckets[-1] = np.concatenate((buckets[-1], residual), axis=0)
+
+        return buckets

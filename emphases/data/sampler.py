@@ -11,7 +11,7 @@ import emphases
 def sampler(dataset, partition):
     """Create batch sampler"""
     # Deterministic random sampler for training
-    if partitionin ['train', 'valid']:
+    if partition in ['train', 'valid']:
         return Sampler(dataset)
 
     # Sample validation and test data sequentially
