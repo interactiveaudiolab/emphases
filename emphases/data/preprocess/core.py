@@ -46,8 +46,10 @@ def datasets(datasets, gpu=None):
             hopsize=emphases.convert.samples_to_seconds(emphases.HOPSIZE),
             fmin=emphases.FMIN,
             fmax=emphases.FMAX,
-            pad=True,
+            batch_size=2048,
+            center='half-hop',
             interp_unvoiced_at=emphases.VOICED_THRESHOLD,
+            num_workers=emphases.NUM_WORKERS,
             gpu=gpu)
 
         # Pitch and periodicity use floating-point hopsize, while mels and

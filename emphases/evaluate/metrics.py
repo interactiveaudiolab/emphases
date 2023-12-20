@@ -65,20 +65,20 @@ class BinaryCrossEntropy(torchutil.metrics.Average):
             values = torch.nn.functional.binary_cross_entropy_with_logits(
                 scores,
                 targets,
-                reduction='sum')
+                reduction='none')
 
         else:
 
             # Get values from probabilities
             x, y = torch.clamp(scores, 0., 1.), targets
             values = -(
-                y * torch.log(x + 1e-6) +
-                (1 - y) * torch.log(1 - x + 1e-6)).sum()
+                y * torch.log(x + 1e-6) + (1 - y) * torch.log(1 - x + 1e-6))
 
         # Update
-        super.update(values, values.numel())
+        super().update(values, values.numel())
 
 
+# TODO - fix scaling
 class MeanSquaredError(torchutil.metrics.Average):
 
     def update(
@@ -89,10 +89,10 @@ class MeanSquaredError(torchutil.metrics.Average):
         values = torch.nn.functional.mse_loss(
             scores,
             targets,
-            reduction='sum')
+            reduction='none')
 
         # Update
-        super.update(values, values.numel())
+        super().update(values, values.numel())
 
 
 ###############################################################################

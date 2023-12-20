@@ -3,6 +3,7 @@ import os
 
 import librosa
 import torch
+import torchutil
 
 import emphases
 
@@ -77,8 +78,12 @@ def from_file_to_file(audio_file, output_file):
 
 def from_files_to_files(audio_files, output_files):
     """Compute mels for many files and save to disk"""
-    with mp.get_context('spawn').Pool(os.cpu_count() // 2) as pool:
-        pool.starmap(from_file_to_file, zip(audio_files, output_files))
+    torchutil.multiprocess_iterator(
+        wrapper,
+        zip(audio_files, output_files),
+        'Preprocessing mels',
+        total=len(audio_files),
+        num_workers=emphases.NUM_WORKERS)
 
 
 ###############################################################################
@@ -102,3 +107,7 @@ def linear_to_mel(spectrogram):
 
     # Apply dynamic range compression
     return torch.log(torch.clamp(melspectrogram, min=1e-5))
+
+def wrapper(item):
+    """Multiprocessing wrapper"""
+    from_file_to_file(*item)

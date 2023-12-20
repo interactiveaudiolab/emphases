@@ -85,7 +85,6 @@ def datasets(datasets, checkpoint=emphases.DEFAULT_CHECKPOINT, gpu=None):
                 for features, word_bounds in emphases.preprocess(
                     alignments[0],
                     audio[0],
-                    pad=True,
                     gpu=gpu
                 ):
 

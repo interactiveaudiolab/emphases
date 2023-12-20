@@ -1,11 +1,13 @@
 import multiprocessing as mp
+import warnings
 
-import emphases
-import torch
 import librosa
 import numpy as np
 import penn
-import warnings
+import torch
+import torchutil
+
+import emphases
 
 
 ###############################################################################
@@ -41,8 +43,12 @@ def from_file_to_file(audio_file, output_file):
 
 def from_files_to_files(audio_files, output_files):
     """Compute loudness for many files and save to disk"""
-    with mp.Pool() as pool:
-        pool.starmap(from_file_to_file, zip(audio_files, output_files))
+    torchutil.multiprocess_iterator(
+        wrapper,
+        zip(audio_files, output_files),
+        'Preprocessing a-weighted loudness',
+        total=len(audio_files),
+        num_workers=emphases.NUM_WORKERS)
 
 
 ###############################################################################
@@ -112,3 +118,7 @@ def perceptual_weights():
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', RuntimeWarning)
         return librosa.A_weighting(frequencies)[:, None] - emphases.REF_DB
+
+def wrapper(item):
+    """Multiprocessing wrapper"""
+    from_file_to_file(*item)
