@@ -44,7 +44,6 @@ def infer(alignment, audio, sample_rate):
         rate=200)
 
     # Slice features
-    # FIXME: min_length
     min_length = np.min([len(pitch), len(energy), len(duration)])
     pitch = pitch[:min_length]
     energy = energy[:min_length]

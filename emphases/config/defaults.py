@@ -232,9 +232,7 @@ MAX_TRAINING_FRAMES = 75000
 NUM_STEPS = 6000
 
 # Number of data loading worker threads
-# TEMPORARY
-# try:
-#     NUM_WORKERS = int(os.cpu_count() / max(1, len(GPUtil.getGPUs())))
-# except ValueError:
-#     NUM_WORKERS = os.cpu_count()
-NUM_WORKERS = 12
+try:
+    NUM_WORKERS = int(os.cpu_count() / max(1, len(GPUtil.getGPUs())))
+except ValueError:
+    NUM_WORKERS = os.cpu_count()

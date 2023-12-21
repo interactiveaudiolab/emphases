@@ -20,7 +20,6 @@ def parse_args():
     parser.add_argument(
         '--checkpoint',
         type=Path,
-        default=emphases.DEFAULT_CHECKPOINT,
         help='The checkpoint file to evaluate')
     parser.add_argument(
         '--gpu',
