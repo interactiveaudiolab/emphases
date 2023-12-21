@@ -36,7 +36,6 @@ def parse_args():
     parser.add_argument(
         '--config',
         type=Path,
-        default=emphases.DEFAULT_CONFIGURATION,
         help='The configuration file')
     parser.add_argument(
         '--dataset',

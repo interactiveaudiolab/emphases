@@ -34,7 +34,6 @@ def parse_args():
     parser.add_argument(
         '--checkpoint',
         type=Path,
-        default=emphases.DEFAULT_CHECKPOINT,
         help='The model checkpoint to use for inference')
     parser.add_argument(
         '--batch_size',

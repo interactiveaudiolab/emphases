@@ -5,6 +5,7 @@ import tempfile
 from pathlib import Path
 from typing import List, Optional, Tuple, Type, Union
 
+import huggingface_hub
 import pyfoal
 import pypar
 import torch
@@ -22,7 +23,7 @@ import emphases
 def from_file(
     text_file: Union[str, bytes, os.PathLike],
     audio_file: Union[str, bytes, os.PathLike],
-    checkpoint: Union[str, bytes, os.PathLike] = emphases.DEFAULT_CHECKPOINT,
+    checkpoint: Optional[Union[str, bytes, os.PathLike]] = None,
     batch_size: Optional[int] = None,
     gpu: Optional[int] = None
 ) -> Tuple[Type[pypar.Alignment], torch.Tensor]:
@@ -76,9 +77,10 @@ def from_file_to_file(
     text_file: List[Union[str, bytes, os.PathLike]],
     audio_file: List[Union[str, bytes, os.PathLike]],
     output_prefix: Optional[List[Union[str, bytes, os.PathLike]]] = None,
-    checkpoint: Union[str, bytes, os.PathLike] = emphases.DEFAULT_CHECKPOINT,
+    checkpoint: Optional[Union[str, bytes, os.PathLike]] = None,
     batch_size: Optional[int] = None,
-    gpu: Optional[int] = None) -> None:
+    gpu: Optional[int] = None
+) -> None:
     """Produce emphasis scores for each word for files on disk and save to disk
 
     Args:
@@ -111,12 +113,13 @@ def from_file_to_file(
 
 
 def from_files_to_files(
-        text_files: List[Union[str, bytes, os.PathLike]],
-        audio_files: List[Union[str, bytes, os.PathLike]],
-        output_prefixes: Optional[List[Union[str, bytes, os.PathLike]]] = None,
-        checkpoint: Union[str, bytes, os.PathLike] = emphases.DEFAULT_CHECKPOINT,
-        batch_size: Optional[int] = None,
-        gpu: Optional[int] = None) -> None:
+    text_files: List[Union[str, bytes, os.PathLike]],
+    audio_files: List[Union[str, bytes, os.PathLike]],
+    output_prefixes: Optional[List[Union[str, bytes, os.PathLike]]] = None,
+    checkpoint: Optional[Union[str, bytes, os.PathLike]] = None,
+    batch_size: Optional[int] = None,
+    gpu: Optional[int] = None
+) -> None:
     """Produce emphasis scores for each word for many files and save to disk
 
     Args:
@@ -180,9 +183,10 @@ def from_text_and_audio(
     text: str,
     audio: torch.Tensor,
     sample_rate: int,
-    checkpoint: Union[str, bytes, os.PathLike] = emphases.DEFAULT_CHECKPOINT,
+    checkpoint: Optional[Union[str, bytes, os.PathLike]] = None,
     batch_size: Optional[int] = None,
-    gpu: Optional[int] = None) -> Tuple[Type[pypar.Alignment], torch.Tensor]:
+    gpu: Optional[int] = None
+) -> Tuple[Type[pypar.Alignment], torch.Tensor]:
     """Produce emphasis scores for each word
 
     Args:
@@ -220,7 +224,7 @@ def from_alignment_and_audio(
     alignment: pypar.Alignment,
     audio: torch.Tensor,
     sample_rate: int,
-    checkpoint: Union[str, bytes, os.PathLike] = emphases.DEFAULT_CHECKPOINT,
+    checkpoint: Optional[Union[str, bytes, os.PathLike]] = None,
     batch_size: Optional[int] = None,
     gpu: Optional[int] = None
 ) -> Tuple[Type[pypar.Alignment], torch.Tensor]:
@@ -288,7 +292,7 @@ def from_alignment_and_audio(
 ###############################################################################
 
 
-def infer(features, word_bounds, checkpoint=emphases.DEFAULT_CHECKPOINT):
+def infer(features, word_bounds, checkpoint=None):
     """Perform model inference to annotate emphases of each word"""
     # Maybe cache model
     if (
@@ -298,6 +302,12 @@ def infer(features, word_bounds, checkpoint=emphases.DEFAULT_CHECKPOINT):
     ):
         # Initialize model
         model = emphases.Model()
+
+        # Maybe download from HuggingFace
+        if checkpoint is None:
+            checkpoint = huggingface_hub.hf_hub_download(
+                'maxrmorrison/emphases',
+                'model.pt')
 
         # Load from disk
         infer.model, *_ = torchutil.checkpoint.load(checkpoint, model)

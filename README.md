@@ -69,9 +69,10 @@ def from_alignment_and_audio(
     alignment: pypar.Alignment,
     audio: torch.Tensor,
     sample_rate: int,
-    checkpoint: Union[str, bytes, os.PathLike] = emphases.DEFAULT_CHECKPOINT,
+    checkpoint: Optional[Union[str, bytes, os.PathLike]] = None,
     batch_size: Optional[int] = None,
-    gpu: Optional[int] = None) -> Tuple[Type[pypar.Alignment], torch.Tensor]:
+    gpu: Optional[int] = None
+) -> Tuple[Type[pypar.Alignment], torch.Tensor]:
     """Produce emphasis scores for each word
 
     Args:
@@ -94,9 +95,10 @@ def from_text_and_audio(
     text: str,
     audio: torch.Tensor,
     sample_rate: int,
-    checkpoint: Union[str, bytes, os.PathLike] = emphases.DEFAULT_CHECKPOINT,
+    checkpoint: Optional[Union[str, bytes, os.PathLike]] = None,
     batch_size: Optional[int] = None,
-    gpu: Optional[int] = None) -> Tuple[Type[pypar.Alignment], torch.Tensor]:
+    gpu: Optional[int] = None
+) -> Tuple[Type[pypar.Alignment], torch.Tensor]:
     """Produce emphasis scores for each word
 
     Args:
@@ -120,7 +122,7 @@ def from_text_and_audio(
 def from_file(
     text_file: Union[str, bytes, os.PathLike],
     audio_file: Union[str, bytes, os.PathLike],
-    checkpoint: Union[str, bytes, os.PathLike] = emphases.DEFAULT_CHECKPOINT,
+    checkpoint: Optional[Union[str, bytes, os.PathLike]] = None,
     batch_size: Optional[int] = None,
     gpu: Optional[int] = None
 ) -> Tuple[Type[pypar.Alignment], torch.Tensor]:
@@ -147,9 +149,10 @@ def from_file_to_file(
     text_file: List[Union[str, bytes, os.PathLike]],
     audio_file: List[Union[str, bytes, os.PathLike]],
     output_prefix: Optional[List[Union[str, bytes, os.PathLike]]] = None,
-    checkpoint: Union[str, bytes, os.PathLike] = emphases.DEFAULT_CHECKPOINT,
+    checkpoint: Optional[Union[str, bytes, os.PathLike]] = None,
     batch_size: Optional[int] = None,
-    gpu: Optional[int] = None) -> None:
+    gpu: Optional[int] = None
+) -> None:
     """Produce emphasis scores for each word for files on disk and save to disk
 
     Args:
@@ -171,18 +174,19 @@ word is emphasized.
 
 ```python
 def from_files_to_files(
-        text_files: List[Union[str, bytes, os.PathLike]],
-        audio_files: List[Union[str, bytes, os.PathLike]],
-        output_prefixes: Optional[List[Union[str, bytes, os.PathLike]]] = None,
-        checkpoint: Union[str, bytes, os.PathLike] = emphases.DEFAULT_CHECKPOINT,
-        batch_size: Optional[int] = None,
-        gpu: Optional[int] = None) -> None:
+    text_files: List[Union[str, bytes, os.PathLike]],
+    audio_files: List[Union[str, bytes, os.PathLike]],
+    output_prefixes: Optional[List[Union[str, bytes, os.PathLike]]] = None,
+    checkpoint: Optional[Union[str, bytes, os.PathLike]] = None,
+    batch_size: Optional[int] = None,
+    gpu: Optional[int] = None
+) -> None:
     """Produce emphasis scores for each word for many files and save to disk
 
     Args:
         text_file: The speech transcript (.txt) or alignment (.TextGrid) files
         audio_files: The corresponding speech audio files
-        output_prefixes: The output files. Default is text files with json suffix.
+        output_prefixes: The output files. Defaults to text file stems.
         checkpoint: The model checkpoint to use for inference
         batch_size: The maximum number of frames per batch
         gpu: The index of the gpu to run inference on

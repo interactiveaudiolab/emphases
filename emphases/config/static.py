@@ -14,12 +14,6 @@ ANNOTATION_DIR = emphases.SOURCE_DIR / 'crowdsource'
 # Default configuration file for emphasis annotation
 DEFAULT_ANNOTATION_CONFIG = emphases.ASSETS_DIR / 'configs' / 'annotate.yaml'
 
-# Default checkpoint for generation
-DEFAULT_CHECKPOINT = emphases.ASSETS_DIR / 'checkpoints' / 'checkpoint.pt'
-
-# Default configuration file
-DEFAULT_CONFIGURATION = emphases.ASSETS_DIR / 'configs' / 'emphases.py'
-
 # Location to save dataset partitions
 PARTITION_DIR = emphases.ASSETS_DIR / 'partitions'
 
