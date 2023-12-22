@@ -7,7 +7,7 @@
 
 Annotation, training, evaluation and inference of speech prominence
 
-[Paper](https://www.maxrmorrison.com/pdfs/morrison2024crowdsourced.pdf) [Website](https://www.maxrmorrison.com/sites/prominence-estimation)
+[Paper](https://www.maxrmorrison.com/pdfs/morrison2024crowdsourced.pdf) [Website](https://www.maxrmorrison.com/sites/prominence-estimation) [Dataset](https://zenodo.org/records/10402793)
 
 </div>
 
