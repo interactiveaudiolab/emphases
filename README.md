@@ -35,6 +35,7 @@ Annotation, training, evaluation and inference of speech prominence
     * [Analyze](#analyze)
 - [Citation](#citation)
 
+
 ## Installation
 
 `pip install emphases`
@@ -97,6 +98,7 @@ def from_alignment_and_audio(
         scores: The float-valued emphasis scores for each word
     """
 ```
+
 
 #### `emphases.from_text_and_audio`
 
