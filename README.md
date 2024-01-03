@@ -7,15 +7,14 @@
 
 Annotation, training, evaluation and inference of speech prominence
 
-`pip install emphases`
-
-[Paper](https://www.maxrmorrison.com/pdfs/morrison2024crowdsourced.pdf) [Website](https://www.maxrmorrison.com/sites/prominence-estimation)
+[Paper](https://www.maxrmorrison.com/pdfs/morrison2024crowdsourced.pdf) [Website](https://www.maxrmorrison.com/sites/prominence-estimation) [Dataset](https://zenodo.org/records/10402793)
 
 </div>
 
 
 ## Table of contents
 
+- [Installation](#installation)
 - [Inference](#inference)
     * [Application programming interface](#application-programming-interface)
         * [`emphases.from_alignment_and_audio`](#emphasesfrom_alignment_and_audio)
@@ -35,6 +34,18 @@ Annotation, training, evaluation and inference of speech prominence
     * [Evaluate](#evaluate)
     * [Analyze](#analyze)
 - [Citation](#citation)
+
+
+## Installation
+
+`pip install emphases`
+
+By default, we use the Penn Phonetic Forced Aligner (P2FA) via the [`pyfoal`](https://github.com/maxrmorrison/pyfoal/)
+repo to perform word alignments. This requires installing HTK. See [the HTK
+installation instructions](https://github.com/maxrmorrison/pyfoal/tree/main?tab=readme-ov-file#penn-phonetic-forced-aligner-p2fa)
+provided by `pyfoal`. Alternatively, you can use a different forced aligner
+and either pass the alignment as a [`pypar.Alignment`](https://github.com/maxrmorrison/pypar/tree/main)
+object or save the alignment as a `.TextGrid` file.
 
 
 ## Inference
@@ -87,6 +98,7 @@ def from_alignment_and_audio(
         scores: The float-valued emphasis scores for each word
     """
 ```
+
 
 #### `emphases.from_text_and_audio`
 
