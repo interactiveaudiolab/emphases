@@ -8,7 +8,7 @@ with open('README.md', encoding='utf8') as file:
 setup(
     name='emphases',
     description='Crowdsourced and Automatic Speech Prominence Estimation',
-    version='0.0.1',
+    version='0.0.2',
     author='Interactive Audio Lab',
     author_email='interactiveaudiolab@gmail.com',
     url='https://github.com/interactiveaudiolab/emphases',
