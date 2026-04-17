@@ -1,6 +1,7 @@
 import numpy as np
 
 import scipy.signal
+from scipy.signal.windows import gaussian
 
 import emphases
 
@@ -51,7 +52,6 @@ def _track_pitch(
 
     # second pass with soft constraints
     n_iters = 3
-    from scipy.signal import gaussian
 
     for iter in range(0, n_iters):
         smoothed = emphases.baselines.prominence.f0_processing.process(pitch)
@@ -131,7 +131,7 @@ def inst_freq_pitch(
         mags = scipy.signal.decimate(abs(wavelet_matrix), DEC, zero_phase=True)
 
         # normalize magnitudes
-        mags = (mags - mags.min()) / mags.ptp()
+        mags = (mags - mags.min()) / np.ptp(mags)
 
         # construct time-frequency image
         _assign_to_bins(pic, freqs, mags)
